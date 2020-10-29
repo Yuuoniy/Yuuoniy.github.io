@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Yuuoniy&#39;s blog</title>
-    <link>https://blog.yuuoniy.cn/</link>
+    <link>https://yuuoniy.github.io/</link>
     <description>Recent content on Yuuoniy&#39;s blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.</copyright>
-    <lastBuildDate>Sat, 11 Jul 2020 09:39:11 +0800</lastBuildDate><atom:link href="https://blog.yuuoniy.cn/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 11 Jul 2020 09:39:11 +0800</lastBuildDate><atom:link href="https://yuuoniy.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>LLVM 入门教程之 Pass 编写</title>
-      <link>https://blog.yuuoniy.cn/posts/llvm-pass-1/</link>
+      <link>https://yuuoniy.github.io/posts/llvm-pass-1/</link>
       <pubDate>Sat, 11 Jul 2020 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/llvm-pass-1/</guid>
+      <guid>https://yuuoniy.github.io/posts/llvm-pass-1/</guid>
       <description>前言 本篇文章作为 Pass 编写的入门，主要介绍以下内容:
  示例 Pass 编写 Pass 编译构建和运行 Pass 不同子类 Pass 注册 Pass 间依赖  示例 首先我们先结合一个小示例，尝试编写 Pass，之后再详细介绍涉及的内容。
 #include &amp;#34;llvm/Pass.h&amp;#34; //添加头文件#include &amp;#34;llvm/IR/Function.h&amp;#34;#include &amp;#34;llvm/Support/raw_ostream.h&amp;#34;#include &amp;#34;llvm/IR/LegacyPassManager.h&amp;#34;#include &amp;#34;llvm/Transforms/IPO/PassManagerBuilder.h&amp;#34;using namespace llvm; //添加 llvm 命名空间  namespace { // 定义匿名命名空间  struct SkeletonPass : public FunctionPass { // 定义 SkeletonPass 继承 FunctionPass  static char ID; // // ID 标识  SkeletonPass() : FunctionPass(ID) {} virtual bool runOnFunction(Function &amp;amp;F) { //// 重载 runOnFunction 函数，接受Function类型参数  errs() &amp;lt;&amp;lt; &amp;#34;I saw a function called &amp;#34; &amp;lt;&amp;lt; F.</description>
@@ -21,10 +21,10 @@
     
     <item>
       <title>LLVM 入门教程之基本介绍</title>
-      <link>https://blog.yuuoniy.cn/posts/llvm-1/</link>
+      <link>https://yuuoniy.github.io/posts/llvm-1/</link>
       <pubDate>Tue, 16 Jun 2020 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/llvm-1/</guid>
+      <guid>https://yuuoniy.github.io/posts/llvm-1/</guid>
       <description>前言 本篇文章作为LLVM入门教程，包括以下内容：
  LLVM 的安装 LLVM 源码结构 LLVM 工具介绍 Clang 基本使用 LLVM IR 基本内容 Pass 介绍  安装 目前 LLVM 的最新版本为 10.0.0，我尝试通过预编译和源码编译两种安装方式安装了 LLVM+Clang。下面介绍这两种方式。
 预编译源码安装 直接去官网下载解压即可，或者去镜像网站 下载，根据系统选择压缩包进行下载，此处我选择的是 clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz 。
@@ -36,10 +36,10 @@ $ cd llvm-project$ mkdir build &amp;amp;&amp;amp; cd build$ cmake -G &amp;quot
     
     <item>
       <title>zeratool：基于 angr 的CTF pwn 自动化利用工具介绍</title>
-      <link>https://blog.yuuoniy.cn/posts/zeratool/</link>
+      <link>https://yuuoniy.github.io/posts/zeratool/</link>
       <pubDate>Tue, 18 Feb 2020 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/zeratool/</guid>
+      <guid>https://yuuoniy.github.io/posts/zeratool/</guid>
       <description>文章首发于 先知社区
  前言 Zeratool 实现了针对 CTF 中的 pwn 题的自动化利用生成（Automatic Exploit Generation）以及远程获取 flag。
 它基于 angr, 探索程序未约束的状态，继而分析状态的寄存器信息和内存布局，设定约束，对约束进行求解，结合 pwntools 编写脚本，提交 payload 到远程 CTF 服务器获得 flag。
@@ -52,10 +52,10 @@ $ cd llvm-project$ mkdir build &amp;amp;&amp;amp; cd build$ cmake -G &amp;quot
     
     <item>
       <title>基于 Angr 的漏洞利用自动生成之缓冲区溢出案例分析</title>
-      <link>https://blog.yuuoniy.cn/posts/angr-aeg/</link>
+      <link>https://yuuoniy.github.io/posts/angr-aeg/</link>
       <pubDate>Thu, 13 Feb 2020 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/angr-aeg/</guid>
+      <guid>https://yuuoniy.github.io/posts/angr-aeg/</guid>
       <description>文章首发于 先知社区
  前言 本文将结合 angr 官方提供的示例 insomnihack_aeg 展示基于 angr 的简单自动利用生成，分析各个步骤并介绍相关接口。通过阅读本文，可以对 angr 和简单 AEG 有进一步的认识。
 相关源文件在 insomnihack_aeg 中。
@@ -66,10 +66,10 @@ demo_bin 为二进制程序，demo_bin.c 为源代码，solve.py 是自动生成
     
     <item>
       <title>Rex: 自动化利用引擎分析</title>
-      <link>https://blog.yuuoniy.cn/posts/rex-1/</link>
+      <link>https://yuuoniy.github.io/posts/rex-1/</link>
       <pubDate>Tue, 11 Feb 2020 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/rex-1/</guid>
+      <guid>https://yuuoniy.github.io/posts/rex-1/</guid>
       <description>Rex: 自动化利用引擎分析  文章首发于 先知社区
  前言 最近在看 rex，没有官方文档，已有的教程也有点过时，基本只能通过看源码学习。
 本篇教程当作是学习的记录，也希望能帮助研究 AEG 的同学快速上手 rex，对 rex 的架构和使用方式有个整体的认识。
@@ -85,10 +85,10 @@ tg = archr.targets.LocalTarget(&amp;lt;path_to_binary&amp;gt;, target_os=&amp;#3
     
     <item>
       <title>Angr 核心概念及模块解读</title>
-      <link>https://blog.yuuoniy.cn/posts/angr-1-basic-concepts/</link>
+      <link>https://yuuoniy.github.io/posts/angr-1-basic-concepts/</link>
       <pubDate>Tue, 28 Jan 2020 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/angr-1-basic-concepts/</guid>
+      <guid>https://yuuoniy.github.io/posts/angr-1-basic-concepts/</guid>
       <description>文章首发于 先知社区
  前言 最近在学习 angr， 发现网上教程大部分都是简单介绍几个顶层接口，或者使用 angr 来解题，比较杂，而且很多接口已经丢弃。所以准备写 angr 系列的教程，同时当作个人学习的记录。
 本文主要对 angr一些概念和接口进行介绍，更像是简略版的说明文档。文章略长，可以选择感兴趣的章节阅读。
@@ -102,10 +102,10 @@ tg = archr.targets.LocalTarget(&amp;lt;path_to_binary&amp;gt;, target_os=&amp;#3
     
     <item>
       <title>stack pivot</title>
-      <link>https://blog.yuuoniy.cn/posts/stack_pivot/</link>
+      <link>https://yuuoniy.github.io/posts/stack_pivot/</link>
       <pubDate>Tue, 14 Jan 2020 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/stack_pivot/</guid>
+      <guid>https://yuuoniy.github.io/posts/stack_pivot/</guid>
       <description>xctf16_b0verflow checksec:
 [*] &#39;/home/yuuoniy/MY-AEG/nightmare/modules/17-stack_pivot/xctf16_b0verflow/b0verflow&#39;Arch: i386-32-littleRELRO: Partial RELROStack: No canary foundNX: NX disabledPIE: No PIE (0x8048000)RWX: Has RWX segmentsObviously, there is a stack overflow, while the overflow buffer only is 18 byte. as a result, we could utilize stack pivot technique.
 we could place our shellcode on string s, then jump to here. so we need a jmp gadget. and hint() has this! (we could also use tool to find it)</description>
@@ -113,10 +113,10 @@ we could place our shellcode on string s, then jump to here. so we need a jmp ga
     
     <item>
       <title>chunk extend</title>
-      <link>https://blog.yuuoniy.cn/posts/chunk_extend/</link>
+      <link>https://yuuoniy.github.io/posts/chunk_extend/</link>
       <pubDate>Sat, 21 Sep 2019 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/chunk_extend/</guid>
+      <guid>https://yuuoniy.github.io/posts/chunk_extend/</guid>
       <description>题目：
 HITCON Trainging lab13
 程序分析：
@@ -135,10 +135,10 @@ chunk1 info(0x20) | chunk1 | chunk2 info | chunk2
     
     <item>
       <title>magicheap（unsorted_bin_attack)</title>
-      <link>https://blog.yuuoniy.cn/posts/unsorted_bin_attack/</link>
+      <link>https://yuuoniy.github.io/posts/unsorted_bin_attack/</link>
       <pubDate>Thu, 19 Sep 2019 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/unsorted_bin_attack/</guid>
+      <guid>https://yuuoniy.github.io/posts/unsorted_bin_attack/</guid>
       <description>题目链接：
 https://github.com/scwuaptx/HITCON-Training/tree/master/LAB/lab14
 首先分析程序，存在任意长度堆溢出，我们的目的是覆盖 bss 段的 magic 变量，使其大于 0x1305, 很容易想到 unsorted bin attack， 该技术达到的效果就是写 unsorted_chunks (av) 到任意地址，而这个值是比较大的。
@@ -151,10 +151,10 @@ bk 是指向 chunk 的 pre_size 的地方的，而我们的 target address 对�
     
     <item>
       <title>软件测试学习笔记</title>
-      <link>https://blog.yuuoniy.cn/posts/st-note/</link>
+      <link>https://yuuoniy.github.io/posts/st-note/</link>
       <pubDate>Sun, 30 Jun 2019 22:04:58 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/st-note/</guid>
+      <guid>https://yuuoniy.github.io/posts/st-note/</guid>
       <description>软件测试
 由于项目需要进行测试,先来学习一下软件测试中的基本概念, 测试的内容很多,这里就简单介绍一下白盒测试/黑盒测试/灰盒测试.
 动态测试 首先介绍一下动态测试 动态测试基本流程:
@@ -178,10 +178,10 @@ bk 是指向 chunk 的 pre_size 的地方的，而我们的 target address 对�
     
     <item>
       <title>vue 组件的生命周期及钩子函数</title>
-      <link>https://blog.yuuoniy.cn/posts/vue-lifecycle/</link>
+      <link>https://yuuoniy.github.io/posts/vue-lifecycle/</link>
       <pubDate>Sun, 30 Jun 2019 09:59:49 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/vue-lifecycle/</guid>
+      <guid>https://yuuoniy.github.io/posts/vue-lifecycle/</guid>
       <description>vue 组件的生命周期相关
 关于 vue 组件的生命周期，写简单的项目不需要太多的了解，甚至只需要知道 mounted 这一钩子函数就可以了，但如果项目的逻辑较复杂，就需要对整个组件的生命周期有一些认识 下面就让我们来看看吧。
 先看一下官方给出的生命周期图 图中表明了生命周期的各个阶段和相关的钩子函数。
@@ -191,10 +191,10 @@ var app = new Vue({ el: &amp;#39;#app&amp;#39;, data: { message : &amp;#34;xuxia
     
     <item>
       <title>如何使用vue 及相关技术栈快速构建前端</title>
-      <link>https://blog.yuuoniy.cn/posts/vue-learning/</link>
+      <link>https://yuuoniy.github.io/posts/vue-learning/</link>
       <pubDate>Sat, 29 Jun 2019 21:41:10 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/vue-learning/</guid>
+      <guid>https://yuuoniy.github.io/posts/vue-learning/</guid>
       <description>在本文中，我将给大家介绍一些 vue 的基础知识、相关工具、生态等内容。相信通过该文章你会对 vue 有大概的认识，并且可以快速地找到入门的方向。 一起来学习吧！
 首先介绍一下本次系分项目前端使用的技术栈：
  vue-cli vuex element-ui vue-router axios webpack yarn  我将一一简单介绍:
@@ -206,10 +206,10 @@ element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还�
     
     <item>
       <title>2019VolgaCTF &amp; 2019SunshineCTF writeup</title>
-      <link>https://blog.yuuoniy.cn/posts/2019volgactfsunshine/</link>
+      <link>https://yuuoniy.github.io/posts/2019volgactfsunshine/</link>
       <pubDate>Tue, 02 Apr 2019 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/2019volgactfsunshine/</guid>
+      <guid>https://yuuoniy.github.io/posts/2019volgactfsunshine/</guid>
       <description>VolgaCTF:  warm/Shadow Cat/JOI  Warm 这道题是 arm 架构下的，不过没什么区别。没有环境的话要先搭一下，直接连服务器做也可以。
 先简单解个密：
 s=&amp;#34;&amp;#34; s+=chr(0x23^85); s+= chr(ord(s[-1])^78) s+= chr(ord(s[-1])^30) s+= chr(ord(s[-1])^21) s+= chr(ord(s[-1])^94) s+= chr(ord(s[-1])^28) s+= chr(ord(s[-1])^33) s+= chr(ord(s[-1])^1) s+= chr(ord(s[-1])^52) s+= chr(ord(s[-1])^7) s+= chr(ord(s[-1])^53) s+= chr(ord(s[-1])^17) s+= chr(ord(s[-1])^55) s+= chr(ord(s[-1])^60) s+= chr(ord(s[-1])^114) s+= chr(ord(s[-1])^71) p.sendline(s); print(len(s)) print(s) 得到 v8&amp;amp;3mqPQebWFqM?x
@@ -224,10 +224,10 @@ str = &amp;#34;hajjzvajvzqyaqbendzvajvqauzarlapjzrkybjzenzuvczjvastlj&amp;#34; a
     
     <item>
       <title>CTF | offbyone writeup</title>
-      <link>https://blog.yuuoniy.cn/posts/pwn-offbyone/</link>
+      <link>https://yuuoniy.github.io/posts/pwn-offbyone/</link>
       <pubDate>Thu, 27 Sep 2018 22:02:10 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/pwn-offbyone/</guid>
+      <guid>https://yuuoniy.github.io/posts/pwn-offbyone/</guid>
       <description>offbyone fastbin attack chunk overlap
 题目就叫 offbyone，是 xman 小姐姐给的，不清楚出处&amp;hellip;
 offbyone 漏洞的大致思路：
@@ -238,10 +238,10 @@ if ( v1 &amp;gt;= 0 &amp;amp;&amp;amp; v1 &amp;lt;= 15 &amp;amp;&amp;amp; ptrs[v
     
     <item>
       <title>CTF | 0ctf 2017 babyheap</title>
-      <link>https://blog.yuuoniy.cn/posts/ctf-fastbin-attack/</link>
+      <link>https://yuuoniy.github.io/posts/ctf-fastbin-attack/</link>
       <pubDate>Tue, 25 Sep 2018 10:42:41 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/ctf-fastbin-attack/</guid>
+      <guid>https://yuuoniy.github.io/posts/ctf-fastbin-attack/</guid>
       <description>0ctf 2017 babyheap writeup 有关 fastbin attack 利用
 稍微复习一下 fastbin attack 利用思路：
  覆盖 got 表劫持控制流 覆盖栈上函数返回地址，然后ROP劫持控制流 覆盖 malloc_hook、覆盖 _IO_FILE 等方式劫持控制流 没有开 FULL RELRO 的话，就可以考虑修改 got 表内容  算是很经典的一道题了吧 先分析一下程序 allocate:
@@ -258,10 +258,10 @@ chunk 结构:
     
     <item>
       <title>CTF | srop 利用</title>
-      <link>https://blog.yuuoniy.cn/posts/pwn-srop/</link>
+      <link>https://yuuoniy.github.io/posts/pwn-srop/</link>
       <pubDate>Wed, 19 Sep 2018 16:49:01 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/pwn-srop/</guid>
+      <guid>https://yuuoniy.github.io/posts/pwn-srop/</guid>
       <description>SROP(Sigreturn Oriented Programming)
 SROP signal 机制 32 位的 sigreturn 的调用号为 77，64 位的系统调用号为 15
 过程： 推荐看 angelboy 的 ppt
@@ -270,10 +270,10 @@ x86mov eax,0x77int 0x80x64mov rax,0xfsyscall利用要点  利用 sigreturn
     
     <item>
       <title>android | 手机应用开发基础知识</title>
-      <link>https://blog.yuuoniy.cn/posts/android-course-2/</link>
+      <link>https://yuuoniy.github.io/posts/android-course-2/</link>
       <pubDate>Wed, 12 Sep 2018 16:27:12 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/android-course-2/</guid>
+      <guid>https://yuuoniy.github.io/posts/android-course-2/</guid>
       <description>关于 android 基本 UI 界面设计的常用空间等内容
 记得修改 build.gradle 文件 android 应用中的所有用户界面元素都是使用 View 和 ViewGroup 对象构建而成。 打开 res/layout/*.xml 进行布局，首先看到图形显示界面为空白。
 修改 res/value/styles.xml stackoverflow
@@ -286,20 +286,20 @@ Bundle bundle = this.getIntent().getExtras(); broadcast 静态广播 动态广�
     
     <item>
       <title>android | 手机平台应用开发第一篇</title>
-      <link>https://blog.yuuoniy.cn/posts/android-course-1/</link>
+      <link>https://yuuoniy.github.io/posts/android-course-1/</link>
       <pubDate>Tue, 11 Sep 2018 14:47:50 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/android-course-1/</guid>
+      <guid>https://yuuoniy.github.io/posts/android-course-1/</guid>
       <description>git 日常使用总结 git 已经用很多了,大概就是需要了解仓库,分支等概念,熟悉本地和远程的关系,熟练使用clone commit pull push merge操作 下面给出一下常用的命令: 新建分支:git branch dev 切换分支:git checkout dev 添加文件 git add file ,常用 git add . 添加全部更新的文件 查看状态 git status 取回远程仓库的变化，并与本地分支合并:git pull [remote] [branch] 上传本地指定分支到远程仓库:git push [remote] [branch] 常见步骤:git add -&amp;gt;commit -&amp;gt;push, 如果有冲突还涉及到 merge 操作 显示版本历史:git log 显示暂存区和工作区的不同: git diff 对于入门者推荐 git 教程 如何使用 Git 和 GitHub 比较系统,之前我也是根据这个学的
 Android开发环境搭建 之前已经安装过 AS 了,下载sdk应该要翻墙,不过我有梯子,不过 sync gardle 时总是失败 错误： Unknown host &#39;dl.google.com&#39;. You may need to adjust the proxy settings in Gradle.</description>
     </item>
     
     <item>
       <title>CTF | 无线网络-802.11攻与防</title>
-      <link>https://blog.yuuoniy.cn/posts/xman-wireless-attack-with-defense/</link>
+      <link>https://yuuoniy.github.io/posts/xman-wireless-attack-with-defense/</link>
       <pubDate>Fri, 17 Aug 2018 08:56:44 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/xman-wireless-attack-with-defense/</guid>
+      <guid>https://yuuoniy.github.io/posts/xman-wireless-attack-with-defense/</guid>
       <description>常见的无线攻击威胁 fake ap攻击 ARP&amp;amp;Dns劫持 WIFI DOS 公攻击 操作命令： iwconfig
 airm
 airodump-ng 名称
@@ -316,10 +316,10 @@ airodump-ng wlan0mon
     
     <item>
       <title>CTF | 0ctf 2015 freenote writeup</title>
-      <link>https://blog.yuuoniy.cn/posts/xman-freenote-writeup/</link>
+      <link>https://yuuoniy.github.io/posts/xman-freenote-writeup/</link>
       <pubDate>Thu, 16 Aug 2018 18:57:34 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/xman-freenote-writeup/</guid>
+      <guid>https://yuuoniy.github.io/posts/xman-freenote-writeup/</guid>
       <description>0ctf 2015 freenote writeup 涉及到 double free 漏洞，利用过程：leak libc ,leak heap, unlink
 做题比写论文好玩多了呜呜呜呜 这个也是很经典的一道题啦，主要就是 leak libc ,leak heap, unlink 这三步
 程序分析 首先弄一下结构体 大概就是这样吧：
@@ -328,10 +328,10 @@ airodump-ng wlan0mon
     
     <item>
       <title>CTF | IO_FILE 相关利用</title>
-      <link>https://blog.yuuoniy.cn/posts/seethefile-writeup/</link>
+      <link>https://yuuoniy.github.io/posts/seethefile-writeup/</link>
       <pubDate>Tue, 14 Aug 2018 15:52:08 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/seethefile-writeup/</guid>
+      <guid>https://yuuoniy.github.io/posts/seethefile-writeup/</guid>
       <description>IO FILE 利用
 seethefile 分析程序 首先看程序
  openfile:读取 长度为63 filename,打开文件,这里有溢出，因为 filename 大小为 40,但是不能覆盖到fp writefile:输出文件 magicbuf，通过这个应该能泄露地址，首先要把内容写道magicbuf readfile:从文件中读取内容到 0x18 长度 closefile: 这里会调用 fclose 函数，可以用来触发 exit : 这里 name 有溢出。可以覆盖到fp,使之指向我们伪造的fp,在调用fcolse时调用system(&amp;quot;bin/sh&amp;quot;)  bss data laylout
@@ -340,10 +340,10 @@ seethefile 分析程序 首先看程序
     
     <item>
       <title>CTF | 逆向入门第二篇</title>
-      <link>https://blog.yuuoniy.cn/posts/xman-reversing-day2/</link>
+      <link>https://yuuoniy.github.io/posts/xman-reversing-day2/</link>
       <pubDate>Fri, 03 Aug 2018 08:50:25 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/xman-reversing-day2/</guid>
+      <guid>https://yuuoniy.github.io/posts/xman-reversing-day2/</guid>
       <description>逆向入门第二篇
 hide strings 查看到有壳upx 3.91 脱壳 不能使用upx -d 直接脱。
 运行起来相当于脱壳看，因此可以用 dd 把data和text两段dump下来之后拼在一起，可以在IDA里面看。但实际上文件结构会被破坏，因为是运行时镜像，动态脱壳都有这样的问题。所以动态调试还是使用有壳的。dd cat /proc/(pid hide)/maps 可以查看进程的内存映射 脱壳命令,其中的地址就是各段的地址,因为是静态的,因此都是不变的，可以直接复制：
@@ -355,10 +355,10 @@ ptrace反调试 ptrace介绍： ptrace提供了一种使父进程得以监视和
     
     <item>
       <title>CTF | 逆向入门第一篇</title>
-      <link>https://blog.yuuoniy.cn/posts/xman-reversing-1/</link>
+      <link>https://yuuoniy.github.io/posts/xman-reversing-1/</link>
       <pubDate>Fri, 03 Aug 2018 00:24:43 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/xman-reversing-1/</guid>
+      <guid>https://yuuoniy.github.io/posts/xman-reversing-1/</guid>
       <description>跟着萌新一起逆向入门呦。包括：基本知识点,简单题例子,常见操作
 先来过一遍知识点吧！
 工具介绍  Disassembler 反汇编器 Tracer 记录运行的过程,如函数，指令 Debugger 调试器 Decompiler IDA、geb（支持mips、web assembly?) Emulator (qemu 模拟执行）知道CPU状态 Symbolic execution 符号执行 angr、路径爆炸  具体工具  IDA 支持脚本、手工定义的反汇编规则 Geb 逆安卓 mips web*** Binary ninja 不支持反编译,api好用，通常提供静态分析 R2 命令系统奇怪，支持以太坊智能合约 Retdec capstone  常规逆向 ELF/PE/Mach-O file with x86/x64/arm
@@ -371,10 +371,10 @@ ptrace反调试 ptrace介绍： ptrace提供了一种使父进程得以监视和
     
     <item>
       <title>CTF | 2016 ZCTF note2</title>
-      <link>https://blog.yuuoniy.cn/posts/2016-zctf-note2/</link>
+      <link>https://yuuoniy.github.io/posts/2016-zctf-note2/</link>
       <pubDate>Thu, 05 Apr 2018 23:27:02 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/2016-zctf-note2/</guid>
+      <guid>https://yuuoniy.github.io/posts/2016-zctf-note2/</guid>
       <description>2016 ZCTF note2 writeup 关于 unlink 利用
 unlink 来复习一下 unlink。。 控制堆块的 fd,bk 指针
 FD=P-&amp;gt;fd BK=P-&amp;gt;bkFD-&amp;gt;bk = BKBK-&amp;gt;fd = FD64位：
@@ -385,10 +385,10 @@ fd = &amp;amp;p-12bk = &amp;amp;p-8效果: p =&amp;amp;p-12可以好好看一
     
     <item>
       <title>Bullet</title>
-      <link>https://blog.yuuoniy.cn/posts/bullet/</link>
+      <link>https://yuuoniy.github.io/posts/bullet/</link>
       <pubDate>Thu, 29 Mar 2018 22:23:06 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/bullet/</guid>
+      <guid>https://yuuoniy.github.io/posts/bullet/</guid>
       <description>注意stack或是struct的layout
 漏洞strncat(bullet-&amp;gt;desc,buf,MAX - bullet-&amp;gt;power); 这样首先create长度为47的bullet，通过power_up 再增加一个power 此时bullet长度为48 通过strnact 最后还会赋值 null ,因此造成溢出,power會從\x2f蓋成\x00
 又因为 power = strlen(power) + power 所以最后power为1 杀死gin才会触发return;
@@ -401,10 +401,10 @@ fd = &amp;amp;p-12bk = &amp;amp;p-8效果: p =&amp;amp;p-12可以好好看一
     
     <item>
       <title>b0verfl0w</title>
-      <link>https://blog.yuuoniy.cn/posts/b0verfl0w/</link>
+      <link>https://yuuoniy.github.io/posts/b0verfl0w/</link>
       <pubDate>Sun, 18 Mar 2018 23:11:36 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/b0verfl0w/</guid>
+      <guid>https://yuuoniy.github.io/posts/b0verfl0w/</guid>
       <description>stack privot 题目 溢出的字节就只有50-0x20-4=14个字节，所以我们很难执行一些比较好的ROP。这里我们就考虑stack privot。
 基本利用思路如下
 利用栈溢出布置shellcode 控制eip指向shellcode处
@@ -417,10 +417,10 @@ from pwn import *sh = process(&#39;./b0verfl0w&#39;)shellcode = &amp;quot;\x31
     
     <item>
       <title>CTF | XDCTF2015-pwn200(DynELF)</title>
-      <link>https://blog.yuuoniy.cn/posts/xdctf2015-pwn200/</link>
+      <link>https://yuuoniy.github.io/posts/xdctf2015-pwn200/</link>
       <pubDate>Sun, 18 Mar 2018 19:40:11 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/xdctf2015-pwn200/</guid>
+      <guid>https://yuuoniy.github.io/posts/xdctf2015-pwn200/</guid>
       <description>该题用到了 DynELF 技术
 DynELF 是 pwntools 中专门用来应对无 libc 情况的漏洞利用模块，其基本代码框架如下。
 p = process(&amp;#39;./xxx&amp;#39;) def leak(address): #各种预处理 payload = &amp;#34;xxxxxxxx&amp;#34; + address + &amp;#34;xxxxxxxx&amp;#34; p.send(payload) #各种处理 data = p.recv(4) return data d = DynELF(leak, elf=ELF(&amp;#34;./xxx&amp;#34;)) #初始化DynELF模块  systemAddress = d.lookup(&amp;#39;system&amp;#39;, &amp;#39;libc&amp;#39;) #在libc文件中搜索system函数的地址 再看 read 函数： 定义函数：ssize_t read(int fd, void * buf, size_t count);  函数说明：read()会把参数fd 所指的文件传送count 个字节到buf 指针所指的内存中. 若参数 count 为 0, 则read()不会有作用并返回0. 返回值为实际读取到的字节数, 如果返回0, 表示已到达文件尾或是无可读取的数据,此外文件读写位置会随读取到的字节移动.
@@ -430,10 +430,10 @@ p = process(&amp;#39;./xxx&amp;#39;) def leak(address): #各种预处理 payload
     
     <item>
       <title>PlaidCTF-2013-ropasaurusrex</title>
-      <link>https://blog.yuuoniy.cn/posts/plaidctf-2013-ropasaurusrex/</link>
+      <link>https://yuuoniy.github.io/posts/plaidctf-2013-ropasaurusrex/</link>
       <pubDate>Sat, 17 Mar 2018 20:36:41 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/plaidctf-2013-ropasaurusrex/</guid>
+      <guid>https://yuuoniy.github.io/posts/plaidctf-2013-ropasaurusrex/</guid>
       <description>分析：
 buf大小只有0x88,但是却允许被读入0x100的字节大小，造成缓冲区溢出。程序是32位。
 定义函数：ssize_t write (int fd, const void * buf, size_t count);
@@ -450,10 +450,10 @@ from pwn import *elf = ELF(&#39;./ropasaurusrex&#39;)io = process(&#39;./ropas
     
     <item>
       <title>Defcon-2015-Qualifier-r0pbaby</title>
-      <link>https://blog.yuuoniy.cn/posts/defcon-2015-qualifier-r0pbaby/</link>
+      <link>https://yuuoniy.github.io/posts/defcon-2015-qualifier-r0pbaby/</link>
       <pubDate>Sat, 17 Mar 2018 18:11:32 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/defcon-2015-qualifier-r0pbaby/</guid>
+      <guid>https://yuuoniy.github.io/posts/defcon-2015-qualifier-r0pbaby/</guid>
       <description>64位需要rdi传参，有PIE保护不能使用程序中的gadget，此处可以从libc中找
 buf的大小是8，会造成缓冲区溢出
 解题思路
@@ -469,10 +469,10 @@ from pwn import *elf = ELF(&#39;r0pbaby&#39;)libc = ELF(&#39;/lib/x86_64-linux
     
     <item>
       <title>CTF|pwnable.tw orw writeup</title>
-      <link>https://blog.yuuoniy.cn/posts/pwnable-tw-orw-writeup/</link>
+      <link>https://yuuoniy.github.io/posts/pwnable-tw-orw-writeup/</link>
       <pubDate>Wed, 14 Mar 2018 12:32:31 +0000</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/pwnable-tw-orw-writeup/</guid>
+      <guid>https://yuuoniy.github.io/posts/pwnable-tw-orw-writeup/</guid>
       <description>pwnable.tw orw writeup shellcode的编写
 呀真的好久没有写博客了，最近在做一些题，都在看别人的题解，做过也忘了，接下来希望好好记录一下，帮助自己理解。
 这道题是有关shellcode的编写，这部分我之前也没学习过，都是使用机器生成的。就&amp;hellip;结合别人的writeup 说一下自己的理解吧。

@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>pwn on Yuuoniy&#39;s blog</title>
-    <link>https://blog.yuuoniy.cn/tags/pwn/</link>
+    <link>https://yuuoniy.github.io/tags/pwn/</link>
     <description>Recent content in pwn on Yuuoniy&#39;s blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.</copyright>
-    <lastBuildDate>Tue, 16 Jun 2020 09:39:11 +0800</lastBuildDate><atom:link href="https://blog.yuuoniy.cn/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 16 Jun 2020 09:39:11 +0800</lastBuildDate><atom:link href="https://yuuoniy.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>LLVM 入门教程之基本介绍</title>
-      <link>https://blog.yuuoniy.cn/posts/llvm-1/</link>
+      <link>https://yuuoniy.github.io/posts/llvm-1/</link>
       <pubDate>Tue, 16 Jun 2020 09:39:11 +0800</pubDate>
       
-      <guid>https://blog.yuuoniy.cn/posts/llvm-1/</guid>
+      <guid>https://yuuoniy.github.io/posts/llvm-1/</guid>
       <description>前言 本篇文章作为LLVM入门教程，包括以下内容：
  LLVM 的安装 LLVM 源码结构 LLVM 工具介绍 Clang 基本使用 LLVM IR 基本内容 Pass 介绍  安装 目前 LLVM 的最新版本为 10.0.0，我尝试通过预编译和源码编译两种安装方式安装了 LLVM+Clang。下面介绍这两种方式。
 预编译源码安装 直接去官网下载解压即可，或者去镜像网站 下载，根据系统选择压缩包进行下载，此处我选择的是 clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz 。
