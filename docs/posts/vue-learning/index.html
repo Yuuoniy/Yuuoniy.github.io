@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>如何使用vue 及相关技术栈快速构建前端 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="在本文中，我将给大家介绍一些 vue 的基础知识、相关工具、生态等内容。相信通过该文章你会对 vue 有大概的认识，并且可以快速地找到入门的方向。 一起来学习吧！
+首先介绍一下本次系分项目前端使用的技术栈：
+ vue-cli vuex element-ui vue-router axios webpack yarn  我将一一简单介绍:
+vue 一开始学 vue, 主要熟悉一些组件的概念，数据，生命周期。 写的时候主要也就是 data, mounted, methods 这几项。 布局方面使用 v-for/v-if/v-show 。 还有学一些路由之间的跳转，传递参数这些内容。 基本够用了&hellip; 还有可以学一下怎么父子组件的相关概念。 其他的还有computed/watch 等，但是简单的项目也可以不用。
+vuex 用来做状态管理，简单来说，可以维护一些全局变量。
+vue-cli 使用 vue-cli 你可以快速构建一个 vue 项目。目前的版本是 3.0。不同先前版本，构建完项目后需要自己创建配置文件，文件名为 vue.config.js 创建： vue create project-name
+element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还有Muse-UI 等等。 我用 element-ui 比较多，就介绍一下我常用的组件： 布局方面，使用 &lt;el-container&gt;  &lt;el-header&gt; &lt;el-main&gt; 将页面分成几大部分。然后使用 el-row el-col 进行布局，设置好 offset 和 span 属性就行 使用 message 来弹出消息，主要有 success/error/warning 几类。 使用 el-menu 设置导航 此外，我喜欢用 el-card 将页面卡片化，布局也很方便。 我常用的还有 form/button/icon/divider 在系分项目中我使用 Upload 来实现头像上传。 新版的 element-ui 也引入了一些非常方便的组件，包括： avatar,loading。我在系分项目中也用到了。">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">如何使用vue 及相关技术栈快速构建前端</h1>
+		<div class="post-meta">June 29, 2019</div>
+	</header>
+	<div class="post-content"><p>在本文中，我将给大家介绍一些 vue 的基础知识、相关工具、生态等内容。相信通过该文章你会对 vue 有大概的认识，并且可以快速地找到入门的方向。
+一起来学习吧！</p>
+<!-- raw HTML omitted -->
+<p>首先介绍一下本次系分项目前端使用的技术栈：</p>
+<ul>
+<li>vue-cli</li>
+<li>vuex</li>
+<li>element-ui</li>
+<li>vue-router</li>
+<li>axios</li>
+<li>webpack</li>
+<li>yarn</li>
+</ul>
+<p>我将一一简单介绍:</p>
+<h2 id="vue">vue</h2>
+<p>一开始学 vue, 主要熟悉一些组件的概念，数据，生命周期。
+写的时候主要也就是 data, mounted, methods 这几项。
+布局方面使用 v-for/v-if/v-show 。
+还有学一些路由之间的跳转，传递参数这些内容。
+基本够用了&hellip; 
+还有可以学一下怎么父子组件的相关概念。
+其他的还有computed/watch 等，但是简单的项目也可以不用。</p>
+<h2 id="vuex">vuex</h2>
+<p>用来做状态管理，简单来说，可以维护一些全局变量。</p>
+<h2 id="vue-cli">vue-cli</h2>
+<p>使用  vue-cli  你可以快速构建一个 vue 项目。目前的版本是 3.0。不同先前版本，构建完项目后需要自己创建配置文件，文件名为 <code>vue.config.js</code>
+创建： <code>vue create project-name</code></p>
+<h2 id="element-ui">element-ui</h2>
+<p>UI 框架。算是 vue 生态中最常用的UI框架了。其他还有Muse-UI 等等。
+我用 element-ui 比较多，就介绍一下我常用的组件：
+布局方面，使用 <code>&lt;el-container&gt;</code> <code> &lt;el-header&gt;</code>   <code>&lt;el-main&gt;</code> 将页面分成几大部分。然后使用 <code>el-row</code> <code>el-col</code> 进行布局，设置好 <code>offset</code> 和 <code>span</code> 属性就行
+使用 <code>message</code> 来弹出消息，主要有 <code>success/error/warning</code> 几类。
+使用 <code>el-menu</code> 设置导航
+此外，我喜欢用 <code>el-card</code> 将页面卡片化，布局也很方便。
+我常用的还有 form/button/icon/divider 
+在系分项目中我使用 <code>Upload</code> 来实现头像上传。
+新版的 element-ui 也引入了一些非常方便的组件，包括：
+<code>avatar</code>,<code>loading</code>。我在系分项目中也用到了。</p>
+<h2 id="vue-router">vue-router</h2>
+<p>这个是 vue 官方的路由管理器。(不是前后端路由的那个路由)
+基本看一下示例就会写了，主要就是写下 路径/你想渲染的组件。复杂一点的，可以学一下嵌套路由。也很简单
+在布局的时候使用 <code>router-view</code> 进行占位，</p>
+<h2 id="axios">axios</h2>
+<p>这是用来处理网络请求的。 vue-resource 也是，但已经不被官方推荐了。使用  axios 好一些。
+网上教程很多，我就不说了。</p>
+<h2 id="webpack">webpack</h2>
+<p>可以在 vue.config.js 中编写 webpack 配置文件。如</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"> <span style="color:#960050;background-color:#1e0010">configureWebpack:</span> {
+    <span style="color:#960050;background-color:#1e0010">devServer:</span> <span style="color:#960050;background-color:#1e0010">{</span>
+      <span style="color:#960050;background-color:#1e0010">proxy:</span> <span style="color:#960050;background-color:#1e0010">{</span>
+        <span style="color:#960050;background-color:#1e0010">&#39;/api&#39;:</span> <span style="color:#960050;background-color:#1e0010">{</span>
+          <span style="color:#960050;background-color:#1e0010">target:</span> <span style="color:#960050;background-color:#1e0010">&#39;sever</span> <span style="color:#960050;background-color:#1e0010">address&#39;,</span>
+          <span style="color:#960050;background-color:#1e0010">pathRewrite:</span> <span style="color:#960050;background-color:#1e0010">{</span><span style="color:#f92672">&#34;^/api&#34;</span> : <span style="color:#e6db74">&#34;&#34;</span>}
+        <span style="color:#960050;background-color:#1e0010">}</span>
+      <span style="color:#960050;background-color:#1e0010">}</span>
+    <span style="color:#960050;background-color:#1e0010">}</span>
+  <span style="color:#960050;background-color:#1e0010">},</span>
+</code></pre></div><p>用来设置请求代理，将请求发给服务端。</p>
+<h2 id="yarn">yarn</h2>
+<p>依赖管理工具，替代 npm，速度方面有些优势。
+<code>yarn run server</code>  运行项目
+<code>yarn add xxx</code> 安装依赖</p>
+<h2 id="其他组件">其他组件</h2>
+<p>vue 有很多第三方组件，可以用来实现一些小功能，如表单验证/分页/富文本编辑器等等，可以自己探索。</p>
+<h2 id="工具相关">工具相关</h2>
+<p>再介绍一下工具！可以大大提高生产力。</p>
+<h3 id="vuejs-devtools">Vue.js devtools</h3>
+<p>chrome 的拓展，vue 调试神器，真的很好用。可以用来查看运行时 vue 各个组件的布局以及数据，真的很好用。</p>
+<h3 id="其他插件">其他插件</h3>
+<p>写代码怎么能少了高亮和自动补全，格式化插件呢。
+我使用的编辑器 <code>vscode</code>, 用的相关插件有：<code>Vetur/Vue 2 Snippets/vue-format</code>。推荐</p>
+<h2 id="总结">总结</h2>
+<p>以上就是使用 vue 构建前端常用的技术栈了，有了宏观的认识后，入门真的很容易，但是我上面所说的内容都是比较简单的，还是有很多高级的内容需要你自己去探索啦。可以找个基础的项目看下，
+都是大同小异（写多了感觉真的纯搬砖&hellip;)</p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

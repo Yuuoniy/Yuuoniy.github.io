@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>vue 组件的生命周期及钩子函数 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="vue 组件的生命周期相关
+关于 vue 组件的生命周期，写简单的项目不需要太多的了解，甚至只需要知道 mounted 这一钩子函数就可以了，但如果项目的逻辑较复杂，就需要对整个组件的生命周期有一些认识 下面就让我们来看看吧。
+先看一下官方给出的生命周期图 图中表明了生命周期的各个阶段和相关的钩子函数。
+ beforeCreate created beforeMount mounted beforeUpdate updated beforeDestroy destroyed  可以用以下代码做测试，并在控制台查看输出，对于生命周期有个直观的认识。
+var app = new Vue({ el: &#39;#app&#39;, data: { message : &#34;xuxiao is boy&#34; }, beforeCreate: function () { console.group(&#39;beforeCreate 创建前状态&#39;); console.log(&#34;%c%s&#34;, &#34;color:red&#34; , &#34;el : &#34; &#43; this.$el); //undefined  console.log(&#34;%c%s&#34;, &#34;color:red&#34;,&#34;data : &#34; &#43; this.$data); //undefined  console.log(&#34;%c%s&#34;, &#34;color:red&#34;,&#34;message: &#34; &#43; this.message) }, created: function () { console.">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">vue 组件的生命周期及钩子函数</h1>
+		<div class="post-meta">June 30, 2019</div>
+	</header>
+	<div class="post-content"><p>vue 组件的生命周期相关</p>
+<!-- raw HTML omitted -->
+<p>关于 vue 组件的生命周期，写简单的项目不需要太多的了解，甚至只需要知道 mounted 这一钩子函数就可以了，但如果项目的逻辑较复杂，就需要对整个组件的生命周期有一些认识
+下面就让我们来看看吧。</p>
+<p>先看一下官方给出的生命周期图
+<img src="https://cn.vuejs.org/images/lifecycle.png" alt=""></p>
+<p>图中表明了生命周期的各个阶段和相关的钩子函数。</p>
+<ul>
+<li>beforeCreate</li>
+<li>created</li>
+<li>beforeMount</li>
+<li>mounted</li>
+<li>beforeUpdate</li>
+<li>updated</li>
+<li>beforeDestroy</li>
+<li>destroyed</li>
+</ul>
+<p>可以用以下代码做测试，并在控制台查看输出，对于生命周期有个直观的认识。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"> <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">app</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">Vue</span>({
+      <span style="color:#a6e22e">el</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;#app&#39;</span>,
+      <span style="color:#a6e22e">data</span><span style="color:#f92672">:</span> {
+          <span style="color:#a6e22e">message</span> <span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;xuxiao is boy&#34;</span> 
+      },
+       <span style="color:#a6e22e">beforeCreate</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">function</span> () {
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">group</span>(<span style="color:#e6db74">&#39;beforeCreate 创建前状态&#39;</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span> , <span style="color:#e6db74">&#34;el     : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$el</span>); <span style="color:#75715e">//undefined
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;data   : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$data</span>); <span style="color:#75715e">//undefined 
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;message: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">message</span>)  
+        },
+        <span style="color:#a6e22e">created</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">function</span> () {
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">group</span>(<span style="color:#e6db74">&#39;created 创建完毕状态&#39;</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;el     : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$el</span>); <span style="color:#75715e">//undefined
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;data   : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$data</span>); <span style="color:#75715e">//已被初始化 
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;message: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">message</span>); <span style="color:#75715e">//已被初始化
+</span><span style="color:#75715e"></span>        },
+        <span style="color:#a6e22e">beforeMount</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">function</span> () {
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">group</span>(<span style="color:#e6db74">&#39;beforeMount 挂载前状态&#39;</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;el     : &#34;</span> <span style="color:#f92672">+</span> (<span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$el</span>)); <span style="color:#75715e">//已被初始化
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;data   : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$data</span>); <span style="color:#75715e">//已被初始化  
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;message: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">message</span>); <span style="color:#75715e">//已被初始化  
+</span><span style="color:#75715e"></span>        },
+        <span style="color:#a6e22e">mounted</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">function</span> () {
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">group</span>(<span style="color:#e6db74">&#39;mounted 挂载结束状态&#39;</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;el     : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$el</span>); <span style="color:#75715e">//已被初始化
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;data   : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$data</span>); <span style="color:#75715e">//已被初始化
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;message: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">message</span>); <span style="color:#75715e">//已被初始化 
+</span><span style="color:#75715e"></span>        },
+        <span style="color:#a6e22e">beforeUpdate</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">function</span> () {
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">group</span>(<span style="color:#e6db74">&#39;beforeUpdate 更新前状态=&#39;</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;el     : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$el</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;data   : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$data</span>); 
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;message: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">message</span>); 
+        },
+        <span style="color:#a6e22e">updated</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">function</span> () {
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">group</span>(<span style="color:#e6db74">&#39;updated 更新完成状态&#39;</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;el     : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$el</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;data   : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$data</span>); 
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;message: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">message</span>); 
+        },
+        <span style="color:#a6e22e">beforeDestroy</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">function</span> () {
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">group</span>(<span style="color:#e6db74">&#39;beforeDestroy 销毁前状态&#39;</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;el     : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$el</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;data   : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$data</span>); 
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;message: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">message</span>); 
+        },
+        <span style="color:#a6e22e">destroyed</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">function</span> () {
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">group</span>(<span style="color:#e6db74">&#39;destroyed 销毁完成状态&#39;</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;el     : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$el</span>);
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;data   : &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$data</span>); 
+            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;%c%s&#34;</span>, <span style="color:#e6db74">&#34;color:red&#34;</span>,<span style="color:#e6db74">&#34;message: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">message</span>)
+        }
+    })
+</code></pre></div><p>下面我介绍一下主要的钩子函数：</p>
+<ul>
+<li>
+<p>beforeCreate 和 create</p>
+<ul>
+<li>
+<p>beforeCreate 
+在 initState 调用之前，而 initState 的作用是初始化 props、data、methods、watch、computed 等属性。因此此时无法获取到 props、data 中定义的值，也不能调用 methods 中定义的函数</p>
+</li>
+<li>
+<p>create 
+initState 调用之后，可以获取到 props、data 中定义的值，也不能调用 methods 中定义的函数
+注意 beforeCreate 和 create 执行时还没有渲染 DOM，因此均访问不到 DOM 元素。</p>
+</li>
+</ul>
+</li>
+<li>
+<p>beforeMount 和 mounted
+beforeMount 和 mounted 函数执行在 Vue 实例挂载阶段</p>
+<ul>
+<li>beforeMount
+完成了 el 和 data 初始化</li>
+<li>mounted 
+完成挂载</li>
+</ul>
+</li>
+<li>
+<p>beforeUpdate 和 updated
+beforeUpdate 和 updated 的钩子函数执行时机都是在数据更新的时候</p>
+</li>
+<li>
+<p>beforeDestroy 和 destroyed
+beforeDestroy 和 destroyed 钩子函数的执行时机在组件销毁的阶段</p>
+</li>
+</ul>
+<p>以上就是对于各个生命周期的说明了，通过对整个生命周期的了解，我们可以很清晰地知道可以vue 组件在什么阶段做什么事,从而恰当地钩子函数，在恰当的时间做恰当的事情。</p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

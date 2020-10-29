@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>CTF | 无线网络-802.11攻与防 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="常见的无线攻击威胁 fake ap攻击 ARP&amp;Dns劫持 WIFI DOS 公攻击 操作命令： iwconfig
+airm
+airodump-ng 名称
+airmon-ng start name
+airodump-ng --bssid xxx -c 信道 -w 保存文件 wlan0mon
+aircrack-ng 包 -w 字典 
+airodump-ng --bssid B4:0B:44:C2:D5:FF -c 11 -w xmantest wlan0mon
+--ivs 只抓握手包
+airodump-ng wlan0mon
+切换信道： iwconfig wlan0mon channel 11
+踢下线： aireplay-ng -0 10000 -a B4:0B:44:C2:D5:FF -c C4:B3:01:C4:27:31 wlan0mon wlan.fc.type_subtype==12
+无线攻防与进阶  ProbeRequest Frame  ProbeRequest SSID 暴露位置信息&amp;定位   WPA-Radius 企业无线攻防 攻击802.11客户端  针对无线设备的漏洞挖掘  802.">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">CTF | 无线网络-802.11攻与防</h1>
+		<div class="post-meta">August 17, 2018</div>
+	</header>
+	<div class="post-content"><!-- raw HTML omitted -->
+<h3 id="常见的无线攻击威胁">常见的无线攻击威胁</h3>
+<h4 id="fake-ap攻击">fake ap攻击</h4>
+<h4 id="arpdns劫持">ARP&amp;Dns劫持</h4>
+<h4 id="wifi-dos-公攻击">WIFI DOS 公攻击</h4>
+<h4 id="操作命令">操作命令：</h4>
+<p><code>iwconfig</code><br>
+<code>airm</code><br>
+<code>airodump-ng 名称</code><br>
+<code>airmon-ng start name</code><br>
+<code>airodump-ng --bssid xxx -c 信道 -w 保存文件 wlan0mon</code><br>
+<code>aircrack-ng 包 -w 字典 </code><br>
+<code>airodump-ng --bssid B4:0B:44:C2:D5:FF -c 11 -w xmantest wlan0mon</code><br>
+<code>--ivs</code> 只抓握手包</p>
+<p><code>airodump-ng wlan0mon</code></p>
+<p>切换信道：
+<code>iwconfig wlan0mon channel 11</code><br>
+踢下线：
+<code>aireplay-ng -0 10000 -a  B4:0B:44:C2:D5:FF -c C4:B3:01:C4:27:31 wlan0mon</code>
+wlan.fc.type_subtype==12</p>
+<h3 id="无线攻防与进阶">无线攻防与进阶</h3>
+<ul>
+<li>ProbeRequest Frame
+<ul>
+<li>ProbeRequest SSID 暴露位置信息&amp;定位</li>
+</ul>
+</li>
+<li>WPA-Radius 企业无线攻防</li>
+<li>攻击802.11客户端</li>
+</ul>
+<h3 id="针对无线设备的漏洞挖掘">针对无线设备的漏洞挖掘</h3>
+<ul>
+<li>802.11 Fuzzing</li>
+<li></li>
+</ul>
+<h3 id="无线攻击的识别与防御">无线攻击的识别与防御</h3>
+<p>fuzz 要根据协议规范，不然协议不认，长度无所谓，但是帧类型的话要根据规范
+要知道ap发给客户端还是客户端发给ap</p>
+<p>wireshark 流量还原</p>
+<h4 id="wifuzz-小工具">wifuzz 小工具</h4>
+<p><code>python wifuzz.py -s 尿尿 -i wlan0mon probe </code>
+scapy  封装好协议</p>
+<p><code>iwconfig wlan0mon channel 1</code></p>
+<p><code>airbase-ng -e &quot;rm -rf&quot; -c 1 -v wlan0mon</code></p>
+<p>推荐博客：http://www.wiattack.net/index.php/archives/7/</p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>LLVM 入门教程之基本介绍 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="前言 本篇文章作为LLVM入门教程，包括以下内容：
+ LLVM 的安装 LLVM 源码结构 LLVM 工具介绍 Clang 基本使用 LLVM IR 基本内容 Pass 介绍  安装 目前 LLVM 的最新版本为 10.0.0，我尝试通过预编译和源码编译两种安装方式安装了 LLVM&#43;Clang。下面介绍这两种方式。
+预编译源码安装 直接去官网下载解压即可，或者去镜像网站 下载，根据系统选择压缩包进行下载，此处我选择的是 clang&#43;llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz 。
+源码编译安装 首先下载相关源码，可以从 github llvm-project 选择自己需要的源码下载，也可以从上面的镜像网站下载。这里我从镜像网站下载了llvm 和 clang 源码（ clang-10.0.0.src.tar.xz 、llvm-10.0.0.src.tar.xz )
+然后将源码进行解压，保持其目录与 llvm-project 目录一致，即
+目录结构图： llvm-project - llvm - clang - build 然后进入llvm-project 目录编译，如果没有 cmake 可以直接通过 apt 安装一下。
+$ cd llvm-project$ mkdir build &amp;&amp; cd build$ cmake -G &quot;Unix Makefiles&quot; -DLLVM_ENABLE_PROJECTS=&quot;clang&quot; \-DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=&quot;X86&quot; \-DBUILD_SHARED_LIBS=On .">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">LLVM 入门教程之基本介绍</h1>
+		<div class="post-meta">June 16, 2020</div>
+	</header>
+	<div class="post-content"><h2 id="前言">前言</h2>
+<p>本篇文章作为LLVM入门教程，包括以下内容：</p>
+<ol>
+<li>LLVM 的安装</li>
+<li>LLVM 源码结构</li>
+<li>LLVM 工具介绍</li>
+<li>Clang 基本使用</li>
+<li>LLVM IR 基本内容</li>
+<li>Pass 介绍</li>
+</ol>
+<h2 id="安装">安装</h2>
+<p>目前 LLVM 的最新版本为 10.0.0，我尝试通过预编译和源码编译两种安装方式安装了 LLVM+Clang。下面介绍这两种方式。</p>
+<h3 id="预编译源码安装">预编译源码安装</h3>
+<p>直接去官网下载解压即可，或者去<a href="https://mirrors.tuna.tsinghua.edu.cn/github-release/llvm/llvm-project/">镜像网站</a> 下载，根据系统选择压缩包进行下载，此处我选择的是 <code>clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz</code>  。</p>
+<h3 id="源码编译安装">源码编译安装</h3>
+<p>首先下载相关源码，可以从 <a href="https://github.com/llvm/llvm-project">github llvm-project</a> 选择自己需要的源码下载，也可以从上面的镜像网站下载。这里我从镜像网站下载了llvm 和 clang 源码（ <a href="https://mirrors.tuna.tsinghua.edu.cn/github-release/llvm/llvm-project/LLVM%2010.0.0/clang-10.0.0.src.tar.xz">clang-10.0.0.src.tar.xz</a> 、<a href="https://mirrors.tuna.tsinghua.edu.cn/github-release/llvm/llvm-project/LLVM%2010.0.0/llvm-10.0.0.src.tar.xz">llvm-10.0.0.src.tar.xz</a> )</p>
+<p>然后将源码进行解压，保持其目录与 llvm-project 目录一致，即</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#960050;background-color:#1e0010">目录结构图：</span>
+llvm<span style="color:#f92672">-</span>project
+   <span style="color:#f92672">-</span> llvm 
+   <span style="color:#f92672">-</span> clang 
+   <span style="color:#f92672">-</span> build
+</code></pre></div><p>然后进入<code>llvm-project </code>目录编译，如果没有 cmake 可以直接通过 apt 安装一下。</p>
+<pre><code class="language-pyton" data-lang="pyton">$ cd llvm-project
+$ mkdir build &amp;&amp; cd build
+$ cmake -G &quot;Unix Makefiles&quot; -DLLVM_ENABLE_PROJECTS=&quot;clang&quot; \
+    -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=&quot;X86&quot; \
+    -DBUILD_SHARED_LIBS=On ../llvm
+$ make // 可以使用 -j 选项并行编译加速
+</code></pre><ul>
+<li><code>-G</code> 指定为 <code>Unix Makefiles</code></li>
+<li>使用 <code>DCMAKE_BUILD_TYPE</code> 选项指定编译的版本为 <code>Release</code>，一共有四种模式可选，分别为<code>Debug, Release, RelWithDebInfo</code>和<code>MinSizeRel</code>。使用 <code>Release</code> 可以节省空间，省略调试信息。</li>
+<li><code>DLLVM_TARGETS_TO_BUILD</code> 指定目标平台的架构。</li>
+<li><code>-DLLVM_ENABLE_PROJECTS</code>表明还需要编译的项目，这里指定 clang，可以根据需要加入其他子项目。</li>
+<li><code>-DBUILD_SHARED_LIBS</code> 指定使用动态链接来链接LLVM的库，默认取值<code>Off</code>代表静态链接。</li>
+</ul>
+<p>编译时间几十分钟至几小时不等。</p>
+<p>安装结束后，在项目的bin目录下我们可以查看到许多二进制程序，包括 LLVM 相关工具以及 Clang 套件。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># mm @ iZ2ze2gbki9vcb415a0z6rZ in /usr/local/llvm-project/build/bin </span>
+<span style="color:#960050;background-color:#1e0010">$</span> ls
+arcmt<span style="color:#f92672">-</span>test             lli                     llvm<span style="color:#f92672">-</span>itanium<span style="color:#f92672">-</span>demangle<span style="color:#f92672">-</span>fuzzer    llvm<span style="color:#f92672">-</span>reduce
+bugpoint               lli<span style="color:#f92672">-</span>child<span style="color:#f92672">-</span>target        llvm<span style="color:#f92672">-</span>jitlink                    llvm<span style="color:#f92672">-</span>rtdyld
+c<span style="color:#f92672">-</span>arcmt<span style="color:#f92672">-</span>test           llvm<span style="color:#f92672">-</span>addr2line          llvm<span style="color:#f92672">-</span>lib                        llvm<span style="color:#f92672">-</span>size
+c<span style="color:#f92672">-</span>index<span style="color:#f92672">-</span>test           llvm<span style="color:#f92672">-</span>ar                 llvm<span style="color:#f92672">-</span>link                       llvm<span style="color:#f92672">-</span>special<span style="color:#f92672">-</span>case<span style="color:#f92672">-</span>list<span style="color:#f92672">-</span>fuzzer
+clang                  llvm<span style="color:#f92672">-</span><span style="color:#66d9ef">as</span>                 llvm<span style="color:#f92672">-</span>lipo                       llvm<span style="color:#f92672">-</span>split
+clang<span style="color:#f92672">++</span>                llvm<span style="color:#f92672">-</span>bcanalyzer         llvm<span style="color:#f92672">-</span>lit                        llvm<span style="color:#f92672">-</span>stress
+clang<span style="color:#f92672">-</span><span style="color:#ae81ff">10</span>               llvm<span style="color:#f92672">-</span>cat                llvm<span style="color:#f92672">-</span>locstats                   llvm<span style="color:#f92672">-</span>strings
+clang<span style="color:#f92672">-</span>check            llvm<span style="color:#f92672">-</span>cfi<span style="color:#f92672">-</span>verify         llvm<span style="color:#f92672">-</span>lto                        llvm<span style="color:#f92672">-</span>strip
+clang<span style="color:#f92672">-</span>cl               llvm<span style="color:#f92672">-</span>config             llvm<span style="color:#f92672">-</span>lto2                       llvm<span style="color:#f92672">-</span>symbolizer
+clang<span style="color:#f92672">-</span>cpp              llvm<span style="color:#f92672">-</span>cov                llvm<span style="color:#f92672">-</span>mc                         llvm<span style="color:#f92672">-</span>tblgen
+<span style="color:#f92672">...</span>
+</code></pre></div><h2 id="架构">架构</h2>
+<p>关于 LLVM 的架构设计，可以查看这篇文章：<a href="http://www.aosabook.org/en/llvm.html">LLVM</a></p>
+<h2 id="源码结构">源码结构</h2>
+<p>LLVM 的源码目录结构如下：</p>
+<pre><code>llvm/examples 使用LLVM IR 和 JIT的示例
+llvm/include  LLVM library的公共头文件
+llvm/lib      大部分源代码
+llvm/projects 一些依赖LLVM的project
+llvm/test     LLVM的测试套件，包含了很多测试用例
+llvm/tools    LLVM 各个工具的源码，也是主要的用户接口。
+llvm/utils    用于操作LLVM 源码的一些小工具
+</code></pre><h2 id="工具">工具</h2>
+<p>安装好 LLVM 后，可以在 bin 目录中看到许多工具，如 <code>llc,lli</code> 等，可以在命令行输入<code>tool_name  -help</code>命令获取帮助，下面介绍常见的工具和基本的使用。</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>介绍</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>llvm-as</td>
+<td>将 LLVM IR 文本格式转化为 bitcode 格式</td>
+</tr>
+<tr>
+<td>llvm-dis</td>
+<td>将 LLVM bitcode 文件转化为IR 文本格式(与llvm-as操作相反)</td>
+</tr>
+<tr>
+<td>llc</td>
+<td>将 LLVM 字节代码转换成特定于平台的汇编代码</td>
+</tr>
+<tr>
+<td>lli</td>
+<td>通过解释器或使用高级选项中的即时 (JIT) 编译器直接执行字节代码</td>
+</tr>
+<tr>
+<td>opt</td>
+<td>LLVM optimizer，对LLVM IR 调用pass进行分析和优化，并且输出结果。</td>
+</tr>
+<tr>
+<td>llvm-link</td>
+<td>链接LLVM bitcode</td>
+</tr>
+</tbody>
+</table>
+<h3 id="使用">使用</h3>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>命令</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C code-&gt;LLVM IR</td>
+<td><code>clang -emit-llvm -S test.c -o test.ll</code></td>
+</tr>
+<tr>
+<td>C code-&gt;LLVM bitcode</td>
+<td><code>clang -emit-llvm -c test.c -o test.bc</code></td>
+</tr>
+<tr>
+<td>LLVM IR -&gt; LLVM bitcode</td>
+<td><code>llvm-as test.ll –o test.bc</code></td>
+</tr>
+<tr>
+<td>LLVM bitcode -&gt;LLVM IR</td>
+<td><code>llvm-dis test.bc -o test.ll</code></td>
+</tr>
+<tr>
+<td>LLVM bitcode -&gt; 目标机器汇编代码</td>
+<td><code>llc test.bc –o test.s</code></td>
+</tr>
+<tr>
+<td>变换 LLVM IR</td>
+<td><code>opt –passname input.ll –o output.ll</code></td>
+</tr>
+<tr>
+<td>链接 LLVM bitcode</td>
+<td><code>llvm-link test1.bc test2.bc –o output.bc</code></td>
+</tr>
+<tr>
+<td>执行 LLVM bitcode</td>
+<td><code>lli output.bc</code></td>
+</tr>
+</tbody>
+</table>
+<p>LLVM 自带了一些 Pass 例子，使用<code>-passname</code>（如 <code>-mem2reg</code>）即可指定 Pass, 也可以自己编写 Pass。</p>
+<h2 id="clang">Clang</h2>
+<p>Clang 是 LLVM 的前端之一， 可以用来编译C，C++，ObjectiveC 等语言。除此之外，LLVM 还有为Swift设计的编译器前端Swift等。</p>
+<p>常见的 Clang 编译选项如下：</p>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-E, --preprocess</code></td>
+<td>只运行预处理阶段</td>
+</tr>
+<tr>
+<td><code>-S, --assemble</code></td>
+<td>只运行预处理和编译阶段</td>
+</tr>
+<tr>
+<td><code>-c, --compile</code></td>
+<td>只运行预处理、编译和汇编阶段。</td>
+</tr>
+<tr>
+<td><code>-emit-llvm</code></td>
+<td>使用LLVM IR 描述汇编和目标文件</td>
+</tr>
+<tr>
+<td><code>-ccc-print-phases</code></td>
+<td>查看编译源文件各个阶段</td>
+</tr>
+</tbody>
+</table>
+<p>可以通过 <code>clang -help</code> 获得选项帮助。</p>
+<h2 id="llvm--ir">LLVM  IR</h2>
+<p>LLVM  IR 是LLVM用于在编译器中表示代码的形式。 有三种表示格式：</p>
+<table>
+<thead>
+<tr>
+<th>格式</th>
+<th>介绍</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文本格式（.ll 格式）</td>
+<td>适合阅读</td>
+</tr>
+<tr>
+<td>bitcode 格式(.bc 格式)</td>
+<td>适合机器存储的二进制文件</td>
+</tr>
+<tr>
+<td>内存中格式</td>
+<td>用于优化器查看和修改的内存中数据结构</td>
+</tr>
+</tbody>
+</table>
+<p>IR 常见语法：</p>
+<ul>
+<li>**注释：**IR 注释以分号 (<code>;</code>) 开始，并持续到行末。</li>
+<li><strong>标识符:</strong> 全局以 <code>@</code> 字符开始。所有的函数名和全局变量都必须以 <code>@</code> 开始。局部标识符以百分号 (<code>%</code>) 开始</li>
+<li><strong>整数类型</strong>：LLVM 将整数类型定义为 <code>i*N*</code>，其中 <em>N</em> 是整数占用的字节数。</li>
+<li><strong>定义函数</strong>：以关键字 <code>define</code> 开始，后面紧跟返回类型，然后是函数名。如 <code>define i32 @main() { ; some LLVM assembly code that returns i32 }</code>。 表示返回 32 字节整数的 <code>main</code> 函数</li>
+<li><strong>声明函数</strong>：以关键字 <code>declare</code> 开始，后面紧跟着返回类型、函数名，以及该函数的可选参数列表。该声明必须是全局范围的。</li>
+<li><strong>函数返回</strong>：有两种形式的返回语句：<code>ret  </code> 或 <code>ret void</code>。</li>
+<li><strong>函数调用</strong>：<code>call &lt;function return type&gt; &lt;function name&gt; &lt;optional function arguments&gt;</code>  如返回一个 6 位的整数并接受一个 36 位的整数的函数测试的语法如下：<code>call i6 @test( i36 %arg1 )</code>。</li>
+</ul>
+<p>使用 IR 编写 helloworld 如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">declare i32 <span style="color:#a6e22e">@puts</span> (i8<span style="color:#f92672">*</span>)
+<span style="color:#a6e22e">@global_str</span> <span style="color:#f92672">=</span> constant [<span style="color:#ae81ff">13</span> x i8] c<span style="color:#e6db74">&#34;Hello World!</span><span style="color:#ae81ff">\00</span><span style="color:#e6db74">&#34;</span>
+ 
+define i32 <span style="color:#a6e22e">@main</span>() {
+  <span style="color:#f92672">%</span>temp <span style="color:#f92672">=</span> getelementptr [<span style="color:#ae81ff">13</span> x i8]<span style="color:#f92672">*</span>  <span style="color:#a6e22e">@global_str</span>, i64 <span style="color:#ae81ff">0</span>, i64 <span style="color:#ae81ff">0</span>
+  call i32 <span style="color:#a6e22e">@puts</span>(i8<span style="color:#f92672">*</span> <span style="color:#f92672">%</span>temp)
+  ret i32 <span style="color:#ae81ff">0</span>
+}
+</code></pre></div><h2 id="pass">Pass</h2>
+<p>Pass 是指针对 LLVM IR 的一次转换分析或优化。官方内置了很多Pass，关于它们的实现可以在 lib 目录下找到源码。<code>opt -help</code> 可以查看所有可用的内置pass。</p>
+<p>Pass 可以分为三类：</p>
+<ul>
+<li><code>Analysis Passes:</code> 用于计算分析和输出IR信息</li>
+<li><code>Transform Passes:</code> 对IR 进行实际的操作，转换 IR。</li>
+<li><code>Utility Passes</code>：一些小工具，本质既不是分析也不是转化。</li>
+</ul>
+<p>此外，不同优化基本使用的内置 pass 也不同，可以通过一下命令查看：</p>
+<p><code>llvm-as &lt; /dev/null | opt -O3 -disable-output -debug-pass=Arguments</code></p>
+<p>针对上述命令，我的机器跑出的结果如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#960050;background-color:#1e0010">$</span> llvm<span style="color:#f92672">-</span><span style="color:#66d9ef">as</span> <span style="color:#f92672">&lt;</span> <span style="color:#f92672">/</span>dev<span style="color:#f92672">/</span>null <span style="color:#f92672">|</span> opt <span style="color:#f92672">-</span>O3 <span style="color:#f92672">-</span>disable<span style="color:#f92672">-</span>output <span style="color:#f92672">-</span>debug<span style="color:#f92672">-</span><span style="color:#66d9ef">pass</span><span style="color:#f92672">=</span>Arguments
+Pass Arguments:  <span style="color:#f92672">-</span>tti <span style="color:#f92672">-</span>tbaa <span style="color:#f92672">-</span>scoped<span style="color:#f92672">-</span>noalias <span style="color:#f92672">-</span>assumption<span style="color:#f92672">-</span>cache<span style="color:#f92672">-</span>tracker <span style="color:#f92672">-</span>targetlibinfo <span style="color:#f92672">-</span>verify <span style="color:#f92672">-</span>ee<span style="color:#f92672">-</span>instrument <span style="color:#f92672">-</span>simplifycfg <span style="color:#f92672">-</span>domtree <span style="color:#f92672">-</span>sroa <span style="color:#f92672">-</span>early<span style="color:#f92672">-</span>cse <span style="color:#f92672">-</span>lower<span style="color:#f92672">-</span>expect
+Pass Arguments:  <span style="color:#f92672">-</span>targetlibinfo <span style="color:#f92672">-</span>tti <span style="color:#f92672">-</span>tbaa <span style="color:#f92672">-</span>scoped<span style="color:#f92672">-</span>noalias <span style="color:#f92672">-</span>assumption<span style="color:#f92672">-</span>cache<span style="color:#f92672">-</span>tracker <span style="color:#f92672">-</span>profile<span style="color:#f92672">-</span>summary<span style="color:#f92672">-</span>info <span style="color:#f92672">-</span>forceattrs <span style="color:#f92672">-</span>inferattrs <span style="color:#f92672">-</span>domtree <span style="color:#f92672">-</span>callsite<span style="color:#f92672">-</span>splitting <span style="color:#f92672">-</span>ipsccp <span style="color:#f92672">-</span>called<span style="color:#f92672">-</span>value<span style="color:#f92672">-</span>propagation <span style="color:#f92672">-</span>attributor <span style="color:#f92672">-</span>globalopt <span style="color:#f92672">-</span>domtree <span style="color:#f92672">-</span>mem2reg <span style="color:#f92672">-</span>deadargelim <span style="color:#f92672">-</span>domtree <span style="color:#f92672">-</span>basicaa <span style="color:#f92672">-</span>aa <span style="color:#f92672">-</span>loops <span style="color:#f92672">-</span>lazy<span style="color:#f92672">-</span>branch<span style="color:#f92672">-</span>prob <span style="color:#f92672">-</span>lazy<span style="color:#f92672">-</span>block<span style="color:#f92672">-</span>freq <span style="color:#f92672">-</span>opt<span style="color:#f92672">-</span>remark<span style="color:#f92672">-</span>emitter <span style="color:#f92672">-</span>instcombine <span style="color:#f92672">-</span>simplifycfg <span style="color:#f92672">-</span>basiccg <span style="color:#f92672">-</span>globals<span style="color:#f92672">-</span>aa <span style="color:#f92672">-</span>prune<span style="color:#f92672">-</span>eh <span style="color:#f92672">-</span>inline <span style="color:#f92672">-</span>functionattrs <span style="color:#f92672">-</span>argpromotion <span style="color:#f92672">-</span>domtree <span style="color:#f92672">-</span>sroa <span style="color:#f92672">-</span>basicaa <span style="color:#f92672">-</span>aa <span style="color:#f92672">-</span>memoryssa <span style="color:#f92672">-</span>early<span style="color:#f92672">-</span>cse<span style="color:#f92672">-</span>memssa <span style="color:#f92672">-</span>speculative<span style="color:#f92672">-</span>execution <span style="color:#f92672">-</span>basicaa <span style="color:#f92672">-</span>aa <span style="color:#f92672">-</span>lazy<span style="color:#f92672">-</span>value<span style="color:#f92672">-</span>info <span style="color:#f92672">-</span>jump<span style="color:#f92672">-</span>threading <span style="color:#f92672">-</span>correlated<span style="color:#f92672">-</span>propagation <span style="color:#f92672">-</span>simplifycfg <span style="color:#f92672">-</span>domtree <span style="color:#f92672">-</span>aggressive<span style="color:#f92672">-</span>instcombine <span style="color:#f92672">-</span>basicaa <span style="color:#f92672">-</span>aa <span style="color:#f92672">-</span>loops <span style="color:#f92672">-</span>lazy<span style="color:#f92672">-</span>branch<span style="color:#f92672">-</span>prob <span style="color:#f92672">-</span>lazy<span style="color:#f92672">-</span>block<span style="color:#f92672">-</span>freq <span style="color:#f92672">-</span>opt<span style="color:#f92672">-</span>remark<span style="color:#f92672">-</span>emitter <span style="color:#f92672">-</span>instcombine <span style="color:#f92672">-</span>libcalls<span style="color:#f92672">-</span>shrinkwrap <span style="color:#f92672">-</span>loops <span style="color:#f92672">-</span>branch<span style="color:#f92672">-</span>prob <span style="color:#f92672">-</span>block<span style="color:#f92672">-</span>freq <span style="color:#f92672">-</span>lazy<span style="color:#f92672">-</span>branch<span style="color:#f92672">-</span>prob <span style="color:#f92672">-</span>lazy<span style="color:#f92672">-</span>block<span style="color:#f92672">-</span>freq <span style="color:#f92672">-</span>opt<span style="color:#f92672">-</span>remark<span style="color:#f92672">-</span>emitter <span style="color:#f92672">-</span>pgo<span style="color:#f92672">-</span>memop<span style="color:#f92672">-</span>opt <span style="color:#f92672">-</span>basicaa <span style="color:#f92672">-</span>aa <span style="color:#f92672">-</span>loops <span style="color:#f92672">.....</span>
+</code></pre></div><p>一些比较重要的内置 Pass,如下：</p>
+<pre><code>adce： Aggressive Dead Code Elimination 入侵式无用代码消除  
+bb-vectorize：Basic-Block Vectorization 基本块向量化
+constprop：Simple constant propagation 简单常量传播
+dce：Dead Code Elimination 无用代码消除
+deadargelim：Dead Argument Elimination 无用参数消除
+globaldce：Dead Global Elimination 无用全局变量消除
+globalopt：Global Variable Optimizer 全局变量优化
+gvn：Global Value Numbering 全局变量编号
+inline：Function Integration/Inlining 函数内联
+instcombine：Combine redundant instructions 冗余指令合并
+licm：Loop Invariant Code Motion 循环常量代码外提
+loop-unswitch：Unswitch loops 循环外提
+loweratomic：Lower atomic intrinsics to non-atomic form 原子内建函数lowering
+lowerinvoke：Lower invokes to calls, for unwindless code generat invode指令lowering
+lowerswitch：Lower SwitchInsts to branches switch指令lowering
+mem2reg：Promote Memory to Register 内存访问优化
+memcpyopt：MemCpy Optimization MemCpy优化
+simplifycfg：Simplify the CFG 简化CFG
+tailcallelim：Tail Call Elimination 尾调用消除
+</code></pre><p><a href="https://github.com/llvm/llvm-project/tree/master/llvm">llvm</a>/<a href="https://github.com/llvm/llvm-project/tree/master/llvm/test">test</a>/<a href="https://github.com/llvm/llvm-project/tree/master/llvm/test/Transforms">Transforms</a> 提供了Pass 对应的测试样例，可以自己使用 opt 尝试跑一下，查看IR 文件有哪些变化，以便更好地理解这些pass。</p>
+<p>此外，LLVM 允许开发人员在程序编译生命周期的不同部分自定义Pass（如寄存器分配前后）。 LLVM 使用 PassManager  来注册，调度和管理 Pass 之间的依赖关系。</p>
+<h2 id="总结">总结</h2>
+<p>本文作为LLVM的入门篇，主要介绍了 LLVM 安装/工具/结构/LLVM IR/Pass 等内容，后续会随着学习不断地深入介绍其他内容。</p>
+<h2 id="参考资料">参考资料</h2>
+<ol>
+<li><a href="https://zhuanlan.zhihu.com/p/122522485">LLVM Pass入门导引</a></li>
+<li><a href="https://llvm.org/devmtg/2019-04/slides/Tutorial-Bridgers-LLVM_IR_tutorial.pdf">LLVM IR tutorial</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/65818158">LLVM入门篇剧场版</a></li>
+<li><a href="https://llvm.org/docs/LangRef.html">LLVM Language Reference Manual</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/opensource/os-createcompilerllvm2/index.html">使用 LLVM 框架创建有效的编译器，第 2 部分</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/opensource/os-createcompilerllvm1/">使用 LLVM 框架创建一个工作编译器，第 1 部分</a></li>
+<li><a href="https://clang.llvm.org/docs/index.html#">Clang 11 documentation</a></li>
+<li><a href="http://llvm.org/docs/tutorial/">LLVM Tutorial</a>/<a href="https://llvm-tutorial-cn.readthedocs.io/en/latest/index.html#">中文版</a></li>
+<li><a href="http://llvm.org/docs/GettingStarted.html#getting-started">Getting Started with the LLVM System</a></li>
+</ol>
+</div>
+	<footer class="post-footer">
+		<ul class="post-tags">
+			<li><a href="https://blog.yuuoniy.cn/tags/llvm">llvm</a></li>
+			<li><a href="https://blog.yuuoniy.cn/tags/pwn">pwn</a></li>
+		</ul>
+	</footer>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

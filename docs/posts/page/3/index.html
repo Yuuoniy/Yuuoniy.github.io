@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Posts - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://blog.yuuoniy.cn/posts/index.xml" title="Yuuoniy's blog" />
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="list">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+ 
+
+ 
+		<header class="page-header">
+				<h1>Posts</h1>
+			
+		</header>
+
+
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>stack pivot</h2>
+	</header>
+	<section class="entry-content">
+	 <p>xctf16_b0verflow checksec:
+[*] &#39;/home/yuuoniy/MY-AEG/nightmare/modules/17-stack_pivot/xctf16_b0verflow/b0verflow&#39;Arch: i386-32-littleRELRO: Partial RELROStack: No canary foundNX: NX disabledPIE: No PIE (0x8048000)RWX: Has RWX segmentsObviously, there is a stack overflow, while the overflow buffer only is 18 byte. as a result, we could utilize stack pivot technique.
+we could place our shellcode on string s, then jump to here. so we need a jmp gadget. and hint() has this! (we could also use tool to find it)...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>January 14, 2020</time>
+	</footer>
+	<a class="entry-link" aria-label="link to stack pivot post" href="https://blog.yuuoniy.cn/posts/stack_pivot/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>chunk extend</h2>
+	</header>
+	<section class="entry-content">
+	 <p>题目：
+HITCON Trainging lab13
+程序分析：
+create : 长度没有进行检测，如果为负数，会导致任意长度堆溢出漏洞
+edit :存在 off-by-one 漏洞
+利用思路
+ 利用 Off-by-one 漏洞覆盖下一个 chunk 的 size 字段 申请伪造的chunk大小，造成 overlapping, 修改关键指针  要注意因为 chunk0 大小是 0x18，会用到 chunk1 的 pre_size 部分。
+然后溢出的时候刚好可以覆盖到 nextchunk 的 size 部分。
+然后堆布局基本是这样的：
+chunk1 info(0x20) | chunk1 | chunk2 info | chunk2
+所以我们 chunk1 溢出修改的是 chunk2 info 的 size, 然后这个 chunk 就会覆盖到 chunk2 的信息，
+从而我们可以修改 chunk2 信息，可以用来 leak info, 修改 got 表。
+内存变化
+这个覆盖了 size 后的 layout...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>September 21, 2019</time>
+	</footer>
+	<a class="entry-link" aria-label="link to chunk extend post" href="https://blog.yuuoniy.cn/posts/chunk_extend/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>magicheap（unsorted_bin_attack)</h2>
+	</header>
+	<section class="entry-content">
+	 <p>题目链接：
+https://github.com/scwuaptx/HITCON-Training/tree/master/LAB/lab14
+首先分析程序，存在任意长度堆溢出，我们的目的是覆盖 bss 段的 magic 变量，使其大于 0x1305, 很容易想到 unsorted bin attack， 该技术达到的效果就是写 unsorted_chunks (av) 到任意地址，而这个值是比较大的。
+我会着重展示内存的变化：
+bk 是指向 chunk 的 pre_size 的地方的，而我们的 target address 对应的是 fake chunk 的 fd 的地方。
+所以 bk = target_address-0x10
+我们直接利用堆溢出，将 unsorted bin 链表中的第一个 chunk 的bk，从而malloc 堆块的时候就能达到 bk 写 unsorted bin 链表头部值的效果。
+ 首先 malloc 三个 chunk，分别问 chunk 0, chunk1,chunk2:  gef➤ heap chunks Chunk(addr=0xa1e010, size=0x30, flags=PREV_INUSE) [0x0000000000a1e010 61 61 61 61 0a 00 00 00 00 00 00 00 00 00 00 00 aaaa....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>September 19, 2019</time>
+	</footer>
+	<a class="entry-link" aria-label="link to magicheap（unsorted_bin_attack) post" href="https://blog.yuuoniy.cn/posts/unsorted_bin_attack/"></a>
+</article> 
+<footer class="page-footer">
+	<nav class="pagination">
+		<a class="prev" href="/posts/page/2/">← Prev Page</a>
+		<a class="next" href="/posts/page/4/">Next Page →</a>
+	</nav>
+</footer></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+ 

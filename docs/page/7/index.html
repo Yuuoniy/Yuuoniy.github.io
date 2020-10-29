@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://blog.yuuoniy.cn/index.xml" title="Yuuoniy's blog" />
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="list home">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<h1 class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></h1>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+ 
+
+   
+		 
+			<header class="page-header">  
+
+			</header>
+		
+
+
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | 无线网络-802.11攻与防</h2>
+	</header>
+	<section class="entry-content">
+	 <p>常见的无线攻击威胁 fake ap攻击 ARP&amp;Dns劫持 WIFI DOS 公攻击 操作命令： iwconfig
+airm
+airodump-ng 名称
+airmon-ng start name
+airodump-ng --bssid xxx -c 信道 -w 保存文件 wlan0mon
+aircrack-ng 包 -w 字典 
+airodump-ng --bssid B4:0B:44:C2:D5:FF -c 11 -w xmantest wlan0mon
+--ivs 只抓握手包
+airodump-ng wlan0mon
+切换信道： iwconfig wlan0mon channel 11
+踢下线： aireplay-ng -0 10000 -a B4:0B:44:C2:D5:FF -c C4:B3:01:C4:27:31 wlan0mon wlan.fc.type_subtype==12
+无线攻防与进阶  ProbeRequest Frame  ProbeRequest SSID 暴露位置信息&amp;定位   WPA-Radius 企业无线攻防 攻击802.11客户端  针对无线设备的漏洞挖掘  802....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>August 17, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | 无线网络-802.11攻与防 post" href="https://blog.yuuoniy.cn/posts/xman-wireless-attack-with-defense/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | 0ctf 2015 freenote writeup</h2>
+	</header>
+	<section class="entry-content">
+	 <p>0ctf 2015 freenote writeup 涉及到 double free 漏洞，利用过程：leak libc ,leak heap, unlink
+做题比写论文好玩多了呜呜呜呜 这个也是很经典的一道题啦，主要就是 leak libc ,leak heap, unlink 这三步
+程序分析 首先弄一下结构体 大概就是这样吧：
+00000000 chunk struc ; (sizeof=0x18, mappedto_8) 00000000 ; XREF: chunk_list/r 00000000 flag dq ? 00000008 size dq ? 00000010 ptr dq ? 00000018 chunk ends 00000018 00000000 ; --------------------------------------------------------------------------- 00000000 00000000 chunk_list struc ; (sizeof=0x1810, mappedto_9) 00000000 head dq ? 00000008 num dq ? 00000010 chunksptr chunk 256 dup(?...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>August 16, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | 0ctf 2015 freenote writeup post" href="https://blog.yuuoniy.cn/posts/xman-freenote-writeup/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | IO_FILE 相关利用</h2>
+	</header>
+	<section class="entry-content">
+	 <p>IO FILE 利用
+seethefile 分析程序 首先看程序
+ openfile:读取 长度为63 filename,打开文件,这里有溢出，因为 filename 大小为 40,但是不能覆盖到fp writefile:输出文件 magicbuf，通过这个应该能泄露地址，首先要把内容写道magicbuf readfile:从文件中读取内容到 0x18 长度 closefile: 这里会调用 fclose 函数，可以用来触发 exit : 这里 name 有溢出。可以覆盖到fp,使之指向我们伪造的fp,在调用fcolse时调用system(&#34;bin/sh&#34;)  bss data laylout
+.bss:0804B080 filename db 40h dup(?) ; DATA XREF: openfile&#43;53↑o .bss:0804B080 ; openfile&#43;6D↑o ... .bss:0804B0C0 public magicbuf .bss:0804B0C0 ; char magicbuf[416] .bss:0804B0C0 magicbuf db 1A0h dup(?) ; DATA XREF: openfile&#43;33↑o .bss:0804B0C0 ; readfile&#43;17↑o ... .bss:0804B260 public name .bss:0804B260 ; char name[32] ....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>August 14, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | IO_FILE 相关利用 post" href="https://blog.yuuoniy.cn/posts/seethefile-writeup/"></a>
+</article> 
+<footer class="page-footer">
+	<nav class="pagination">
+		<a class="prev" href="/page/6/">← Prev Page</a>
+		<a class="next" href="/page/8/">Next Page →</a>
+	</nav>
+</footer></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+ 

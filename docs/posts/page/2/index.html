@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Posts - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://blog.yuuoniy.cn/posts/index.xml" title="Yuuoniy's blog" />
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="list">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+ 
+
+ 
+		<header class="page-header">
+				<h1>Posts</h1>
+			
+		</header>
+
+
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>基于 Angr 的漏洞利用自动生成之缓冲区溢出案例分析</h2>
+	</header>
+	<section class="entry-content">
+	 <p>文章首发于 先知社区
+ 前言 本文将结合 angr 官方提供的示例 insomnihack_aeg 展示基于 angr 的简单自动利用生成，分析各个步骤并介绍相关接口。通过阅读本文，可以对 angr 和简单 AEG 有进一步的认识。
+相关源文件在 insomnihack_aeg 中。
+demo_bin 为二进制程序，demo_bin.c 为源代码，solve.py 是自动生成 exploit 的脚本
+程序分析 首先分析一下程序源代码 demo_bin.c ，该程序有一个明显缓冲区溢出。
+#include &lt;stdio.h&gt; #include &lt;stdlib.h&gt; #include &lt;unistd.h&gt; char component_name[128] = {0}; #buffer 大小为 128 typedef struct component { char name[32]; # length 只有 32，小于 128 int (*do_something)(int arg); } comp_t; int sample_func(int x) { printf(&#34; - %s- recieved argument %d\n&#34;, component_name, x); } comp_t *initialize_component(char *cmp_name) { int i = 0; comp_t *cmp; cmp = malloc(sizeof(struct component)); cmp-&gt;do_something = sample_func; printf(&#34;Copying component name....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>February 13, 2020</time>
+	</footer>
+	<a class="entry-link" aria-label="link to 基于 Angr 的漏洞利用自动生成之缓冲区溢出案例分析 post" href="https://blog.yuuoniy.cn/posts/angr-aeg/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>Rex: 自动化利用引擎分析</h2>
+	</header>
+	<section class="entry-content">
+	 <p>Rex: 自动化利用引擎分析  文章首发于 先知社区
+ 前言 最近在看 rex，没有官方文档，已有的教程也有点过时，基本只能通过看源码学习。
+本篇教程当作是学习的记录，也希望能帮助研究 AEG 的同学快速上手 rex，对 rex 的架构和使用方式有个整体的认识。
+概述 Rex 是 Shellphish 团队开发的自动生成 exploit 的引擎，是 Mechaphish 中的一个模块，最初用于 CGC 竞赛。
+Rex 基于硬件模拟器 QEMU 和 angr ，通过混合执行（Concolic Execution）复现崩溃路径，根据寄存器及内存信息对漏洞类型/可利用性进行判定等，并尝试应用多种漏洞利用技术自动生成利用脚本。
+本篇文章会介绍 rex 安装/顶层接口/内部实现/相关依赖等内容。
+安装 有两种方法
+ 安装 rex 及其依赖 直接安装 mechaphish 镜像  推荐直接使用 shellphish/mechaphish docker 镜像，比较方便
+docker pull shellphish/mechaphish; docker run -it shellphish/mechaphish rex 基于 angr，关于 angr 的使用方式，可以查看我的另一篇教程。
+测试 首先测试一下 rex 是否安装成功，简单测试代码如下：
+tg = archr.targets.LocalTarget(&lt;path_to_binary&gt;, target_os=&#39;cgc&#39;) crash = rex....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>February 11, 2020</time>
+	</footer>
+	<a class="entry-link" aria-label="link to Rex: 自动化利用引擎分析 post" href="https://blog.yuuoniy.cn/posts/rex-1/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>Angr 核心概念及模块解读</h2>
+	</header>
+	<section class="entry-content">
+	 <p>文章首发于 先知社区
+ 前言 最近在学习 angr， 发现网上教程大部分都是简单介绍几个顶层接口，或者使用 angr 来解题，比较杂，而且很多接口已经丢弃。所以准备写 angr 系列的教程，同时当作个人学习的记录。
+本文主要对 angr一些概念和接口进行介绍，更像是简略版的说明文档。文章略长，可以选择感兴趣的章节阅读。
+希望通过这篇教程各位可以对 angr 的使用有整体的认识，快速上手 angr并利用它进行二进制分析和研究。对细节感兴趣的同学就可以查文档和看源码。
+安装教程略去，按照文档安装即可。
+顶层接口 首先简单介绍一下 angr 的几个顶层接口，我们会在下面章节中进一步介绍这些接口。
+使用 angr 第一件事就是加载二进制文件，在 angr 中，基本上所有的对象操作都依赖于已有的 Project 。
+&gt;&gt;&gt; import angr &gt;&gt;&gt; proj = angr.Project(&#39;/bin/true&#39;) 以下是 angr 对 Project 类的说明。
+ This is the main class of the angr module. It is meant to contain a set of binaries and the relationships between them, and perform analyses on them....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>January 28, 2020</time>
+	</footer>
+	<a class="entry-link" aria-label="link to Angr 核心概念及模块解读 post" href="https://blog.yuuoniy.cn/posts/angr-1-basic-concepts/"></a>
+</article> 
+<footer class="page-footer">
+	<nav class="pagination">
+		<a class="prev" href="/posts/">← Prev Page</a>
+		<a class="next" href="/posts/page/3/">Next Page →</a>
+	</nav>
+</footer></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+ 

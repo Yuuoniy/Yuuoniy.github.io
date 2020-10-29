@@ -1,5 +1,35 @@
-baseURL = "http://example.org/"
-languageCode = "en-us"
-title = "My New Hugo Site"
-theme = "paper"
-publishDir = docs
+baseURL = "https://blog.yuuoniy.cn"
+title = "Yuuoniy's blog"
+author = "Yuuoniy"
+copyright = "Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved."
+paginate = 3
+languageCode = "en"
+DefaultContentLanguage = "en"
+enableInlineShortcodes = true
+theme = "plains"
+publishDir = "docs"
+[menu]
+
+  [[menu.main]]
+    identifier = "about"
+    name = "About"
+    url = "/about/"
+    weight = 3
+  [[menu.main]]
+    identifier = "Tags"
+    name = "Tags"
+    url = "/tags/"
+    weight = 2
+  [[menu.main]]
+    identifier = "Posts"
+    name = "Posts"
+    url = "/posts/"
+    weight = 1
+
+
+
+[taxonomies]
+category = "categories"
+tag = "tags"
+series = "series"
+

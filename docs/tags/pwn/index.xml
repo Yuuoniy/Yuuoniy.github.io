@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>pwn on Yuuoniy&#39;s blog</title>
+    <link>https://blog.yuuoniy.cn/tags/pwn/</link>
+    <description>Recent content in pwn on Yuuoniy&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <copyright>Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.</copyright>
+    <lastBuildDate>Tue, 16 Jun 2020 09:39:11 +0800</lastBuildDate><atom:link href="https://blog.yuuoniy.cn/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>LLVM 入门教程之基本介绍</title>
+      <link>https://blog.yuuoniy.cn/posts/llvm-1/</link>
+      <pubDate>Tue, 16 Jun 2020 09:39:11 +0800</pubDate>
+      
+      <guid>https://blog.yuuoniy.cn/posts/llvm-1/</guid>
+      <description>前言 本篇文章作为LLVM入门教程，包括以下内容：
+ LLVM 的安装 LLVM 源码结构 LLVM 工具介绍 Clang 基本使用 LLVM IR 基本内容 Pass 介绍  安装 目前 LLVM 的最新版本为 10.0.0，我尝试通过预编译和源码编译两种安装方式安装了 LLVM+Clang。下面介绍这两种方式。
+预编译源码安装 直接去官网下载解压即可，或者去镜像网站 下载，根据系统选择压缩包进行下载，此处我选择的是 clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz 。
+源码编译安装 首先下载相关源码，可以从 github llvm-project 选择自己需要的源码下载，也可以从上面的镜像网站下载。这里我从镜像网站下载了llvm 和 clang 源码（ clang-10.0.0.src.tar.xz 、llvm-10.0.0.src.tar.xz )
+然后将源码进行解压，保持其目录与 llvm-project 目录一致，即
+目录结构图： llvm-project - llvm - clang - build 然后进入llvm-project 目录编译，如果没有 cmake 可以直接通过 apt 安装一下。
+$ cd llvm-project$ mkdir build &amp;amp;&amp;amp; cd build$ cmake -G &amp;quot;Unix Makefiles&amp;quot; -DLLVM_ENABLE_PROJECTS=&amp;quot;clang&amp;quot; \-DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=&amp;quot;X86&amp;quot; \-DBUILD_SHARED_LIBS=On .</description>
+    </item>
+    
+  </channel>
+</rss>

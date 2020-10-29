@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>LLVM 入门教程之 Pass 编写 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="前言 本篇文章作为 Pass 编写的入门，主要介绍以下内容:
+ 示例 Pass 编写 Pass 编译构建和运行 Pass 不同子类 Pass 注册 Pass 间依赖  示例 首先我们先结合一个小示例，尝试编写 Pass，之后再详细介绍涉及的内容。
+#include &#34;llvm/Pass.h&#34; //添加头文件#include &#34;llvm/IR/Function.h&#34;#include &#34;llvm/Support/raw_ostream.h&#34;#include &#34;llvm/IR/LegacyPassManager.h&#34;#include &#34;llvm/Transforms/IPO/PassManagerBuilder.h&#34;using namespace llvm; //添加 llvm 命名空间  namespace { // 定义匿名命名空间  struct SkeletonPass : public FunctionPass { // 定义 SkeletonPass 继承 FunctionPass  static char ID; // // ID 标识  SkeletonPass() : FunctionPass(ID) {} virtual bool runOnFunction(Function &amp;F) { //// 重载 runOnFunction 函数，接受Function类型参数  errs() &lt;&lt; &#34;I saw a function called &#34; &lt;&lt; F.">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">LLVM 入门教程之 Pass 编写</h1>
+		<div class="post-meta">July 11, 2020</div>
+	</header>
+	<div class="post-content"><h2 id="前言">前言</h2>
+<p>本篇文章作为 Pass 编写的入门，主要介绍以下内容:</p>
+<ul>
+<li>示例 Pass 编写</li>
+<li>Pass 编译构建和运行</li>
+<li>Pass 不同子类</li>
+<li>Pass 注册</li>
+<li>Pass 间依赖</li>
+</ul>
+<h2 id="示例">示例</h2>
+<p>首先我们先结合一个小示例，尝试编写 Pass，之后再详细介绍涉及的内容。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;llvm/Pass.h&#34; //添加头文件</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;llvm/IR/Function.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;llvm/Support/raw_ostream.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;llvm/IR/LegacyPassManager.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;llvm/Transforms/IPO/PassManagerBuilder.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> llvm;  <span style="color:#75715e">//添加 llvm 命名空间
+</span><span style="color:#75715e"></span> 
+<span style="color:#66d9ef">namespace</span> {   <span style="color:#75715e">// 定义匿名命名空间 
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">SkeletonPass</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> FunctionPass { <span style="color:#75715e">// 定义 SkeletonPass 继承 FunctionPass
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">char</span> ID;  <span style="color:#75715e">// // ID 标识
+</span><span style="color:#75715e"></span>    SkeletonPass() <span style="color:#f92672">:</span> FunctionPass(ID) {}  
+
+    <span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">runOnFunction</span>(Function <span style="color:#f92672">&amp;</span>F) { <span style="color:#75715e">//// 重载 runOnFunction 函数，接受Function类型参数
+</span><span style="color:#75715e"></span>      errs() <span style="color:#f92672">&lt;&lt;</span> <span style="color:#e6db74">&#34;I saw a function called &#34;</span> <span style="color:#f92672">&lt;&lt;</span> F.getName() <span style="color:#f92672">&lt;&lt;</span> <span style="color:#e6db74">&#34;!</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>;  <span style="color:#75715e">// 输出函数名
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">return</span> false; <span style="color:#75715e">// 没有修改 F，因此返回 false
+</span><span style="color:#75715e"></span>    }
+  };
+}
+
+<span style="color:#66d9ef">char</span> SkeletonPass<span style="color:#f92672">::</span>ID <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">//id ，随便指定一个数字就可以
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">// Register the pass so `opt -skeleton` runs it.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> RegisterPass<span style="color:#f92672">&lt;</span>SkeletonPass<span style="color:#f92672">&gt;</span> X(<span style="color:#e6db74">&#34;skeleton&#34;</span>, <span style="color:#e6db74">&#34;a useless pass&#34;</span>); <span style="color:#75715e">//注册Pass
+</span></code></pre></div><p>errs() 为LLVM 中 C++ 的输出流。</p>
+<p>以上的示例 Pass 会在每个函数运行时输出函数名。</p>
+<h2 id="构建">构建</h2>
+<p>编写好 Pass 后，需要进行编译构建，有两种构建方式：</p>
+<ol>
+<li>将 Pass 放至 LLVM 源码目录，并修改已有的 CMakeLists 文件。可以直接查看 <a href="https://llvm.org/docs/WritingAnLLVMPass.html#setting-up-the-build-environment">官方示例</a></li>
+<li>单独建立目录，并编写好 CMakeLists文件。</li>
+</ol>
+<p>单独构建目录结构大致如下：</p>
+<pre><code>pass-project
+   - CMakeLists.txt
+   - MyPass
+      - mypass.cpp
+   	  - CMakeLists.txt
+   - build
+</code></pre><p>参考 <a href="https://github.com/sampsyo/llvm-pass-skeleton">llvm-pass-skeleton</a> (该repo有不同的分支，用于展示不同的用法），不过由于 llvm-pass-skeleton 依赖的版本比较旧，对应的编译选项 C++11 已经不适合，因此需要修改下 CMakeLists 文件，在这里提供我使用的：</p>
+<p><code>llvm-pass-skeleton</code> 下的 CMakeList.txt (添加编译选项标准为 C++14):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmake" data-lang="cmake">cmake_minimum_required(<span style="color:#e6db74">VERSION</span> <span style="color:#e6db74">3.1</span>)<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>project(<span style="color:#e6db74">Skeleton</span>)<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>find_package(<span style="color:#e6db74">LLVM</span> <span style="color:#e6db74">REQUIRED</span> <span style="color:#e6db74">CONFIG</span>)<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>add_definitions(<span style="color:#f92672">${</span>LLVM_DEFINITIONS<span style="color:#f92672">}</span>)<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>include_directories(<span style="color:#f92672">${</span>LLVM_INCLUDE_DIRS<span style="color:#f92672">}</span>)<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>link_directories(<span style="color:#f92672">${</span>LLVM_LIBRARY_DIRS<span style="color:#f92672">}</span>)<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>add_compile_options(<span style="color:#e6db74">-std=c++14</span>) <span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>add_subdirectory(<span style="color:#e6db74">skeleton</span>)  <span style="color:#75715e"># Use your pass name here.
+</span></code></pre></div><p>skeleton 内的 CMakeList.txt(删除了 <code>target_compile_features(SkeletonPass PRIVATE cxx_range_for cxx_auto_type</code> 因为该语句使用C++11来编译Pass)</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmake" data-lang="cmake">add_library(<span style="color:#e6db74">SkeletonPass</span> <span style="color:#e6db74">MODULE</span>
+    <span style="color:#75715e"># List your source files here.
+</span><span style="color:#75715e"></span>    <span style="color:#e6db74">Skeleton.cpp</span>
+)<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># LLVM is (typically) built with no C++ RTTI. We need to match that;
+</span><span style="color:#75715e"># otherwise, we&#39;ll get linker errors about missing RTTI data.
+</span><span style="color:#75715e"></span>set_target_properties(<span style="color:#e6db74">SkeletonPass</span> <span style="color:#e6db74">PROPERTIES</span>
+    <span style="color:#e6db74">COMPILE_FLAGS</span> <span style="color:#e6db74">&#34;-fno-rtti&#34;</span>
+)<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Get proper shared-library behavior (where symbols are not necessarily
+</span><span style="color:#75715e"># resolved when the shared library is linked) on OS X.
+</span><span style="color:#75715e"></span>if(<span style="color:#e6db74">APPLE</span>)<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    set_target_properties(<span style="color:#e6db74">SkeletonPass</span> <span style="color:#e6db74">PROPERTIES</span>
+        <span style="color:#e6db74">LINK_FLAGS</span> <span style="color:#e6db74">&#34;-undefined dynamic_lookup&#34;</span>
+    )<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>endif(<span style="color:#e6db74">APPLE</span>)<span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><p>这里我使用的 Skeleton 文件是 noauto 分支下的。</p>
+<p>在 build 目录依次执行</p>
+<pre><code>cmake ..
+make
+</code></pre><p>编译成功：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># mm @ iZ2ze2gbki9vcb415a0z6rZ in ~/llvm-learn/llvm-pass-skeleton/build on git:master x [11:41:04] </span>
+$ make
+Scanning dependencies of target SkeletonPass
+<span style="color:#f92672">[</span> 50%<span style="color:#f92672">]</span> Building CXX object skeleton/CMakeFiles/SkeletonPass.dir/Skeleton.cpp.o
+<span style="color:#f92672">[</span>100%<span style="color:#f92672">]</span> Linking CXX shared module libSkeletonPass.so
+<span style="color:#f92672">[</span>100%<span style="color:#f92672">]</span> Built target SkeletonPass
+</code></pre></div><p>在 <code>build/skeleton</code> 目录下可以看到 <code>libSkeletonPass.so</code> 文件。</p>
+<h2 id="使用-opt-运行-pass">使用 opt 运行 Pass</h2>
+<p>获得 so 文件后，我们通过 opt 的 -load 选项动态加载此文件，选择 pass 执行。</p>
+<p>通过 opt -help 命令也可以看到我们的 pass:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#960050;background-color:#1e0010">$</span> opt <span style="color:#f92672">-</span>load <span style="color:#f92672">./</span>libSkeletonPass<span style="color:#f92672">.</span>so <span style="color:#f92672">-</span>help <span style="color:#f92672">|</span> grep skeleton
+      <span style="color:#f92672">--</span>skeleton                                         <span style="color:#f92672">-</span> a useless <span style="color:#66d9ef">pass</span>
+</code></pre></div><p>直接运行 <code>opt -load ./libSkeletonPass.so -skeleton test.ll -o test.ll</code> 就可对 test.ll 文件应用编写好的 Pass。</p>
+<p>也可以使用C/C++ 编写文件，使用 clang 转化为 LLVM IR 再使用 opt 命令运行。</p>
+<h2 id="使用-clang-自动化运行-pass">使用 Clang 自动化运行 Pass</h2>
+<p>每次使用 clang 编译获得LLVM IR，再通过 opt 运行 pass，再再使用 opt 执行一些优化，这个过程十分繁琐。</p>
+<p>我们可以在Pass 文件将注册部分写成这样(MyPass 是自定义的Pass 类)， llvm-pass-skeleton的master 分支下就是这样编写的，可以对比一下 noauto 分支下的不同。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">registerMyPass</span>(<span style="color:#66d9ef">const</span> PassManagerBuilder <span style="color:#f92672">&amp;</span>,
+                           PassManagerBase <span style="color:#f92672">&amp;</span>PM) {
+    PM.add(<span style="color:#66d9ef">new</span> MyPass()); <span style="color:#75715e">// PM 用于添加 Pass
+</span><span style="color:#75715e"></span>}
+<span style="color:#66d9ef">static</span> RegisterStandardPasses
+    <span style="color:#a6e22e">RegisterMyPass</span>(PassManagerBuilder<span style="color:#f92672">::</span>EP_EarlyAsPossible,
+                   registerMyPass); <span style="color:#75715e">// 第一个参数表示加载的时间，枚举值，第二个参数是函数指针
+</span></code></pre></div><p>之后便可以通过以下命令直接运行了</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang -Xclang -load -Xclang mypass.so ...
+</code></pre></div><p>这里我简单地编写了一些 Demo 进行测试（Pass 就是SkeletonPass)</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">func2</span>(){
+        printf(<span style="color:#e6db74">&#34;hello world&#34;</span>);
+}
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">func</span>(){
+        func2();
+}
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
+        func();
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>执行结果如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ clang -Xclang -load -Xclang ./libSkeletonPass.so test.c
+I saw a <span style="color:#66d9ef">function</span> called func2!
+I saw a <span style="color:#66d9ef">function</span> called func!
+I saw a <span style="color:#66d9ef">function</span> called main!
+</code></pre></div><h2 id="pass">Pass</h2>
+<p>通过以上内容，可以大致了解 Pass 的编写，构建和运行，接下来我们进一步了解 Pass 的相关内容。</p>
+<p>推荐先阅读这篇文章，<a href="https://www.leadroyal.cn/?p=701">llvm学习（七）：IR 的基础结构</a> 了解基础概念。</p>
+<p>LLVM 提供了多种Pass类, 均继承自 Pass class。都包含一些关键的虚函数，自定义 Pass 时需要重载这些函数。</p>
+<p>介绍常用的 Pass 类及方法，其中比较常用的是 ModulePass 和  FunctionPass。</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>解释</th>
+<th>接口</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ImmutablePass</td>
+<td>不常用的，指不运行, 不改变状态也永不更新的pass，一般情况下用于显示编译器的配置信息。</td>
+<td></td>
+</tr>
+<tr>
+<td>ModulePass</td>
+<td>最常用的，将整个程序看作一个单元进行处理，可以引用，添加和删除 Function</td>
+<td><code>virtual bool runOnModule(Module &amp;M) = 0;</code></td>
+</tr>
+<tr>
+<td>CallGraphSCCPass</td>
+<td>可以从底至上遍历程序的函数调用关系图。</td>
+<td><code>virtual bool doInitialization(CallGraph &amp;CG);</code><!-- raw HTML omitted --><code>virtual bool runOnSCC(CallGraphSCC &amp;SCC) = 0;</code><!-- raw HTML omitted --><code>virtual bool doFinalization(CallGraph &amp;CG);</code></td>
+</tr>
+<tr>
+<td>FunctionPass</td>
+<td>可以修改和分析 Function 的行为，每个函数间是相互独立的, 相互之间无法影响。</td>
+<td><code>virtual bool doInitialization(Module &amp;M);</code><!-- raw HTML omitted --><code>virtual bool runOnFunction(Function &amp;F) = 0;</code><!-- raw HTML omitted --><code>virtual bool doFinalization(Module &amp;M);</code></td>
+</tr>
+<tr>
+<td>LoopPass</td>
+<td>以循环为单位，以循环嵌套顺序处理，外层循环最后处理。可以使用 LPPassManager 接口更新循环嵌套。</td>
+<td><code>virtual bool doInitialization(Loop *, LPPassManager &amp;LPM);</code><!-- raw HTML omitted --><code>virtual bool runOnLoop(Loop *, LPPassManager &amp;LPM) = 0;</code><!-- raw HTML omitted --><code>virtual bool doFinalization();</code></td>
+</tr>
+<tr>
+<td>RegionPass</td>
+<td>Region是一个控制流图的连接的子图，单入口单出口。可以被用来分析和优化控制流图中的部分内容。。使用 RGPassManager 接口可以更新  region tree。</td>
+<td><code>virtual bool doInitialization(Region *, RGPassManager &amp;RGM);</code><!-- raw HTML omitted --><code>virtual bool runOnRegion(Region *, RGPassManager &amp;RGM) = 0;</code><!-- raw HTML omitted --><code>virtual bool doFinalization();</code></td>
+</tr>
+<tr>
+<td>MachineFunctionPass</td>
+<td>类似FunctionPass, 但它属于LLVM code generator(后端), 生成架构相关代码, FunctionPass 属于，生成通用的IR。无法通过通用Pass 接口注册</td>
+<td><code>virtual bool runOnMachineFunction(MachineFunction &amp;MF) = 0;</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>不同的 Pass 运行在不同的 XX(Module/Function/Loop..) 之上</li>
+<li><code>runOnxx</code> 中通常为 Pass 的主要代码，在里面实现优化分析工作。</li>
+<li><code>doInitialization</code> 顾名思义做一些初始化工作，<code>doFinalization</code> 做一些收尾工作。</li>
+<li>如果这些虚函数修改工作，则返回  true,否则返回 false。</li>
+</ul>
+<h2 id="pass-注册">Pass 注册</h2>
+<p>编写 Pass 后需要注册 Pass 到LLVM框架中。根据Pass作用域不同分为两种：</p>
+<ul>
+<li>对于架构无关的，在 LLVM IR 层面的Pass</li>
+<li>对于架构相关的优化Pass，在LLVM Backend层面的Pass，需要在目标后端目录下注册。</li>
+</ul>
+<p>下面仅介绍常见的在LLVM IR 层面的注册。（在<code>lib/Passes/PassRegistry.def</code>目录可以查看 LLVM IR 优化pass. ）</p>
+<p>通过 <code>RegisterPass</code>  template注册Pass。接口如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#75715e">//其中第一参数 PassArg 通常代表Pass的名称，用于opt 工具识别 ，第二个参数是 Pass 的具体名称。
+</span><span style="color:#75715e"></span>llvm<span style="color:#f92672">::</span>RegisterPass<span style="color:#f92672">&lt;</span> passName <span style="color:#f92672">&gt;::</span>RegisterPass	(	StringRef 	PassArg,
+StringRef 	Name,
+<span style="color:#66d9ef">bool</span> 	CFGOnly <span style="color:#f92672">=</span> false,
+<span style="color:#66d9ef">bool</span> 	is_analysis <span style="color:#f92672">=</span> false 
+)	
+</code></pre></div><p>如果想要方便输出自定义 Pass 的信息，用于调试和分析，可以重载 print 函数，原型如下</p>
+<pre><code>virtual void print(llvm::raw_ostream &amp;O, const Module *M) const;
+</code></pre><p>使用 opt <code>-analyze</code> 可以调用该方法。其中参数 <code>llvm::raw_ostream</code> 指定需要输出结果的流，<code>Module</code>指定需要分析的上层 Module 的指针。</p>
+<h2 id="pass-间交互依赖">Pass 间交互/依赖</h2>
+<p>LLVM Pass之间的依赖由PassManager管理的，如果自定义的 Pass 依赖其他 Pass，则需要实现 <code>getAnalysisUsage</code> 方法，获得 <code>AnalysisUsage</code> 对象。这个对象包含了 Pass 依赖的信息。</p>
+<pre><code>virtual void getAnalysisUsage(AnalysisUsage &amp;Info) const;
+</code></pre><p>Pass 调用 AnalysisUsage 对象的以下方法之一解决依赖，安排指定Pass在自定义的Pass 之前运行。</p>
+<ul>
+<li>
+<p><code>AnalysisUsage::addRequired&lt;&gt;</code>  方法</p>
+</li>
+<li>
+<p><code>AnalysisUsage::addRequiredTransitive&lt;&gt;</code>方法</p>
+</li>
+<li>
+<p><code>AnalysisUsage::addPreserved&lt;&gt;</code> 方法</p>
+</li>
+</ul>
+<p>具体可以查看这篇文章: <a href="https://www.jianshu.com/p/b280c8d67909">【LLVM】Pass之间的依赖</a></p>
+<p><code>getAnalysisUsage</code> 实现示例如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#75715e">// This example modifies the program, but does not modify the CFG
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> LICM<span style="color:#f92672">::</span>getAnalysisUsage(AnalysisUsage <span style="color:#f92672">&amp;</span>AU) <span style="color:#66d9ef">const</span> {
+  AU.setPreservesCFG(); <span style="color:#75715e">// 保留 CFG
+</span><span style="color:#75715e"></span>  AU.addRequired<span style="color:#f92672">&lt;</span>LoopInfoWrapperPass<span style="color:#f92672">&gt;</span>(); <span style="color:#75715e">//等LoopInfoWrapperPass执行后再执行
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>-debug-pass 选项可以 debugging pass execution, seeing how things work, and diagnosing when you should be preserving more analyses than you currently are.</p>
+<p>可以查看 PASS 依赖：</p>
+<pre><code> opt sum-O0.ll -debug-pass=Structure -mem2reg -S -o sum-O1.ll 
+</code></pre><p>Pass Arguments  可以看到。</p>
+<h3 id="优化">优化</h3>
+<p>介绍用于不同优化的目的Pass。</p>
+<h4 id="内存优化">内存优化</h4>
+<h4 id="合并指令">合并指令</h4>
+<h3 id="ir-层优化">IR 层优化</h3>
+<ul>
+<li>
+<p>Ox 指定优化级别，具体有：</p>
+</li>
+<li>
+<p>O0 ： 不优化，用于代码调试</p>
+</li>
+<li>
+<p>O1 ：介于 O0 和 O2之间</p>
+</li>
+<li>
+<p>O2 ：中等优化</p>
+</li>
+<li>
+<p>Os ：类似于 O2 ，体积更小</p>
+</li>
+<li>
+<p>Oz ：类似于 Os ， 体积最小</p>
+</li>
+<li>
+<p>O3 ：类似于 O2 ，代码体积大于 O2，但是运行速度更快</p>
+</li>
+<li>
+<p>O4 ：类似于 O3 ，增加了链接时优化。</p>
+</li>
+</ul>
+<p>更多内置分析与优化Pass请查看文档 <a href="http://llvm.org/docs/Passes.html#introduction">LLVM’s Analysis and Transform Passes</a></p>
+<h2 id="总结">总结</h2>
+<p>以上内容介绍粗略地 Pass的编写/编译构建/运行等内容，内容比较浅显，想要真正地写一些有用的 Pass 还需要深入了解 LLVM 的接口。</p>
+<p>PS：文章介绍的是传统的 Pass 编写方式，目前已有新版的PassManager，API 都有了变化，感兴趣的可以查看搜索 Writing LLVM Pass in 2018  系列的文章。</p>
+<h2 id="参考链接">参考链接</h2>
+<ol>
+<li><a href="https://llvm.org/docs/WritingAnLLVMPass.html">Writing an LLVM Pass</a></li>
+<li><a href="https://www.cs.cornell.edu/~asampson/blog/llvm.html">LLVM for Grad Students</a></li>
+<li><a href="https://www.cs.cornell.edu/~asampson/blog/clangpass.html">Run an LLVM Pass Automatically with Clang</a></li>
+<li><a href="https://xz.aliyun.com/t/7257">初探LLVM&amp;clang&amp;pass</a></li>
+<li><a href="https://www.leadroyal.cn/?p=719">llvm学习（八）：Pass编写简单案例</a></li>
+<li><a href="https://www.cnblogs.com/Five100Miles/p/11025680.html">LLVM笔记(3) - PASS</a></li>
+<li><a href="https://llvm.org/docs/Passes.html">https://llvm.org/docs/Passes.html</a></li>
+<li>《LLVM cookbook》</li>
+<li><a href="https://llvm.org/devmtg/2014-04/PDFs/Talks/Passes.pdf">https://llvm.org/devmtg/2014-04/PDFs/Talks/Passes.pdf</a></li>
+</ol>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

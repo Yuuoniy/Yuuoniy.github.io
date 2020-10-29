@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>CTF | 逆向入门第二篇 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="逆向入门第二篇
+hide strings 查看到有壳upx 3.91 脱壳 不能使用upx -d 直接脱。
+运行起来相当于脱壳看，因此可以用 dd 把data和text两段dump下来之后拼在一起，可以在IDA里面看。但实际上文件结构会被破坏，因为是运行时镜像，动态脱壳都有这样的问题。所以动态调试还是使用有壳的。dd cat /proc/(pid hide)/maps 可以查看进程的内存映射 脱壳命令,其中的地址就是各段的地址,因为是静态的,因此都是不变的，可以直接复制：
+sudo dd if=/proc/$(pidof hide)/mem of=hide_dump1 skip=4194304 bs=1c count=827392sudo dd if=/proc/$(pidof hide)/mem of=hide_dump2 skip=7110656 bs=1c count=20480cat hide_dump1 hide_dump2 &gt;hide_dump看到别人说gdb dump binary 更方便,不过没试过(不会)
+ptrace反调试 ptrace介绍： ptrace提供了一种使父进程得以监视和控制其它进程的方式，它还能够改变子进程中的寄存器和内核映像，因而可以实现断点调试和系统调用的跟踪。使用ptrace，你可以在用户层拦截和修改系统调用(sys call)，修改它的参数，插入代码给正在运行的程序以及偷窥和篡改进程的寄存器和数据段。
+使用strace ptrace 相关的反调试 需要把反调试过掉 gdb 中 catch syscall ptrace 设置断点 可以发现程序在cmp eax,0 处断下,此时通过set $eax=0,使程序可以往下执行。 c ,再修改一次，就可以成功过掉反调试了&gt;&lt; 队友说,ptrace 大概就是看eax有没有改变?一般就是cmp eax,0的地方了
+附gdb 操作  hb *0x start地址 下硬件断点 record full (只有在静态执行时有用) 之后可以倒着执行也可以正着执行 rsi ni si reverse-continue 倒着执行回到上一个断点  ELF：init区，在main 执行前会执行 字符串交叉引用 enter flag 看到哪些地方引用，找到藏起来的代码 p 出来F5有问题,算是IDA的bug吧。">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">CTF | 逆向入门第二篇</h1>
+		<div class="post-meta">August 3, 2018</div>
+	</header>
+	<div class="post-content"><p>逆向入门第二篇</p>
+<!-- raw HTML omitted -->
+<h4 id="hide">hide</h4>
+<p>strings 查看到有壳upx 3.91
+<img src="http://p6cwaqxnz.bkt.clouddn.com/upx3.91.png" alt=""></p>
+<h5 id="脱壳">脱壳</h5>
+<p>不能使用upx -d 直接脱。</p>
+<p>运行起来相当于脱壳看，因此可以用 dd 把data和text两段dump下来之后拼在一起，可以在IDA里面看。但实际上文件结构会被破坏，因为是运行时镜像，动态脱壳都有这样的问题。所以动态调试还是使用有壳的。dd 
+cat /proc/(pid hide)/maps 可以查看进程的内存映射
+脱壳命令,其中的地址就是各段的地址,因为是静态的,因此都是不变的，可以直接复制：</p>
+<pre><code>sudo dd if=/proc/$(pidof hide)/mem of=hide_dump1 skip=4194304  bs=1c count=827392
+sudo dd if=/proc/$(pidof hide)/mem of=hide_dump2 skip=7110656  bs=1c count=20480
+cat hide_dump1 hide_dump2 &gt;hide_dump
+</code></pre><p>看到别人说gdb dump binary 更方便,不过没试过(不会)</p>
+<h5 id="ptrace反调试">ptrace反调试</h5>
+<p><strong>ptrace介绍</strong>： ptrace提供了一种使父进程得以监视和控制其它进程的方式，它还能够改变子进程中的寄存器和内核映像，因而可以实现断点调试和系统调用的跟踪。使用ptrace，你可以在用户层拦截和修改系统调用(sys call)，修改它的参数，插入代码给正在运行的程序以及偷窥和篡改进程的寄存器和数据段。</p>
+<p>使用strace
+<strong>ptrace 相关的反调试</strong> 
+需要把反调试过掉
+gdb 中 <code>catch syscall ptrace</code> 设置断点
+可以发现程序在<code>cmp eax,0</code> 处断下,此时通过<code>set $eax=0</code>,使程序可以往下执行。
+c ,再修改一次，就可以成功过掉反调试了&gt;&lt; 队友说,ptrace 大概就是看eax有没有改变?一般就是<code>cmp eax,0</code>的地方了</p>
+<h6 id="附gdb-操作">附gdb 操作</h6>
+<ul>
+<li>hb *0x start地址 下硬件断点</li>
+<li>record full (只有在静态执行时有用) 之后可以倒着执行也可以正着执行</li>
+<li>rsi</li>
+<li>ni</li>
+<li>si</li>
+<li>reverse-continue 倒着执行回到上一个断点</li>
+</ul>
+<p>ELF：init区，在main 执行前会执行
+<strong>字符串交叉引用</strong> enter flag 看到哪些地方引用，找到藏起来的代码
+p 出来F5有问题,算是IDA的bug吧。</p>
+<pre><code class="language-x86asm" data-lang="x86asm">mov eax xxh
+syscall
+cmp eax 0
+jnz xx
+</code></pre><p>忽视syscall 会改变eax</p>
+<pre><code class="language-x86asm" data-lang="x86asm">xor eax eax
+syscall 
+cmp eax
+</code></pre><p>所以此处也要改
+修改之后的：
+<img src="http://p6cwaqxnz.bkt.clouddn.com/hide-jz.png?imageView2/2/w/200" alt="">
+结果：
+<img src="http://p6cwaqxnz.bkt.clouddn.com/hide-patch.png?imageView2/2/w/200" alt="">
+jnz 改成jz，就可以看但是语义会改变
+继续逆向程序,可以发现是常见算法 Tea
+首先会判断字符串长度和几位字符是否符合要求，之后进行加密
+加密过程为 xTea-&gt;异或-&gt;xtea。。
+但是对于我来说..看半天都不知道是xtea加密吧
+v1 为加密后的flag<br>
+解密获得key  delta xtea<br>
+嗯..开始写脚本了&hellip;对我来说好难&hellip;还是试一下&hellip;先github上找到xtea
+和网上找的xtea加密是一模一样的，应该没有修改
+注意加密的v0,v1分别取data二进制数据的0-4,和4-8位,所以需要struct
+感觉我反汇编还是有问题&hellip;看了别人写的脚本，和自己看到的加密有点不一样，尤其是sum部分。
+终于&hellip;原来是我脚本的问题..
+字符串定位找到关键函数<br>
+附：<a href="https://blog.csdn.net/buaaqqq2015/article/details/79736026">2018年强网杯初赛 逆向题目 hide writeup (超详细)</a><br>
+<strong>符号匹配</strong>
+总结：ida flirt/rizzo.py 比IDA官方好,不支持IDA7.0/ <a href="https://github.com/A7um/CTFUtils">https://github.com/A7um/CTFUtils</a> 支持IDA7.0</p>
+<p>写个简易的源码
+gcc &ndash;static 
+安装插件 rizoo (autm改进支持7.0的)
+file-&gt;produce file-&gt;rizzo
+file-&gt;load file-&gt;rizzo
+静态编译，得到有符号的，使用工具匹配对照看，produce /load 
+windows 程序比较有用
+<code>ps -ef | grep</code> 进程名</p>
+<h4 id="re2">re2</h4>
+<p>hook 原理
+<a href="https://bbs.pediy.com/thread-228669.htm">https://bbs.pediy.com/thread-228669.htm</a>
+可以看出来是修改writefile的前五个字节，但是怎么看出来跳转到哪个函数的？
+还需要注意优先级的问题，^ 和 +,不知道的话还是挺坑的&hellip;</p>
+<h4 id="magic">magic</h4>
+<p>动态调试更方便<br>
+F5有问题,修改main调用约定<br>
+<strong>调用约定</strong> 
+options-&gt;complier-&gt;编译器-&gt;Vistual C++ 就可以了
+首先设置断点发现问题，使用trace找到main之前调用的函数，通过交叉调用分析函数。
+首先过掉 check_sercet<br>
+(大佬是一开始交叉引用一波,然后看scanf的交叉引用就找到了关键函数)
+前三个
+最后一个
+simple_enc
+int __usercall xxx@<!-- raw HTML omitted --></p>
+<p>setjmp：设置jmp点。longjmp: 跳到setjmp设置的位置异常处理 
+虚拟机逆向题</p>
+<p>相关writeup
+<a href="https://www.52pojie.cn/thread-742361-1-1.html">https://www.52pojie.cn/thread-742361-1-1.html</a>  RCTF - magic
+<a href="https://4hou.win/wordpress/?p=20989">https://4hou.win/wordpress/?p=20989</a> 
+haskell 编译中间语言<br>
+oooverflow<br>
+34c3ctf</p>
+<p>了解到虚拟机逆向&hellip;我对逆向还真的一无所知</p>
+<p>需要学习的:</p>
+<ul>
+<li>gdb 使用</li>
+<li>虚拟机逆向</li>
+<li>逆向题分析</li>
+<li>脱壳</li>
+<li>动态调试</li>
+</ul>
+<h4 id="非常规逆向">非常规逆向</h4>
+<ul>
+<li>lua/python/java/lua-jit/haskell/applescript/js混淆方法多/solidity/webassembly/etc</li>
+<li>firmware固件/raw bin/etc</li>
+<li>chip8/avr/clemency/risc-v/etc</li>
+</ul>
+<h5 id="找工具">找工具</h5>
+<ul>
+<li>binary parser</li>
+<li>disassembler 
+-必要的</li>
+<li>tracer
+<ul>
+<li>disassembler+tracer=debugger</li>
+</ul>
+</li>
+<li>debugger</li>
+<li>decomplier</li>
+</ul>
+<h5 id="格式">格式</h5>
+<p>读文档<br>
+工具链 toolchains
+教程 tutorial
+例子</p>
+<ul>
+<li>haskell</li>
+</ul>
+<h5 id="find-binary">find binary</h5>
+<ul>
+<li>google</li>
+<li>firmware
+<ul>
+<li>rebase the binary 还原基址</li>
+<li>recover the symbol table</li>
+</ul>
+</li>
+<li>other</li>
+<li>-strings/binwalk</li>
+<li>IDA/radare2/binary.ninja/ida loader</li>
+</ul>
+<h5 id="disassembler">disassembler</h5>
+<ul>
+<li>google &lsquo;xxx dissemab/xx IDA '
+-avr ida</li>
+<li>人工</li>
+<li>ida pro/radare2/binary.ninja interface
+IDA processor</li>
+</ul>
+<h5 id="tracer">tracer</h5>
+<ul>
+<li>google 先搜文档</li>
+<li>tracer</li>
+<li>debugger
+<ul>
+<li>gdb-mutiarch</li>
+<li>qemu</li>
+<li>emulator</li>
+<li>trace reply</li>
+</ul>
+</li>
+<li>例子
+<ul>
+<li>solidity</li>
+</ul>
+</li>
+</ul>
+<h5 id="逆向工程">逆向工程</h5>
+<p>find code pattern</p>
+<h4 id="printf_machine">printf_machine</h4>
+<p>实现一套指令集
+mov语句,脚本翻译
+符号执行</p>
+<h4 id="assem">assem</h4>
+<p>写个html 在浏览器调</p>
+<h4 id="re_3">re_3</h4>
+<p>ida/procs/
+<a href="https://github.com/themadinventor/ida-xtensa">https://github.com/themadinventor/ida-xtensa</a> 
+上网找适配器
+找flag 字符串交叉引用</p>
+<h4 id="easy">easy</h4>
+<p>haskell 逆向
+有反汇编 网上找</p>
+<h4 id="ida">IDA</h4>
+<h5 id="断点">断点</h5>
+<ul>
+<li>执行断点是软件断点。</li>
+<li>内存访问断点是硬件断点。</li>
+</ul>
+<h5 id="trace-功能">trace 功能</h5>
+<ul>
+<li>
+<p>指令跟踪：IDA将会记录每一条指令的执行，并保存寄存器数值，通过使用这些信息，你可以找出应用程序的执行过程，并可找出哪条指令修改了哪个寄存器。</p>
+</li>
+<li>
+<p>函数跟踪：IDA将会记录所有的函数调用和函数返回。</p>
+</li>
+<li>
+<p>读写-写-执行跟踪：IDA将会记录一个对指定地址的所有访问。这种机制相当于是不停止的断点。</p>
+</li>
+</ul>
+<p>对每种跟踪机制，都会记录相应的跟踪事件到跟踪缓存区，也可以保存到一个txt的文件中，同样可以通过Tracing-options里的选项来设定。</p>
+<h5 id="插件">插件：</h5>
+<p>keypatch
+findcrypt-yara 找加密方式的插件 <a href="https://www.cnblogs.com/zhaijiahui/p/7978897.html">https://www.cnblogs.com/zhaijiahui/p/7978897.html</a>
+FRIEND 链接：https://github.com/alexhude/FRIEND</p>
+<p>翻页 esc 和 Ctrl+Enter</p>
+<p><strong>强制类型转换</strong></p>
+<p>P:还是懒得贴图，我以后不知道自己在写什么鬼东西时一定会后悔的 嗯&hellip;
+大佬讲的是在太难了,我还是先去做一些基础题呜呜呜</p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

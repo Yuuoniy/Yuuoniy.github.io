@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Rex: 自动化利用引擎分析 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="Rex: 自动化利用引擎分析  文章首发于 先知社区
+ 前言 最近在看 rex，没有官方文档，已有的教程也有点过时，基本只能通过看源码学习。
+本篇教程当作是学习的记录，也希望能帮助研究 AEG 的同学快速上手 rex，对 rex 的架构和使用方式有个整体的认识。
+概述 Rex 是 Shellphish 团队开发的自动生成 exploit 的引擎，是 Mechaphish 中的一个模块，最初用于 CGC 竞赛。
+Rex 基于硬件模拟器 QEMU 和 angr ，通过混合执行（Concolic Execution）复现崩溃路径，根据寄存器及内存信息对漏洞类型/可利用性进行判定等，并尝试应用多种漏洞利用技术自动生成利用脚本。
+本篇文章会介绍 rex 安装/顶层接口/内部实现/相关依赖等内容。
+安装 有两种方法
+ 安装 rex 及其依赖 直接安装 mechaphish 镜像  推荐直接使用 shellphish/mechaphish docker 镜像，比较方便
+docker pull shellphish/mechaphish; docker run -it shellphish/mechaphish rex 基于 angr，关于 angr 的使用方式，可以查看我的另一篇教程。
+测试 首先测试一下 rex 是否安装成功，简单测试代码如下：
+tg = archr.targets.LocalTarget(&lt;path_to_binary&gt;, target_os=&#39;cgc&#39;) crash = rex.">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://blog.yuuoniy.cn/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/style.css" rel="stylesheet">
+		<link href="https://blog.yuuoniy.cn/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://blog.yuuoniy.cn/apple-touch-icon.png">
+		<link rel="icon" href="https://blog.yuuoniy.cn/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://blog.yuuoniy.cn">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">Rex: 自动化利用引擎分析</h1>
+		<div class="post-meta">February 11, 2020</div>
+	</header>
+	<div class="post-content"><h1 id="rex-自动化利用引擎分析">Rex: 自动化利用引擎分析</h1>
+<blockquote>
+<p>文章首发于 <a href="https://xz.aliyun.com/t/7117">先知社区</a></p>
+</blockquote>
+<h2 id="前言">前言</h2>
+<p>最近在看 rex，没有官方文档，已有的教程也有点过时，基本只能通过看源码学习。</p>
+<p>本篇教程当作是学习的记录，也希望能帮助研究 AEG 的同学快速上手 rex，对 rex 的架构和使用方式有个整体的认识。</p>
+<h2 id="概述">概述</h2>
+<p>Rex 是  <a href="http://shellphish.net/cgc/">Shellphish</a> 团队开发的自动生成 exploit 的引擎，是 <a href="https://github.com/mechaphish">Mechaphish</a> 中的一个模块，最初用于 <a href="https://ma3k4h3d.top/2018/11/01/CGC/">CGC</a> 竞赛。</p>
+<p>Rex 基于硬件模拟器 QEMU 和 angr ，通过混合执行（Concolic Execution）复现崩溃路径，根据寄存器及内存信息对漏洞类型/可利用性进行判定等，并尝试应用多种漏洞利用技术自动生成利用脚本。</p>
+<p>本篇文章会介绍 rex 安装/顶层接口/内部实现/相关依赖等内容。</p>
+<h2 id="安装">安装</h2>
+<p>有两种方法</p>
+<ol>
+<li>安装 rex 及其依赖</li>
+<li>直接安装 mechaphish 镜像</li>
+</ol>
+<p>推荐直接使用  <code>shellphish/mechaphish</code> docker 镜像，比较方便</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">docker pull shellphish/mechaphish; 
+docker run -it shellphish/mechaphish
+</code></pre></div><p>rex 基于 angr，关于 angr 的使用方式，可以查看我的另一篇<a href="https://xz.aliyun.com/t/7117">教程</a>。</p>
+<h2 id="测试">测试</h2>
+<p>首先测试一下 rex 是否安装成功，简单测试代码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">tg <span style="color:#f92672">=</span> archr<span style="color:#f92672">.</span>targets<span style="color:#f92672">.</span>LocalTarget(<span style="color:#f92672">&lt;</span>path_to_binary<span style="color:#f92672">&gt;</span>, target_os<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;cgc&#39;</span>)
+crash <span style="color:#f92672">=</span> rex<span style="color:#f92672">.</span>Crash(tg, <span style="color:#f92672">&lt;</span>input<span style="color:#f92672">&gt;</span>)
+</code></pre></div><p>首先需要创建 target ,类型是  <code>archr.targets.Target</code> 并指定配置。</p>
+<p>接下来通过 rex.Crash 接口，传递创建的 target 和可以触发 crash 的输入，我们可以获得 Crash 对象，便可以对 Crash 对象进行一系列分析，下面会涉及对 Crash 对象的操作。</p>
+<p>这里 <code>path_to_binary</code> 为二进制文件路径，target_os 指定系统，cgc 或者 linux, 这里我们可以使用 cgc 的文件进行测试（可以在<a href="https://github.com/angr/binaries">binaries</a> 中找到）</p>
+<p>简单测试：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">t <span style="color:#f92672">=</span> archr<span style="color:#f92672">.</span>targets<span style="color:#f92672">.</span>LocalTarget([<span style="color:#e6db74">&#34;/home/angr-dev/binaries/tests/defcon24/legit_00003&#34;</span>], target_os<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;cgc&#39;</span>)
+crash <span style="color:#f92672">=</span> rex<span style="color:#f92672">.</span>Crash(t, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00\x0b</span><span style="color:#e6db74">1</span><span style="color:#ae81ff">\xc1\x00\x0c\xeb\xe4\xf1\xf1\x14\r\r</span><span style="color:#e6db74">M</span><span style="color:#ae81ff">\r\xf3\x1b\r\r\r</span><span style="color:#e6db74">~</span><span style="color:#ae81ff">\x7f\x1b\xe3\x0c</span><span style="color:#e6db74">`_222</span><span style="color:#ae81ff">\r\r</span><span style="color:#e6db74">M</span><span style="color:#ae81ff">\r\xf3\x1b\r\x7f\x00</span><span style="color:#e6db74">2</span><span style="color:#ae81ff">\x7f</span><span style="color:#e6db74">~</span><span style="color:#ae81ff">\x7f\xe2\xff\x7f\xff\xff\x8b\xc7\xc9\x83\x8b\x0c\xeb\x80\x00</span><span style="color:#e6db74">2</span><span style="color:#ae81ff">\xac\xe2\xff\xff\x00</span><span style="color:#e6db74">t</span><span style="color:#ae81ff">\x8b</span><span style="color:#e6db74">t</span><span style="color:#ae81ff">\x8b</span><span style="color:#e6db74">t_o_</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">t</span><span style="color:#ae81ff">\x8b\xc7\xdd\x83\xc2</span><span style="color:#e6db74">t~n~~</span><span style="color:#ae81ff">\xac\xe2\xff\xff</span><span style="color:#e6db74">_k_</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">t</span><span style="color:#ae81ff">\x8b\xc7\xdd\x83\xc2</span><span style="color:#e6db74">t~n~~</span><span style="color:#ae81ff">\xac\xe2\xff\xff\x00</span><span style="color:#e6db74">t</span><span style="color:#ae81ff">\x8b</span><span style="color:#e6db74">t</span><span style="color:#ae81ff">\x8b\xac\xf1\x83\xc2</span><span style="color:#e6db74">t~c</span><span style="color:#ae81ff">\x00\x00\x00</span><span style="color:#e6db74">~~</span><span style="color:#ae81ff">\x7f\xe2\xff\xff\x00</span><span style="color:#e6db74">t</span><span style="color:#ae81ff">\x9e\xac\xe2\xf1\xf2</span><span style="color:#e6db74">@</span><span style="color:#ae81ff">\x83\xc3</span><span style="color:#e6db74">t&#34;</span>)
+</code></pre></div><p>如果没有出现报错则说明安装成功。</p>
+<p>rex 也提供了多种测试样例, 可以在 tests 目录查看, 测试使用的文件可以在 <a href="https://github.com/angr/binaries">binaries 仓库</a> 中找到.</p>
+<h2 id="顶层接口">顶层接口</h2>
+<p>使用 rex 通常步骤：</p>
+<ol>
+<li>创建 target 对象，随后使用 target 和 input 创建 Crash 对象</li>
+<li>对 Crash 进行分析，调用 explore 探索路径，调用 exploit() 方法构建 exp</li>
+<li>获取 exploit 相关信息，导出到文件等</li>
+</ol>
+<p>此外也可以对 state 添加约束进行求解等，自行探索。</p>
+<h3 id="crash-对象">Crash 对象</h3>
+<p>属性</p>
+<pre><code>- crash_types 返回 crash 的漏洞类型
+</code></pre><p>方法</p>
+<pre><code>- explorable()  Determine if the crash can be explored with the 'crash explorer'.
+- exploitable() Determine if the crash is exploitable.
+- exploit() 返回一个 ExploitFactory  实例，用于管理和构建 exp
+- explore() explore a crash further to find new bugs
+- memory_control()  determine what symbolic memory we control which is at a constant address
+- stack_control()  determine what symbolic memory we control on the stack.
+- copy() 拷贝 crash 对象
+- checkpoint()   Save intermediate results (traced states, etc.) to a file 
+- checkpoint_restore() 
+</code></pre><h3 id="exploitfactory">ExploitFactory</h3>
+<p>通过 crash 的 exploit 方法我们可以获得 ExploitFactory  实例，用于管理和构建 exploit。</p>
+<p>ExploitFactory  有一个重要的属性 arsenal，是一个字典，用来存储对应 technique 的 exploit, 关于 rex 中实现的 technique 后面会涉及。</p>
+<h3 id="vulnerability">Vulnerability</h3>
+<p>rex 定义了如下几种漏洞：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    IP_OVERWRITE              <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ip_overwrite&#34;</span>
+    PARTIAL_IP_OVERWRITE      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;partial_ip_overwrite&#34;</span>
+    UNCONTROLLED_IP_OVERWRITE <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;uncontrolled_ip_overwrite&#34;</span>
+    BP_OVERWRITE              <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;bp_overwrite&#34;</span>
+    PARTIAL_BP_OVERWRITE      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;partial_bp_overwrite&#34;</span>
+    WRITE_WHAT_WHERE          <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;write_what_where&#34;</span>
+    WRITE_X_WHERE             <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;write_x_where&#34;</span>
+    UNCONTROLLED_WRITE        <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;uncontrolled_write&#34;</span> <span style="color:#75715e"># a write where the destination address is uncontrolled</span>
+    ARBITRARY_READ            <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;arbitrary_read&#34;</span>
+    NULL_DEREFERENCE          <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;null_dereference&#34;</span>
+    ARBITRARY_TRANSMIT        <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;arbitrary_transmit&#34;</span> <span style="color:#75715e"># transmit where the buf argument is completely controlled</span>
+    ARBITRARY_RECEIVE         <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;arbitrary_receive&#34;</span> <span style="color:#75715e"># receive where the buf argument is completel controlled</span>
+</code></pre></div><h2 id="内部解读">内部解读</h2>
+<p>Rex 内部实现主要包含三个模块:</p>
+<ul>
+<li>Crash：重现崩溃路径，包括漏洞类型判定,  Crash 的可利用性判定等；</li>
+<li>Technique：对于可利用的 Crash，采取相应的利用技术，构造 Exploit；</li>
+<li>Exploit：调用各子模块，自动生成 Exploit</li>
+</ul>
+<p>可以简单理解成 crash + technique = exploit ,下面我们来看具体内容</p>
+<h3 id="crash-分析">crash 分析</h3>
+<p>导入 crash 后，首先对 crash 进行 trace、筛选内存写操作和 判定漏洞类型。对应的函数分别为 <code>_trace / _filter_memory_writes /  _triage_crash</code></p>
+<p>接下来我们对这三个函数进行分析：</p>
+<h4 id="路径重现tracing">路径重现（tracing)</h4>
+<p>函数：  _trace</p>
+<p>使用给定的输入，通过符号执行，重现路径，如果没有 Crash 会抛出 NonCrashingInput  异常.</p>
+<p>首先使用用户输入获得具体的 trace，</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">  <span style="color:#75715e"># collect a concrete trace</span>
+   save_core <span style="color:#f92672">=</span> True
+   <span style="color:#66d9ef">if</span> isinstance(self<span style="color:#f92672">.</span>tracer_bow, archr<span style="color:#f92672">.</span>arsenal<span style="color:#f92672">.</span>RRTracerBow):
+       save_core <span style="color:#f92672">=</span> False
+   r <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>tracer_bow<span style="color:#f92672">.</span>fire(testcase<span style="color:#f92672">=</span>test_case, channel<span style="color:#f92672">=</span>channel,save_core<span style="color:#f92672">=</span>save_core)
+</code></pre></div><p>再进行符号化 trace</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">self<span style="color:#f92672">.</span>_t <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>tracer_technique(keep_predecessors<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, copy_states<span style="color:#f92672">=</span>False, mode<span style="color:#f92672">=</span>TracingMode<span style="color:#f92672">.</span>Strict)
+simgr<span style="color:#f92672">.</span>use_technique(self<span style="color:#f92672">.</span>_t)
+simgr<span style="color:#f92672">.</span>use_technique(angr<span style="color:#f92672">.</span>exploration_techniques<span style="color:#f92672">.</span>Oppologist())
+</code></pre></div><p>结束 trace, 检查是否有 crash</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">        <span style="color:#75715e"># tracing completed</span>
+        <span style="color:#75715e"># if there was no crash we&#39;ll have to use the previous path&#39;s state</span>
+        <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;crashed&#39;</span> <span style="color:#f92672">in</span> simgr<span style="color:#f92672">.</span>stashes:
+            <span style="color:#75715e"># the state at crash time</span>
+            self<span style="color:#f92672">.</span>state <span style="color:#f92672">=</span> simgr<span style="color:#f92672">.</span>crashed[<span style="color:#ae81ff">0</span>]
+            <span style="color:#75715e"># a path leading up to the crashing basic block</span>
+            self<span style="color:#f92672">.</span>prev <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_t<span style="color:#f92672">.</span>predecessors[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+        <span style="color:#66d9ef">else</span>:
+            self<span style="color:#f92672">.</span>state <span style="color:#f92672">=</span> simgr<span style="color:#f92672">.</span>traced[<span style="color:#ae81ff">0</span>]
+            self<span style="color:#f92672">.</span>prev <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>state
+</code></pre></div><h4 id="获得内存写操作">获得内存写操作</h4>
+<p><code>_filter_memory_writes</code>  获得所有的写内存操作，并将分成符号内存（ symbolic memory bytes ）和 flag 内存（ flag memory bytes ）。flag memory 针对的是 cgc 格式文件，其他情况下为空。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_filter_memory_writes</span>(self):
+        memory_writes <span style="color:#f92672">=</span> sorted(self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>mem<span style="color:#f92672">.</span>get_symbolic_addrs())
+        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>is_cgc:
+            <span style="color:#75715e"># remove all memory writes that directly end up in the CGC flag page (0x4347c000 - 0x4347d000)</span>
+            memory_writes <span style="color:#f92672">=</span> [m <span style="color:#66d9ef">for</span> m <span style="color:#f92672">in</span> memory_writes <span style="color:#66d9ef">if</span> m <span style="color:#f92672">//</span> <span style="color:#ae81ff">0x1000</span> <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0x4347c</span>]
+        user_writes <span style="color:#f92672">=</span> [m <span style="color:#66d9ef">for</span> m <span style="color:#f92672">in</span> memory_writes <span style="color:#66d9ef">if</span>
+                       any(<span style="color:#e6db74">&#34;aeg_stdin&#34;</span> <span style="color:#f92672">in</span> v <span style="color:#66d9ef">for</span> v <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(m, <span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>variables)]
+        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>is_cgc:
+            flag_writes <span style="color:#f92672">=</span> [m <span style="color:#66d9ef">for</span> m <span style="color:#f92672">in</span> memory_writes <span style="color:#66d9ef">if</span>
+                           any(v<span style="color:#f92672">.</span>startswith(<span style="color:#e6db74">&#34;cgc-flag&#34;</span>) <span style="color:#66d9ef">for</span> v <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>memory<span style="color:#f92672">.</span>load(m, <span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>variables)]
+        <span style="color:#66d9ef">else</span>:
+            flag_writes <span style="color:#f92672">=</span> []
+        l<span style="color:#f92672">.</span>debug(<span style="color:#e6db74">&#34;Finished filtering memory writes.&#34;</span>)
+        self<span style="color:#f92672">.</span>symbolic_mem <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_segment(user_writes)
+        self<span style="color:#f92672">.</span>flag_mem <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_segment(flag_writes)
+</code></pre></div><h4 id="漏洞类型判断triage_crash">漏洞类型判断(triage_crash)</h4>
+<p>rex 中  <code>_triage_crash</code>  函数用于判断 crash 对应的漏洞类型，漏洞类型之后的可利用性判定</p>
+<p>漏洞判断基本思路如下：</p>
+<ol>
+<li>检查 ip 是否符号化（即ip是否可控），并且检查可控的大小。通过此我们可以将漏洞判定为 <code>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</code>。</li>
+<li>检查 bp 是否符号化，并且检查可控的大小，通过此我们可以漏洞判定为 <code>BP_OVERWRITE / PARTIAL_BP_OVERWRITE</code></li>
+<li>检查触发崩溃时前一个 State，查看最近的操作（ recent_actions ）筛选出内存读写地址可控的操作，得到数组  <code>symbolic_actions</code></li>
+<li>如果符号化操作中有内存写，则判断写数据是否可控，通过此我们可以将漏洞判定为  <code>WRITE_WHAT_WHERE /  WRITE_X_WHERE</code> 。</li>
+<li>如果符号化操作中有内存读，我们可以将漏洞判定为   <code>ARBITRARY_READ</code>  。</li>
+</ol>
+<p>以下截取该函数的部分内容帮助理解：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">	 <span style="color:#75715e"># 判断 ip 是否可控，bp 类似        </span>
+    <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>symbolic(ip): 
+        <span style="color:#75715e"># how much control of ip do we have?</span>
+        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>_symbolic_control(ip) <span style="color:#f92672">&gt;=</span> self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>arch<span style="color:#f92672">.</span>bits:
+            l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;detected ip overwrite vulnerability&#34;</span>)
+            self<span style="color:#f92672">.</span>crash_types<span style="color:#f92672">.</span>append(Vulnerability<span style="color:#f92672">.</span>IP_OVERWRITE)
+        <span style="color:#66d9ef">else</span>:
+            l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;detected partial ip overwrite vulnerability&#34;</span>)
+            self<span style="color:#f92672">.</span>crash_types<span style="color:#f92672">.</span>append(Vulnerability<span style="color:#f92672">.</span>PARTIAL_IP_OVERWRITE)
+            
+        <span style="color:#66d9ef">return</span>
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">        <span style="color:#75715e"># 筛选出目的地址可控的操作</span>
+    	<span style="color:#75715e"># grab the all actions in the last basic block</span>
+        symbolic_actions <span style="color:#f92672">=</span> [ ]
+        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>_t <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> None <span style="color:#f92672">and</span> self<span style="color:#f92672">.</span>_t<span style="color:#f92672">.</span>last_state <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> None:
+            recent_actions <span style="color:#f92672">=</span> reversed(self<span style="color:#f92672">.</span>_t<span style="color:#f92672">.</span>last_state<span style="color:#f92672">.</span>history<span style="color:#f92672">.</span>recent_actions)
+            state <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_t<span style="color:#f92672">.</span>last_state
+            <span style="color:#75715e"># TODO: this is a dead assignment! what was this supposed to be?</span>
+        <span style="color:#66d9ef">else</span>:
+            recent_actions <span style="color:#f92672">=</span> reversed(self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>history<span style="color:#f92672">.</span>actions)
+            state <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>state
+        <span style="color:#66d9ef">for</span> a <span style="color:#f92672">in</span> recent_actions:
+            <span style="color:#66d9ef">if</span> a<span style="color:#f92672">.</span>type <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;mem&#39;</span>:
+                <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>symbolic(a<span style="color:#f92672">.</span>addr<span style="color:#f92672">.</span>ast):
+                    symbolic_actions<span style="color:#f92672">.</span>append(a)
+              
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">        <span style="color:#75715e">#判断是内存读还是内存写，并判断数据是否可控，由此确定漏洞类型</span>
+    	<span style="color:#66d9ef">for</span> sym_action <span style="color:#f92672">in</span> symbolic_actions:
+            <span style="color:#66d9ef">if</span> sym_action<span style="color:#f92672">.</span>action <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;write&#34;</span>:
+                <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>state<span style="color:#f92672">.</span>solver<span style="color:#f92672">.</span>symbolic(sym_action<span style="color:#f92672">.</span>data):
+                    l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;detected write-what-where vulnerability&#34;</span>)
+                    self<span style="color:#f92672">.</span>crash_types<span style="color:#f92672">.</span>append(Vulnerability<span style="color:#f92672">.</span>WRITE_WHAT_WHERE)
+                <span style="color:#66d9ef">else</span>:
+                    l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;detected write-x-where vulnerability&#34;</span>)
+                    self<span style="color:#f92672">.</span>crash_types<span style="color:#f92672">.</span>append(Vulnerability<span style="color:#f92672">.</span>WRITE_X_WHERE)
+
+                self<span style="color:#f92672">.</span>violating_action <span style="color:#f92672">=</span> sym_action
+                <span style="color:#66d9ef">break</span>
+
+            <span style="color:#66d9ef">if</span> sym_action<span style="color:#f92672">.</span>action <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;read&#34;</span>:
+                <span style="color:#75715e"># special vulnerability type, if this is detected we can explore the crash further</span>
+                l<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;detected arbitrary-read vulnerability&#34;</span>)
+                self<span style="color:#f92672">.</span>crash_types<span style="color:#f92672">.</span>append(Vulnerability<span style="color:#f92672">.</span>ARBITRARY_READ)
+
+                self<span style="color:#f92672">.</span>violating_action <span style="color:#f92672">=</span> sym_action
+                <span style="color:#66d9ef">break</span>
+</code></pre></div><p>完成漏洞类型判定后，我们会对 crash 进行一些判断如 <code>explorable/leakable</code>，如 explore 目的是寻找一个更有价值的 crash, 方便漏洞利用。</p>
+<h4 id="explore">explore</h4>
+<p>首先判断 crash 是否可 explore, 可以 explore 的漏洞类型是: <code>ARBITRARY_READ/WRITE_WHAT_WHERE/WRITE_X_WHERE</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">explorable</span>(self):
+        explorables <span style="color:#f92672">=</span> [Vulnerability<span style="color:#f92672">.</span>ARBITRARY_READ, Vulnerability<span style="color:#f92672">.</span>WRITE_WHAT_WHERE, Vulnerability<span style="color:#f92672">.</span>WRITE_X_WHERE]
+        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>one_of(explorables)
+</code></pre></div><p>explore 主要针对任意内存读写漏洞，对应两种实现：<code>_explore_arbitrary_read</code> 和 <code>_explore_arbitrary_write</code>。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>one_of([Vulnerability<span style="color:#f92672">.</span>ARBITRARY_READ]):
+                self<span style="color:#f92672">.</span>_explore_arbitrary_read(path_file)
+        <span style="color:#66d9ef">elif</span> self<span style="color:#f92672">.</span>one_of([Vulnerability<span style="color:#f92672">.</span>WRITE_WHAT_WHERE, Vulnerability<span style="color:#f92672">.</span>WRITE_X_WHERE]):
+            self<span style="color:#f92672">.</span>_explore_arbitrary_write(path_file)
+        <span style="color:#66d9ef">else</span>:
+            <span style="color:#66d9ef">raise</span> CannotExplore(<span style="color:#e6db74">&#34;unknown explorable crash type: </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> self<span style="color:#f92672">.</span>crash_types)
+</code></pre></div><p><code>_explore_arbitrary_read / _explore_arbitrary_write</code> 进行路径探索，分别对应任意写和任意读漏洞，使读写的地址是符号化地址，即我们可控的 ( point the violating address at a  symbolic memory region )，返回一个 crash 对象。</p>
+<h4 id="可利用性判定">可利用性判定</h4>
+<p>通过调用 exploitable 接口判断 crash 是否可利用，rex 会判断 Crash 的漏洞类型是否属于可 exploitable 漏洞之一 。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">exploitable</span>(self):
+        exploitables <span style="color:#f92672">=</span> [Vulnerability<span style="color:#f92672">.</span>IP_OVERWRITE, Vulnerability<span style="color:#f92672">.</span>PARTIAL_IP_OVERWRITE, Vulnerability<span style="color:#f92672">.</span>BP_OVERWRITE,
+                Vulnerability<span style="color:#f92672">.</span>PARTIAL_BP_OVERWRITE, Vulnerability<span style="color:#f92672">.</span>WRITE_WHAT_WHERE, Vulnerability<span style="color:#f92672">.</span>WRITE_X_WHERE]
+        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>one_of(exploitables)
+
+</code></pre></div><p>检查是否可以泄露信息, 判断 crash 类型是否属于 <code>ARBITRARY_READ/ARBITRARY_TRANSMIT</code> 其中一种.</p>
+<h3 id="technique-对象">Technique 对象</h3>
+<p>每个 technique 都是  Technique 对象的子类, 主要对 check / apply 这两个接口进行重写. 同时 Technique 对象实现了一些通用的接口, 作为构造 exploit 的辅助函数.</p>
+<p>下面介绍一下 check / apply</p>
+<pre><code>check: 检查对于给定的crash, 该技术能否应用到 binary 上,返回布尔值
+
+apply : 在binary的崩溃状态点应用该技术,返回 Exploit 对象或抛出  CannotExploit  异常
+</code></pre><p>apply 其实就是根据每个技术的不同，添加不同的约束。</p>
+<p>每种包含  applicable_to  属性,表示可以应用的平台, unix 或者 cgc</p>
+<p>以下是 technique 的基本信息, 基本通过名称就能知道攻击技术，就不一一介绍了，它们的实现也比较朴素。</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>限定漏洞类型</th>
+<th>其他条件</th>
+<th>平台</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>call_jmp_sp_shellcode</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td>栈可执行</td>
+<td>unix</td>
+</tr>
+<tr>
+<td><code>call_shellcode</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td>栈可执行</td>
+<td>unix</td>
+</tr>
+<tr>
+<td>circumstantially_set_register</td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td></td>
+<td>cgc</td>
+</tr>
+<tr>
+<td><code>rop_leak_memory</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td></td>
+<td>cgc</td>
+</tr>
+<tr>
+<td><code>rop_register_control</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td></td>
+<td>unix</td>
+</tr>
+<tr>
+<td><code>rop_set_register</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td></td>
+<td>cgc</td>
+</tr>
+<tr>
+<td><code>rop_to_accept_system</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td>存在 accept&amp; read函数</td>
+<td>unix</td>
+</tr>
+<tr>
+<td><code>rop_to_execl</code></td>
+<td>IP_OVERWRITE/PARTIAL_IP_OVERWRITE</td>
+<td>存在 execl&amp;dup2 函数</td>
+<td>unix</td>
+</tr>
+<tr>
+<td><code>rop_to_system</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td>存在 system 函数</td>
+<td>unix</td>
+</tr>
+<tr>
+<td><code>rop_to_system_complicated</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td>libc 被加载&amp; system 函数 &amp; plt</td>
+<td>unix</td>
+</tr>
+<tr>
+<td><code>shellcode_leak_address</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td>栈可执行</td>
+<td>cgc</td>
+</tr>
+<tr>
+<td><code>shellcode_set_register</code></td>
+<td>IP_OVERWRITE / PARTIAL_IP_OVERWRITE</td>
+<td>栈可执行</td>
+<td>cgc</td>
+</tr>
+</tbody>
+</table>
+<p>可以在调用 exploit 时设置  <code>blacklist_techniques</code>  参数排除不需要使用的技术.</p>
+<p>成功应用 Technique 会返回 Exploit 对象，接下来介绍 Exploit 对象。</p>
+<h3 id="exploit--对象">Exploit  对象</h3>
+<blockquote>
+<p>An Exploit object represents the successful application of an exploit technique to a crash state.</p>
+</blockquote>
+<p>rex 实现了 <code>ExploitFactory</code>  类，用于管理和构建 exploit,</p>
+<p>调用 exploit() 方法时，<code>ExploitFactory</code>  会依次应用每一种利用技术, 尝试生成 exploit, 得到的  exploit  会以<code>arsenal[&lt;techinique_name&gt;]</code>  形式存储在 arsenal 属性中. 针对 CGC 实现了  <a href="https://github.com/angr/rex/blob/0df09e0bc0a8a64b876ce366e3202998bd58b8f0/rex/exploit/cgc_exploit_factory.py#L8">CGCExploitFactory</a> 类.</p>
+<p>构建 exp:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"> <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">exploit</span>(self, blacklist_symbolic_explore<span style="color:#f92672">=</span>True, <span style="color:#f92672">**</span>kwargs):
+        <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">        Initialize an exploit factory, with which you can build exploits.
+</span><span style="color:#e6db74">        :return:    An initialized ExploitFactory instance.
+</span><span style="color:#e6db74">        :rtype:     ExploitFactory
+</span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+        factory <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_prepare_exploit_factory(blacklist_symbolic_explore, <span style="color:#f92672">**</span>kwargs)
+        factory<span style="color:#f92672">.</span>initialize()
+        <span style="color:#66d9ef">return</span> factory
+    
+    
+    
+</code></pre></div><p><code>_prepare_exploit_factory</code> 函数主要为 exploit 的生成做一些准备操作，比如设置 technique 的黑名单，判断输入类型等。</p>
+<h3 id="测试-1">测试</h3>
+<p>以下是分别对 cgc 和 linux 两种格式的测试样例</p>
+<h4 id="cgc">cgc</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">test_legit_00003</span>():
+    <span style="color:#75715e"># Test exploration and exploitation of legit_00003.</span>
+    inp <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;1</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;A&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">200</span> <span style="color:#75715e">#设置输入内容</span>
+    path <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>join(bin_location, <span style="color:#e6db74">&#34;tests/defcon24/legit_00003&#34;</span>)
+    <span style="color:#66d9ef">with</span> archr<span style="color:#f92672">.</span>targets<span style="color:#f92672">.</span>LocalTarget([path], target_os<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;cgc&#39;</span>) <span style="color:#66d9ef">as</span> target:
+        crash <span style="color:#f92672">=</span> rex<span style="color:#f92672">.</span>Crash(target, inp, fast_mode<span style="color:#f92672">=</span>True, rop_cache_path<span style="color:#f92672">=</span>os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>join(cache_location, <span style="color:#e6db74">&#39;legit_00003&#39;</span>))
+ 
+        nose<span style="color:#f92672">.</span>tools<span style="color:#f92672">.</span>assert_true(crash<span style="color:#f92672">.</span>explorable())  <span style="color:#75715e">#判断是否可以 explore</span>
+        nose<span style="color:#f92672">.</span>tools<span style="color:#f92672">.</span>assert_true(crash<span style="color:#f92672">.</span>one_of(Vulnerability<span style="color:#f92672">.</span>WRITE_WHAT_WHERE)) <span style="color:#75715e"># 漏洞是否为任意写</span>
+
+        crash<span style="color:#f92672">.</span>explore() <span style="color:#75715e">#进行探索m</span>
+        arsenal <span style="color:#f92672">=</span> crash<span style="color:#f92672">.</span>exploit(blacklist_techniques<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;rop_set_register&#39;</span>, <span style="color:#e6db74">&#39;rop_leak_memory&#39;</span>})
+
+        nose<span style="color:#f92672">.</span>tools<span style="color:#f92672">.</span>assert_true(len(arsenal<span style="color:#f92672">.</span>register_setters) <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">2</span>)
+        nose<span style="color:#f92672">.</span>tools<span style="color:#f92672">.</span>assert_true(len(arsenal<span style="color:#f92672">.</span>leakers) <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">1</span>)
+
+        crash<span style="color:#f92672">.</span>project<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>close()
+
+        <span style="color:#66d9ef">for</span> reg_setter <span style="color:#f92672">in</span> arsenal<span style="color:#f92672">.</span>register_setters:
+            nose<span style="color:#f92672">.</span>tools<span style="color:#f92672">.</span>assert_true(_do_pov_test(reg_setter))
+
+        <span style="color:#66d9ef">for</span> leaker <span style="color:#f92672">in</span> arsenal<span style="color:#f92672">.</span>leakers:
+            nose<span style="color:#f92672">.</span>tools<span style="color:#f92672">.</span>assert_true(_do_pov_test(leaker))
+</code></pre></div><h4 id="linux">linux</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">test_linux_stacksmash_32</span>():
+    <span style="color:#75715e"># Test exploiting a simple linux program with a stack buffer overflow. We should be able to exploit the test binary by</span>
+    <span style="color:#75715e"># ropping to &#39;system&#39;, calling shellcode in the BSS and calling &#39;jmpsp&#39; shellcode in the BSS.</span>
+
+    inp <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;A&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">227</span>
+    lib_path <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>join(bin_location, <span style="color:#e6db74">&#34;tests/i386&#34;</span>)
+    ld_path <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>join(lib_path, <span style="color:#e6db74">&#34;ld-linux.so.2&#34;</span>)
+    path <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>join(lib_path, <span style="color:#e6db74">&#34;vuln_stacksmash&#34;</span>)
+    <span style="color:#66d9ef">with</span> archr<span style="color:#f92672">.</span>targets<span style="color:#f92672">.</span>LocalTarget([ld_path, <span style="color:#e6db74">&#39;--library-path&#39;</span>, lib_path, path], path, target_arch<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;i386&#39;</span>)<span style="color:#f92672">.</span>build()<span style="color:#f92672">.</span>start() <span style="color:#66d9ef">as</span> target:
+        crash <span style="color:#f92672">=</span> rex<span style="color:#f92672">.</span>Crash(target, inp, fast_mode<span style="color:#f92672">=</span>True, rop_cache_path<span style="color:#f92672">=</span>os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>join(cache_location, <span style="color:#e6db74">&#39;vuln_stacksmash&#39;</span>))
+
+        exploit <span style="color:#f92672">=</span> crash<span style="color:#f92672">.</span>exploit(blacklist_techniques<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;rop_leak_memory&#39;</span>, <span style="color:#e6db74">&#39;rop_set_register&#39;</span>})
+        crash<span style="color:#f92672">.</span>project<span style="color:#f92672">.</span>loader<span style="color:#f92672">.</span>close()
+
+        <span style="color:#75715e"># make sure we&#39;re able to exploit it in all possible ways</span>
+        <span style="color:#66d9ef">assert</span> len(exploit<span style="color:#f92672">.</span>arsenal) <span style="color:#f92672">==</span> <span style="color:#ae81ff">3</span>
+        <span style="color:#66d9ef">assert</span> <span style="color:#e6db74">&#39;rop_to_system&#39;</span> <span style="color:#f92672">in</span> exploit<span style="color:#f92672">.</span>arsenal
+        <span style="color:#66d9ef">assert</span> <span style="color:#e6db74">&#39;call_shellcode&#39;</span> <span style="color:#f92672">in</span> exploit<span style="color:#f92672">.</span>arsenal
+        <span style="color:#66d9ef">assert</span> <span style="color:#e6db74">&#39;call_jmp_sp_shellcode&#39;</span> <span style="color:#f92672">in</span> exploit<span style="color:#f92672">.</span>arsenal
+
+        _check_arsenal_has_send(exploit<span style="color:#f92672">.</span>arsenal)
+</code></pre></div><h3 id="相关库">相关库</h3>
+<p>这里顺便介绍一些 rex 依赖的 <a href="https://github.com/angr/archr">archr</a>  模块</p>
+<h4 id="archr">archr</h4>
+<p>前面提到，在使用 rex 前，需要使用 archr 创建 target 对象。我们可以指定  <code>target_path /  target_os(linux /cgc)  /  target_arch(linux , x86_64)</code> 等.</p>
+<p>archr 模块实现了以 target 为中心的分析模型。（传统是以程序 program 为中心）</p>
+<p>其中包含两个重要的概念，</p>
+<p>Targets: 包含 target 的说明，如何配置，如何启动以及如何交互。</p>
+<p>Bows：明确 target 特定的分析动作，包括 tracing，符号执行（symbolic execution）等，为了实现目标，Bows 可能会注入 <code>Arrows</code> （如<code>qemu-user</code>, <code>gdbserver</code>等）到 target 中。</p>
+<p>archr 提供了两种 target:</p>
+<ul>
+<li><code>DockerImageTarget</code>: docker 镜像</li>
+<li><code>LocalTarget</code>：本地系统运行的 target</li>
+</ul>
+<p>提供了以下 Bows ：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DataScoutBow</code></td>
+<td>获取进程启动时的内存映射，环境，属性</td>
+</tr>
+<tr>
+<td><code>AngrProjectBow</code></td>
+<td>创建 angr Project</td>
+</tr>
+<tr>
+<td><code>AngrStateBow</code></td>
+<td>创建 angr State</td>
+</tr>
+<tr>
+<td><code>QEMUTraceBow</code></td>
+<td>执行 qemu tracing</td>
+</tr>
+<tr>
+<td><code>GDBServerBow</code></td>
+<td>在 gdbserver 中启动 target</td>
+</tr>
+<tr>
+<td><code>STraceBow</code></td>
+<td>strace 目标（即跟踪系统调用和信号）</td>
+</tr>
+<tr>
+<td><code>CoreBow</code></td>
+<td>启动target 并恢复 core</td>
+</tr>
+<tr>
+<td><code>InputFDBow</code></td>
+<td>确定用户输入的FD数目</td>
+</tr>
+</tbody>
+</table>
+<p>具体使用方法可以查看项目。</p>
+<h4 id="总结">总结</h4>
+<p>对于自动化利用，rex 比较简陋，漏洞利用技术也比较简单，但是我们可以学习它的思路，对其进行改进。</p>
+<h2 id="参考链接">参考链接</h2>
+<ol>
+<li>[https://paper.seebug.org/papers/Security%20Conf/Hitcon/Hitcon-2016/1202%20R2%201510%20automatic%20binary%20exploitation%20and%20patching%20using%20mechanical%20shellphish.pdf](<a href="https://paper.seebug.org/papers/Security">https://paper.seebug.org/papers/Security</a> Conf/Hitcon/Hitcon-2016/1202 R2 1510 automatic binary exploitation and patching using mechanical shellphish.pdf)</li>
+<li><a href="https://ma3k4h3d.top/2019/01/23/rex-crash/">https://ma3k4h3d.top/2019/01/23/rex-crash/</a></li>
+<li><a href="https://ma3k4h3d.top/2019/03/28/rex-1/">https://ma3k4h3d.top/2019/03/28/rex-1/</a></li>
+<li><a href="https://ma3k4h3d.top/2019/01/17/Rex-stacksmash/">https://ma3k4h3d.top/2019/01/17/Rex-stacksmash/</a></li>
+<li><a href="https://github.com/angr/rex">https://github.com/angr/rex</a></li>
+</ol>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://blog.yuuoniy.cn/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+
