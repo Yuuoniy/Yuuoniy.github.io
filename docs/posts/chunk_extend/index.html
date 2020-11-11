@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -30,6 +32,8 @@ chunk1 info(0x20) | chunk1 | chunk2 info | chunk2
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -49,6 +53,7 @@ chunk1 info(0x20) | chunk1 | chunk2 info | chunk2
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -58,6 +63,7 @@ chunk1 info(0x20) | chunk1 | chunk2 info | chunk2
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -83,10 +89,13 @@ chunk1 info(0x20) | chunk1 | chunk2 info | chunk2
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">chunk extend</h1>
 		<div class="post-meta">September 21, 2019</div>
+		
+		
 	</header>
-	<div class="post-content"><p>题目：</p>
+	<div class="toc"></div><div class="post-content"><p>题目：</p>
 <p>HITCON Trainging lab13</p>
 <p>程序分析：</p>
 <p>create : 长度没有进行检测，如果为负数，会导致任意长度堆溢出漏洞</p>
@@ -186,6 +195,82 @@ delete(<span style="color:#ae81ff">0</span>)
 r<span style="color:#f92672">.</span>interactive()
 
 </code></pre></div></div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -202,4 +287,3 @@ r<span style="color:#f92672">.</span>interactive()
 </script>
 </body>
 </html>
-

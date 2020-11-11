@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -24,6 +26,8 @@
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -43,6 +47,7 @@
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -52,6 +57,7 @@
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -77,10 +83,13 @@
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">Bullet</h1>
 		<div class="post-meta">March 29, 2018</div>
+		
+		
 	</header>
-	<div class="post-content"><p>注意<code>stack</code>或是<code>struct</code>的<code>layout</code></p>
+	<div class="toc"></div><div class="post-content"><p>注意<code>stack</code>或是<code>struct</code>的<code>layout</code></p>
 <p>漏洞<code>strncat(bullet-&gt;desc,buf,MAX - bullet-&gt;power)</code>; 
 这样首先<code>create</code>长度为47的<code>bullet</code>，通过<code>power_up</code> 再增加一个<code>power</code> 此时bullet长度为48
 通过<code>strnact</code> 最后还会赋值 <code>null</code> ,因此造成溢出,<code>power</code>會從<code>\x2f</code>蓋成<code>\x00</code><br>
@@ -176,6 +185,82 @@ menu</p>
 <a href="http://look3little.blogspot.sg/2017/03/silverbullet-200.html">http://look3little.blogspot.sg/2017/03/silverbullet-200.html</a> (十分详细)
 <a href="http://blog.c0smic.cn/2017/12/10/pwnable_tw_4_6/">http://blog.c0smic.cn/2017/12/10/pwnable_tw_4_6/</a> 详细</p>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -192,4 +277,3 @@ menu</p>
 </script>
 </body>
 </html>
-

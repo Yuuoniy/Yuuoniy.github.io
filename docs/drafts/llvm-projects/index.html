@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -23,6 +25,8 @@ sudo apt get install swig libedit-dev pythonlibc&#43;&#43; 标准库 libc &#43;
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -42,6 +46,7 @@ sudo apt get install swig libedit-dev pythonlibc&#43;&#43; 标准库 libc &#43;
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -51,6 +56,7 @@ sudo apt get install swig libedit-dev pythonlibc&#43;&#43; 标准库 libc &#43;
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -76,10 +82,13 @@ sudo apt get install swig libedit-dev pythonlibc&#43;&#43; 标准库 libc &#43;
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title"></h1>
 		<div class="post-meta">January 1, 0001</div>
+		
+		
 	</header>
-	<div class="post-content"><h1 id="llvm-入门教程之外部项目">LLVM 入门教程之外部项目</h1>
+	<div class="toc"></div><div class="post-content"><h1 id="llvm-入门教程之外部项目">LLVM 入门教程之外部项目</h1>
 <p>本文内容介绍 LLVM 的相关项目，这些项目不包括在 LLVM+Clang, 因此需要额外安装，具体包括：</p>
 <ul>
 <li>Clang extra tools</li>
@@ -109,6 +118,82 @@ sudo apt get install swig libedit-dev pythonlibc&#43;&#43; 标准库 libc &#43;
 <li></li>
 </ol>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -125,4 +210,3 @@ sudo apt get install swig libedit-dev pythonlibc&#43;&#43; 标准库 libc &#43;
 </script>
 </body>
 </html>
-

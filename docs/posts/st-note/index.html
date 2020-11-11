@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -35,6 +37,8 @@
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -54,6 +58,7 @@
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -63,6 +68,7 @@
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -88,10 +94,13 @@
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">软件测试学习笔记</h1>
 		<div class="post-meta">June 30, 2019</div>
+		
+		
 	</header>
-	<div class="post-content"><p>软件测试</p>
+	<div class="toc"></div><div class="post-content"><p>软件测试</p>
 <!-- raw HTML omitted -->
 <p>由于项目需要进行测试,先来学习一下软件测试中的基本概念, 测试的内容很多,这里就简单介绍一下白盒测试/黑盒测试/灰盒测试.</p>
 <h2 id="动态测试">动态测试</h2>
@@ -172,6 +181,82 @@
 <h3 id="灰盒测试">灰盒测试</h3>
 <p>灰盒测试是一种将黑盒测试、白盒测试、回归测试和变异测试结合在一起的综合测试方法，也是一种软件全生命周期测试方法。</p>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -188,4 +273,3 @@
 </script>
 </body>
 </html>
-

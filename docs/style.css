@@ -28,6 +28,9 @@
 	--code-bg: #f5f5f5;
 	--border: #eee;
 }
+
+
+
 .dark {
 	--theme: #1d1e20;
 	--entry: #2e2e33;
@@ -569,6 +572,7 @@ img {
 .category-post:hover {
 	color: var(--secondary);
 }
+
 /* Tags list page
 -------------------------------------------------- */
 ul.tags-list {
@@ -594,3 +598,5 @@ ul.tags-list li.tag a:hover {
 ul.tags-list li.tag span.tag-count {
 	color: var(--secondary);
 }
+
+

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -27,6 +29,8 @@ from pwn import *elf = ELF(&#39;r0pbaby&#39;)libc = ELF(&#39;/lib/x86_64-linux
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -46,6 +50,7 @@ from pwn import *elf = ELF(&#39;r0pbaby&#39;)libc = ELF(&#39;/lib/x86_64-linux
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -55,6 +60,7 @@ from pwn import *elf = ELF(&#39;r0pbaby&#39;)libc = ELF(&#39;/lib/x86_64-linux
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -80,10 +86,13 @@ from pwn import *elf = ELF(&#39;r0pbaby&#39;)libc = ELF(&#39;/lib/x86_64-linux
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">Defcon-2015-Qualifier-r0pbaby</h1>
 		<div class="post-meta">March 17, 2018</div>
+		
+		
 	</header>
-	<div class="post-content"><p>64位需要rdi传参，有PIE保护不能使用程序中的gadget，此处可以从libc中找</p>
+	<div class="toc"></div><div class="post-content"><p>64位需要rdi传参，有PIE保护不能使用程序中的gadget，此处可以从libc中找</p>
 <p>buf的大小是8，会造成缓冲区溢出<br>
 解题思路<br>
 1.找到一个gadget RDI<br>
@@ -126,6 +135,82 @@ io.recvuntil(&quot;Bad choice.\n&quot;)
 io.interactive()
 </code></pre><p>总结：简单的调用 system + “bin/sh” 通过寄存器 gadget “pop rdi;ret “传参</p>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -142,4 +227,3 @@ io.interactive()
 </script>
 </body>
 </html>
-

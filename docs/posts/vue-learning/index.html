@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -23,6 +25,8 @@ element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还�
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -42,6 +46,7 @@ element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还�
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -51,6 +56,7 @@ element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还�
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -76,10 +82,13 @@ element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还�
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">如何使用vue 及相关技术栈快速构建前端</h1>
 		<div class="post-meta">June 29, 2019</div>
+		
+		
 	</header>
-	<div class="post-content"><p>在本文中，我将给大家介绍一些 vue 的基础知识、相关工具、生态等内容。相信通过该文章你会对 vue 有大概的认识，并且可以快速地找到入门的方向。
+	<div class="toc"></div><div class="post-content"><p>在本文中，我将给大家介绍一些 vue 的基础知识、相关工具、生态等内容。相信通过该文章你会对 vue 有大概的认识，并且可以快速地找到入门的方向。
 一起来学习吧！</p>
 <!-- raw HTML omitted -->
 <p>首先介绍一下本次系分项目前端使用的技术栈：</p>
@@ -154,6 +163,82 @@ element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还�
 <p>以上就是使用 vue 构建前端常用的技术栈了，有了宏观的认识后，入门真的很容易，但是我上面所说的内容都是比较简单的，还是有很多高级的内容需要你自己去探索啦。可以找个基础的项目看下，
 都是大同小异（写多了感觉真的纯搬砖&hellip;)</p>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -170,4 +255,3 @@ element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还�
 </script>
 </body>
 </html>
-

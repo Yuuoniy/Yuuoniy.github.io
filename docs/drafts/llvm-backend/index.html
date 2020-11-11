@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -30,6 +32,8 @@ overview 在得到优化过的 LLVM IR 之后，下一个阶段就是把它转�
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -49,6 +53,7 @@ overview 在得到优化过的 LLVM IR 之后，下一个阶段就是把它转�
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -58,6 +63,7 @@ overview 在得到优化过的 LLVM IR 之后，下一个阶段就是把它转�
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -83,10 +89,13 @@ overview 在得到优化过的 LLVM IR 之后，下一个阶段就是把它转�
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title"></h1>
 		<div class="post-meta">January 1, 0001</div>
+		
+		
 	</header>
-	<div class="post-content"><h1 id="llvm--backend">LLVM  Backend</h1>
+	<div class="toc"></div><div class="post-content"><h1 id="llvm--backend">LLVM  Backend</h1>
 <h1 id="前言">前言</h1>
 <p>LLVM backend的主要功能是code gen，也就是代码生成，其中包括若干个code gen分析换转化pass将LLVM IR转换成特定目标架构的机器 代码。</p>
 <h1 id="overview">overview</h1>
@@ -141,6 +150,82 @@ overview 在得到优化过的 LLVM IR 之后，下一个阶段就是把它转�
 <li></li>
 </ol>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -157,4 +242,3 @@ overview 在得到优化过的 LLVM IR 之后，下一个阶段就是把它转�
 </script>
 </body>
 </html>
-

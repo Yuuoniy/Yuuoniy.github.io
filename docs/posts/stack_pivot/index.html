@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -19,6 +21,8 @@ we could place our shellcode on string s, then jump to here. so we need a jmp ga
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -38,6 +42,7 @@ we could place our shellcode on string s, then jump to here. so we need a jmp ga
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -47,6 +52,7 @@ we could place our shellcode on string s, then jump to here. so we need a jmp ga
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -72,10 +78,13 @@ we could place our shellcode on string s, then jump to here. so we need a jmp ga
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">stack pivot</h1>
 		<div class="post-meta">January 14, 2020</div>
+		
+		
 	</header>
-	<div class="post-content"><h2 id="xctf16_b0verflow">xctf16_b0verflow</h2>
+	<div class="toc"></div><div class="post-content"><h2 id="xctf16_b0verflow">xctf16_b0verflow</h2>
 <p>checksec:</p>
 <pre><code>[*] '/home/yuuoniy/MY-AEG/nightmare/modules/17-stack_pivot/xctf16_b0verflow/b0verflow'
     Arch:     i386-32-little
@@ -229,6 +238,82 @@ p<span style="color:#f92672">.</span>interactive()
 </code></pre></div><p>reference:</p>
 <p><a href="https://github.com/guyinatuxedo/nightmare/blob/master/modules/17-stack_pivot/insomnihack18_onewrite/readme.md">https://github.com/guyinatuxedo/nightmare/blob/master/modules/17-stack_pivot/insomnihack18_onewrite/readme.md</a></p>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -245,4 +330,3 @@ p<span style="color:#f92672">.</span>interactive()
 </script>
 </body>
 </html>
-

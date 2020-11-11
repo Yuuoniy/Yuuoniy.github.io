@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -26,6 +28,8 @@ codegen Codegen()函数使用了LLVM内建的函数调用来生成IR">
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -45,6 +49,7 @@ codegen Codegen()函数使用了LLVM内建的函数调用来生成IR">
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -54,6 +59,7 @@ codegen Codegen()函数使用了LLVM内建的函数调用来生成IR">
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -79,10 +85,13 @@ codegen Codegen()函数使用了LLVM内建的函数调用来生成IR">
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title"></h1>
 		<div class="post-meta">January 1, 0001</div>
+		
+		
 	</header>
-	<div class="post-content"><h1 id="llvm-入门教程之-frontend-介绍">LLVM 入门教程之 frontend 介绍</h1>
+	<div class="toc"></div><div class="post-content"><h1 id="llvm-入门教程之-frontend-介绍">LLVM 入门教程之 frontend 介绍</h1>
 <h2 id="前言">前言</h2>
 <h2 id="clang">clang</h2>
 <p>icc(Intel C++ Compiler)</p>
@@ -109,6 +118,82 @@ codegen Codegen()函数使用了LLVM内建的函数调用来生成IR">
 <h3 id="codegen">codegen</h3>
 <p>Codegen()函数使用了LLVM内建的函数调用来生成IR</p>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -125,4 +210,3 @@ codegen Codegen()函数使用了LLVM内建的函数调用来生成IR">
 </script>
 </body>
 </html>
-

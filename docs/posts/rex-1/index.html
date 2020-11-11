@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -27,6 +29,8 @@ tg = archr.targets.LocalTarget(&lt;path_to_binary&gt;, target_os=&#39;cgc&#39;) 
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -46,6 +50,7 @@ tg = archr.targets.LocalTarget(&lt;path_to_binary&gt;, target_os=&#39;cgc&#39;) 
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -55,6 +60,7 @@ tg = archr.targets.LocalTarget(&lt;path_to_binary&gt;, target_os=&#39;cgc&#39;) 
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -80,10 +86,13 @@ tg = archr.targets.LocalTarget(&lt;path_to_binary&gt;, target_os=&#39;cgc&#39;) 
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">Rex: 自动化利用引擎分析</h1>
 		<div class="post-meta">February 11, 2020</div>
+		
+		
 	</header>
-	<div class="post-content"><h1 id="rex-自动化利用引擎分析">Rex: 自动化利用引擎分析</h1>
+	<div class="toc"></div><div class="post-content"><h1 id="rex-自动化利用引擎分析">Rex: 自动化利用引擎分析</h1>
 <blockquote>
 <p>文章首发于 <a href="https://xz.aliyun.com/t/7117">先知社区</a></p>
 </blockquote>
@@ -516,6 +525,82 @@ apply : 在binary的崩溃状态点应用该技术,返回 Exploit 对象或抛�
 <li><a href="https://github.com/angr/rex">https://github.com/angr/rex</a></li>
 </ol>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -532,4 +617,3 @@ apply : 在binary的崩溃状态点应用该技术,返回 Exploit 对象或抛�
 </script>
 </body>
 </html>
-

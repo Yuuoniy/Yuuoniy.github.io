@@ -7,5 +7,5 @@ hi~
 - Github: https://github.com/Yuuoniy  
 - Mail: linmq006@gmail.com  
 
-😍 **男友链**：https://blog.xylearn.site/
+🙈💖 **男友链**：https://blog.xylearn.site  
 

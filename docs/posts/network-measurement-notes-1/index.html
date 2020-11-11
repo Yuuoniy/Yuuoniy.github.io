@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -25,6 +27,8 @@ tcpdump tcpdump 是一种可以记录网络流量的网络检测工具。
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -44,6 +48,7 @@ tcpdump tcpdump 是一种可以记录网络流量的网络检测工具。
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -53,6 +58,7 @@ tcpdump tcpdump 是一种可以记录网络流量的网络检测工具。
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -78,10 +84,13 @@ tcpdump tcpdump 是一种可以记录网络流量的网络检测工具。
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">互联网络测量读书笔记</h1>
 		<div class="post-meta">October 1, 2018</div>
+		
+		
 	</header>
-	<div class="post-content"><p>《互联网络测量理论与应用》读书笔记</p>
+	<div class="toc"></div><div class="post-content"><p>《互联网络测量理论与应用》读书笔记</p>
 <!-- raw HTML omitted -->
 <h2 id="a">a</h2>
 <h3 id="b">b</h3>
@@ -232,6 +241,82 @@ tcpdump tcpdump 是一种可以记录网络流量的网络检测工具。
 希望&hellip;对于网络测量和机器学习的部分在国庆假期前完成。
 我真的&hellip;好伤心，真不希望大三就这样被披上一层阴郁的灰色，到底是谁的问题呢</p>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -248,4 +333,3 @@ tcpdump tcpdump 是一种可以记录网络流量的网络检测工具。
 </script>
 </body>
 </html>
-

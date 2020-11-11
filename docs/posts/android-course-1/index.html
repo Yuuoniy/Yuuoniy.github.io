@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -18,6 +20,8 @@ Android开发环境搭建 之前已经安装过 AS 了,下载sdk应该要翻墙,
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -37,6 +41,7 @@ Android开发环境搭建 之前已经安装过 AS 了,下载sdk应该要翻墙,
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -46,6 +51,7 @@ Android开发环境搭建 之前已经安装过 AS 了,下载sdk应该要翻墙,
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -71,10 +77,13 @@ Android开发环境搭建 之前已经安装过 AS 了,下载sdk应该要翻墙,
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">android | 手机平台应用开发第一篇</h1>
 		<div class="post-meta">September 11, 2018</div>
+		
+		
 	</header>
-	<div class="post-content"><!-- raw HTML omitted -->
+	<div class="toc"></div><div class="post-content"><!-- raw HTML omitted -->
 <h3 id="git-日常使用总结">git 日常使用总结</h3>
 <p>git 已经用很多了,大概就是需要了解仓库,分支等概念,熟悉本地和远程的关系,熟练使用clone commit pull push merge操作
 下面给出一下常用的命令:
@@ -103,6 +112,82 @@ install build tool 后
 依旧是  <code>gardle project sync failed</code> 的问题
 结果发现翻了墙还是要改 host 呀，修改 Host 就好了，连接手机，完美运行app</p>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -119,4 +204,3 @@ install build tool 后
 </script>
 </body>
 </html>
-

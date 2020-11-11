@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -28,6 +30,8 @@ airodump-ng wlan0mon
 		
 		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
 		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
 		<meta name="generator" content="Hugo 0.76.5" />
 		
 		
@@ -47,6 +51,7 @@ airodump-ng wlan0mon
 				if (time < sunrise || time > sunset)
 					document.body.classList.add('dark');
 			}
+			
 		</script>
 		
 	</head>
@@ -56,6 +61,7 @@ airodump-ng wlan0mon
 			setTheme();
 			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
 		</script>
+		
 		
 		<header class="header">
 			<nav class="nav">
@@ -81,10 +87,13 @@ airodump-ng wlan0mon
 
 <article class="post-single">
 	<header class="post-header">
+
 		<h1 class="post-title">CTF | 无线网络-802.11攻与防</h1>
 		<div class="post-meta">August 17, 2018</div>
+		
+		
 	</header>
-	<div class="post-content"><!-- raw HTML omitted -->
+	<div class="toc"></div><div class="post-content"><!-- raw HTML omitted -->
 <h3 id="常见的无线攻击威胁">常见的无线攻击威胁</h3>
 <h4 id="fake-ap攻击">fake ap攻击</h4>
 <h4 id="arpdns劫持">ARP&amp;Dns劫持</h4>
@@ -130,6 +139,82 @@ scapy  封装好协议</p>
 <p><code>airbase-ng -e &quot;rm -rf&quot; -c 1 -v wlan0mon</code></p>
 <p>推荐博客：http://www.wiattack.net/index.php/archives/7/</p>
 </div>
+	<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		function mashiroToc(mashiro) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mashiro) {
+        var id = 1;
+        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
+            
+            var hyphenated = "mm-" + id;
+            $(this).attr('id', hyphenated);
+            id++;
+        });
+        
+        tocbot.init({
+            tocSelector: '.toc',
+            contentSelector: '.post-content',
+            headingSelector: 'h1, h2, h3, h4, h5',
+            positionFixedSelector: ".toc",
+            scrollEndCallback: function (e) {
+                window.scrollTo(window.scrollX, window.scrollY - 80);
+            },
+        });
+    }
+}
+	mashiroToc(true);
+	</script>
 	
 </article></main>
 <footer class="footer">
@@ -146,4 +231,3 @@ scapy  封装好协议</p>
 </script>
 </body>
 </html>
-
