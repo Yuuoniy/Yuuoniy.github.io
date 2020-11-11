@@ -9,6 +9,16 @@
     <copyright>Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.</copyright>
     <lastBuildDate>Sat, 11 Jul 2020 09:39:11 +0800</lastBuildDate><atom:link href="https://yuuoniy.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>About</title>
+      <link>https://yuuoniy.github.io/about/</link>
+      <pubDate>Wed, 11 Nov 2020 23:25:55 +0800</pubDate>
+      
+      <guid>https://yuuoniy.github.io/about/</guid>
+      <description>hi~
+ Github: https://github.com/Yuuoniy Mail: linmq006@gmail.com  😍 男友链：https://blog.xylearn.site/</description>
+    </item>
+    
+    <item>
       <title>LLVM 入门教程之 Pass 编写</title>
       <link>https://yuuoniy.github.io/posts/llvm-pass-1/</link>
       <pubDate>Sat, 11 Jul 2020 09:39:11 +0800</pubDate>
@@ -223,6 +233,23 @@ str = &amp;#34;hajjzvajvzqyaqbendzvajvqauzarlapjzrkybjzenzuvczjvastlj&amp;#34; a
     </item>
     
     <item>
+      <title>互联网络测量读书笔记</title>
+      <link>https://yuuoniy.github.io/posts/network-measurement-notes-1/</link>
+      <pubDate>Mon, 01 Oct 2018 16:42:16 +0000</pubDate>
+      
+      <guid>https://yuuoniy.github.io/posts/network-measurement-notes-1/</guid>
+      <description>《互联网络测量理论与应用》读书笔记
+a b 主动测量 被动测量 BGP 优点 容易得到大量的 AS 级的拓扑连接信息。
+缺点  由 BGP 的路由信息生成的 AS 级拓扑结构是个类似树状的结构， AS 间可能存在的任何交叉连接都难以被发现 对 BGP 信息进行路由汇集和过滤的过程中可能会隐藏掉该 AS 的边缘信息  OSPF 开放最短路径优先协议，也属于内部网关协议。在链路状态路由协议中，每个路由器维护它自己的本地链路状态信息，即路由器到子网的链路状态和可以到达的邻居路由器，并且通过洪泛的方法把更新了的本地链路状态信息广播给自治系统中每个路由器。
+优点 信息收集比较简单，且速度快
+缺点  要求所有的路由器都支持 OSPF 协议， 收集到的拓扑信息中缺乏接口之间的联系关系，这给基于该方法的拓扑测量带来困难  SNMP//RMON SNMP是 IETF 为Internet 管理而设计的信息交换协议。RMON 是 IETF 制定的一种特殊的 SNMP MIB，主要用于远程监控局域网。
+tcpdump tcpdump 是一种可以记录网络流量的网络检测工具。
+混合测量 网络测量体系结构 被动测量体系结构 RTFM 监听模块、读取模块、控制模块、分析模块。
+抽象测量体系结构 数据采集、数据管理、数据分析、数据表示
+集中式测量体系结构 简单的分布式测量体系结构 基于 P2P 的分布式测量体系结构 基于 web service 的分布式测量体系结构 基础设施部署的关键问题 测量点的选择 噪声分组的过滤 时钟同步 匿名化 误差和校准 网络性能测量 性能指标 时延 传输时延、传播时延、路由器时延 端到端时延</description>
+    </item>
+    
+    <item>
       <title>CTF | offbyone writeup</title>
       <link>https://yuuoniy.github.io/posts/pwn-offbyone/</link>
       <pubDate>Thu, 27 Sep 2018 22:02:10 +0000</pubDate>
@@ -266,6 +293,18 @@ chunk 结构:
 SROP signal 机制 32 位的 sigreturn 的调用号为 77，64 位的系统调用号为 15
 过程： 推荐看 angelboy 的 ppt
 x86mov eax,0x77int 0x80x64mov rax,0xfsyscall利用要点  利用 sigreturn ,构造 syscall 控制所有寄存器 控制 ip 和 stack 需要足够的栈空间保存 signal frame 直接伪造 sigcontext 结构，全部 push 进 stack 将 ret address 设在 sigreturn syscall 的 gadget 将 signal frame 中的 rip(eip) 设在 syscall sigreturn 回来后就会执行我们自己构造的 syscall  要求  利用栈溢出控制栈内容 相应的地址  &amp;lsquo;/bin/sh&amp;rsquo; signal frame syscall sigreturn    系统调用链  控制栈指针 rsp 把原来 rip 指向的 syscall gadget 换成 syscall;ret gadget  基本思路：首先构造一个 fake signal frame 写入内存中，将然后将 RSP 指向这段空间，再发送 rt_sigreturn 信号（ 利用 eax 和 syscall 调用 sigreturn 控制 rax=15 32位是 0x77）。此时，内核会将构造好的 fake signal frame 取出，恢复。恢复后类似于ROP的方式，为 syscall 调用 execve</description>
+    </item>
+    
+    <item>
+      <title>CTF | 格式化字符串漏洞</title>
+      <link>https://yuuoniy.github.io/posts/format-string/</link>
+      <pubDate>Sat, 15 Sep 2018 14:55:47 +0000</pubDate>
+      
+      <guid>https://yuuoniy.github.io/posts/format-string/</guid>
+      <description>关于格式化字符串漏洞
+常见的格式
+%d - 十进制 %s - 字符串%x - 十六进制 %c - 字符%p - 指针%n - 当前print的字符数通过AAAA%x%x%x%x%x 测试偏移
+32位读&#39;%{}$x&#39;.format(index) // 读4个字节&#39;%{}$p&#39;.format(index) // 同上面&#39;${}$s&#39;.format(index)写&#39;%{}$n&#39;.format(index) // 解引用，写入四个字节&#39;%{}$hn&#39;.format(index) // 解引用，写入两个字节&#39;%{}$hhn&#39;.format(index) // 解引用，写入一个字节&#39;%{}$lln&#39;.format(index) // 解引用，写入八个字节////////////////////////////64位读&#39;%{}$x&#39;.format(index, num) // 读4个字节&#39;%{}$lx&#39;.format(index, num) // 读8个字节&#39;%{}$p&#39;.format(index) // 读8个字节&#39;${}$s&#39;.format(index)写&#39;%{}$n&#39;.format(index) // 解引用，写入四个字节&#39;%{}$hn&#39;.format(index) // 解引用，写入两个字节&#39;%{}$hhn&#39;.format(index) // 解引用，写入一个字节&#39;%{}$lln&#39;.</description>
     </item>
     
     <item>
@@ -479,6 +518,92 @@ from pwn import *elf = ELF(&#39;r0pbaby&#39;)libc = ELF(&#39;/lib/x86_64-linux
 高级语言形式
 char *fn = &amp;#34;/home/orw/flag&amp;#34;; sys_open(fn,0,0) sys_read(3,fn,0x30) sys_write(1,fn,0x30) 查看 linux 系统调用 获得各个函数的调用号
 首先是第一部分 sys_openxor ecx,ecx ;清空ecx寄存器mov eax,0x5;查看以上资料知道 sys_open 对应0x5push ecx ;把一个空值压入栈中(这里不是很理解)push 0x67616c66;galf(flag) 接下来就是把字符串作为参数压入栈中 数字就是字符的ASCII码十六进制值push 0x2f77726f; /wro (orw/)push 0x2f656d6f; /emo (ome/)push 0x682f2f2f; h/// (///h)mov ebx,esp;把内容移到ebxxor edx,edx;清空 edxint 0x80;中断 执行syscall第二部分是sys_readmov eax,0x3;sys_readmov ecx,ebx;flag文件中的内容mov ebx,0x3;文件描述符mov dl,0x30;用于中断(??)int 0x80;中断 执行syscall第三部分是sys_writemov eax,0x4;sys_writemov bl,0x1;用于中断int 0x80最后的脚本：</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://yuuoniy.github.io/drafts/llvm-backend-implementation/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://yuuoniy.github.io/drafts/llvm-backend-implementation/</guid>
+      <description>实现 LLVM 后端 前言  定义寄存器和寄存器集合 定义调用约定 定义指令集 实现栈帧 lowering 打印指令 选择指令 增加指令编码 子平台支持 多指令 lowering 平台注册  LLVM 有自己的定义目标机器的方式——tablegen，通过它来指定目标的寄存器、 指令集、调用约定等，并且tablegen函数以编程的方式缓解了描述一套架构属性所带来
+定义调用约定 定义指令集 </description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://yuuoniy.github.io/drafts/llvm-backend/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://yuuoniy.github.io/drafts/llvm-backend/</guid>
+      <description>LLVM Backend 前言 LLVM backend的主要功能是code gen，也就是代码生成，其中包括若干个code gen分析换转化pass将LLVM IR转换成特定目标架构的机器 代码。
+overview 在得到优化过的 LLVM IR 之后，下一个阶段就是把它转为目标平台的指令了。LLVM 通过 SelectionDAG 来将 IR 转为机器指令。在此过程中，指令通过 DAG 的节点来表示，最 后线性的 IR 便被转为了 SelectionDAG。在此之后，SelectionDAG 还要经历以下几个阶段。
+  由 LLVM IR 创建 SelectionDAG。
+  SelectionDAG 节点合法化。
+  DAG 合并优化。
+  针对目标指令的指令选择。
+  调度并发射机器指令。
+  寄存器分配——SSA 解构、寄存器赋值、寄存器溢出。
+  发射机器码。
+所有以上步骤在 LLVM 中都是模块化的。
+  LLVM 的后端有一套流水线架构，指令经历了许多阶段：从 LLVM IR 到 SelectionDAG、MachineDAG、MachineInstr，最终到MCInst
+指令选择-指令调度-寄存器分配
+  指令选择阶段
+将 IR 转化为指定目标的 SelectionDAG 结点。将三地址结构的IR转化为有向无环图(DAG) 、</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://yuuoniy.github.io/drafts/llvm-frontend/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://yuuoniy.github.io/drafts/llvm-frontend/</guid>
+      <description>LLVM 入门教程之 frontend 介绍 前言 clang icc(Intel C++ Compiler)
+ 实现词法分析器 定义抽象语法树 实现语法分析器 解析简单表达式 解析二元表达式 为解析编写驱动  定义抽象语法树 AST 的使用集中在语义分析阶段，在这个阶段，编译器会检查程序和语言元素是否正 确使用。
+http://clang.llvm.org/docs/IntroductionToTheClangAST.html
+实现语法分析器 语法分析器（parser）根据语言的语法规则来解析代码，解析阶段决定了输入的代码是 否能够根据既定的语法组成token流 5。在此阶段会构造出一棵解析树，而语法分析器则会 定义一些函数来把代码组织成一种被称为AST的数据结构
+解析简单的表达式 生成 LLVM IR 实现 codegen 函数，
+这一函数返回值是 LLVM Value 对象，它表示了静态单赋值（SSA）对象。在 Codegen 过程中还需要定义几个静态对象。
+Module_Ob模块包含了代码中的所有函数和变量。
+Builder对象帮助生成 LLVM IR 并且记录程序的当前点，以插入 LLVM 指令。另外， Builder对象有创建新指令的函数。
+Named_Values map 对象记录当前作用域中的所有已定义值，充当符号表的功能。
+codegen Codegen()函数使用了LLVM内建的函数调用来生成IR</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://yuuoniy.github.io/drafts/llvm-ir/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://yuuoniy.github.io/drafts/llvm-ir/</guid>
+      <description>LLVM IR 层介绍 前言 LLVM IR 是 LLVM 的中间语言，先前的文章包括了 IR 的简单介绍，本篇文章针对 IR深入学习。
+包括以下内容：
+  LLVM IR 特性
+  IR 语法
+  生成 IR
+  格式 IR是SS A静态单一赋值的（Static Single Assignment）。
+LLVM IR 是强类型语言。文档 LangRef
+SSA “alloca + mem2reg”技术
+语法 结合例子分析语法，
+首先编写程序
+int sum(int a,int b){ return a+b; } 编译转化为 LLVM IR
+clang sum.c -emit-llvm -S -c -o sum.ll 得到 ll 文件：
+$ cat sum.ll ; ModuleID = &amp;#39;sum.</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://yuuoniy.github.io/drafts/llvm-projects/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://yuuoniy.github.io/drafts/llvm-projects/</guid>
+      <description>LLVM 入门教程之外部项目 本文内容介绍 LLVM 的相关项目，这些项目不包括在 LLVM+Clang, 因此需要额外安装，具体包括：
+ Clang extra tools Compiler-RT DragonEgg LLVM test suite LLDB libc++  此外，还有两个官方 LLVM 项目：Polly 和 lld，本文不涉及。
+安装 先去官网或镜像网站下载对应的源码，然后把源码放到对应目录后进行编译安装，具体的目录如下：
+Compiler-RT: llvm/projects/compiler-rtCompiler-RT DragonEgg LLVM test suite LLDB LLBD 是使用 LLVM 基础架构构建的调试器，相当于 gdb。
+LLBD 依赖swig、libedit、python。首先需要通过以下命令安装:
+sudo apt get install swig libedit-dev pythonlibc++ 标准库 libc ++ 是 LLVM 项目重写的C++ 标准库，支持最新的C++标准。
+参考资料  lldb Tutorial   </description>
     </item>
     
   </channel>

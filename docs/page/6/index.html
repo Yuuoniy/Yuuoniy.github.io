@@ -60,6 +60,9 @@
 					<li>
 						<a href="/about/">About</a>
 					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
 				</ul>
 			</nav>
 		</header>
@@ -76,6 +79,46 @@
 
 <article class="post-entry">
 	<header class="entry-header">
+		<h2>CTF | offbyone writeup</h2>
+	</header>
+	<section class="entry-content">
+	 <p>offbyone fastbin attack chunk overlap
+题目就叫 offbyone，是 xman 小姐姐给的，不清楚出处…
+offbyone 漏洞的大致思路：
+ 改写下一个块的size 改写下一个块的pre inuse位 chunk overlap ： Overwrite next chunk’s size =&gt; extend free chunk Overwrite next chunk’s size =&gt; extend allocated chunk Overwrite next chunk’s size =&gt; shrink free chunk  这道题的 offbyone 比较宽松，可以写任意字节，而不仅仅是 null
+程序分析 edit 函数有 offbyone：
+if ( v1 &gt;= 0 &amp;&amp; v1 &lt;= 15 &amp;&amp; ptrs[v1] ) { puts(&#34;your note:&#34;); v2 = strlen(ptrs[v1]); read(0, (void *)ptrs[v1], v2); puts(&#34;done....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>September 27, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | offbyone writeup post" href="https://yuuoniy.github.io/posts/pwn-offbyone/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | 0ctf 2017 babyheap</h2>
+	</header>
+	<section class="entry-content">
+	 <p>0ctf 2017 babyheap writeup 有关 fastbin attack 利用
+稍微复习一下 fastbin attack 利用思路：
+ 覆盖 got 表劫持控制流 覆盖栈上函数返回地址，然后ROP劫持控制流 覆盖 malloc_hook、覆盖 _IO_FILE 等方式劫持控制流 没有开 FULL RELRO 的话，就可以考虑修改 got 表内容  算是很经典的一道题了吧 先分析一下程序 allocate:
+最大0x1000
+fill 关键！
+没有设置字符串结尾，而且长度并不是之前 chunk 分配时指定的长度，是自己指定的，所以这里就出现了任意堆溢出的情形。可以用来泄露libc地址，以及构造fake chunk
+dump
+输出对应chunk的内容
+free
+释放堆块，清空 inuse,size,ptr
+chunk 结构:
+&#43;---------|---------&#43;|prev_size| size ||---------|---------|| fd | bk ||---------|---------|| data |&#43;---------|---------&#43;chunk 包含三个字段：inusesizeptr题目中 fill 存在堆溢出，可以写任意长度，注意分配使用的 calloc ，在分配的时候会将分配出来的 chunk 先清空，dump 的大小是根据 alloc 指定的 size 决定的，跟真正的 chunk 大小无关。...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>September 25, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | 0ctf 2017 babyheap post" href="https://yuuoniy.github.io/posts/ctf-fastbin-attack/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
 		<h2>CTF | srop 利用</h2>
 	</header>
 	<section class="entry-content">
@@ -88,38 +131,6 @@ x86mov eax,0x77int 0x80x64mov rax,0xfsyscall利用要点  利用 sigreturn
 		<time>September 19, 2018</time>
 	</footer>
 	<a class="entry-link" aria-label="link to CTF | srop 利用 post" href="https://yuuoniy.github.io/posts/pwn-srop/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
-		<h2>android | 手机应用开发基础知识</h2>
-	</header>
-	<section class="entry-content">
-	 <p>关于 android 基本 UI 界面设计的常用空间等内容
-记得修改 build.gradle 文件 android 应用中的所有用户界面元素都是使用 View 和 ViewGroup 对象构建而成。 打开 res/layout/*.xml 进行布局，首先看到图形显示界面为空白。
-修改 res/value/styles.xml stackoverflow
-UI 设计 ConstraintLayout 约束布局 形式：app:layout_constraint[组件本身的位置]_to[目标位置]Of=&#34;[目标id]&#34;
-1：设计和蓝图:选择您想如何在编辑器中查看您的布局。设计视图显示一个颜色预览你的布局,而蓝图视图显示只对每个视图轮廓。或者你可以查看设计&#43;并排蓝图. 提示:您可以按下B就这些视图之间切换。
-shape 自定义圆角按钮
-事件处理 Intent、Bundle 的使用以及 RecyclerView、ListView 的应用 Intent mIntent = new Intent(this,SerializableDemo.class);  Bundle mBundle = new Bundle(); mBundle.putSerializable(&#34;data&#34;,object); mIntent.putExtras(mBundle); startActivity(mIntent); 取值
-Bundle bundle = this.getIntent().getExtras(); broadcast 静态广播 动态广播 发送广播：将数据装入一个Intent对象，调用Context.sendBroadcast() 方法发出去。 接受广播：所有已经注册的 BroadcastReceiver 会检查注册时的 IntentFilter 是否与发送的 Intent 相匹配，若匹配则就会调用 BroadcastReceiver 的 void onReceive(Context curContext, Intent broadcastMsg)...</p>
-	</section>
-	<footer class="entry-footer">
-		<time>September 12, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to android | 手机应用开发基础知识 post" href="https://yuuoniy.github.io/posts/android-course-2/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
-		<h2>android | 手机平台应用开发第一篇</h2>
-	</header>
-	<section class="entry-content">
-	 <p>git 日常使用总结 git 已经用很多了,大概就是需要了解仓库,分支等概念,熟悉本地和远程的关系,熟练使用clone commit pull push merge操作 下面给出一下常用的命令: 新建分支:git branch dev 切换分支:git checkout dev 添加文件 git add file ,常用 git add . 添加全部更新的文件 查看状态 git status 取回远程仓库的变化，并与本地分支合并:git pull [remote] [branch] 上传本地指定分支到远程仓库:git push [remote] [branch] 常见步骤:git add -&gt;commit -&gt;push, 如果有冲突还涉及到 merge 操作 显示版本历史:git log 显示暂存区和工作区的不同: git diff 对于入门者推荐 git 教程 如何使用 Git 和 GitHub 比较系统,之前我也是根据这个学的
-Android开发环境搭建 之前已经安装过 AS 了,下载sdk应该要翻墙,不过我有梯子,不过 sync gardle 时总是失败 错误： Unknown host &#39;dl.google.com&#39;. You may need to adjust the proxy settings in Gradle....</p>
-	</section>
-	<footer class="entry-footer">
-		<time>September 11, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to android | 手机平台应用开发第一篇 post" href="https://yuuoniy.github.io/posts/android-course-1/"></a>
 </article> 
 <footer class="page-footer">
 	<nav class="pagination">

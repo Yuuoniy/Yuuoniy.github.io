@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="LLVM 入门教程之外部项目 本文内容介绍 LLVM 的相关项目，这些项目不包括在 LLVM&#43;Clang, 因此需要额外安装，具体包括：
+ Clang extra tools Compiler-RT DragonEgg LLVM test suite LLDB libc&#43;&#43;  此外，还有两个官方 LLVM 项目：Polly 和 lld，本文不涉及。
+安装 先去官网或镜像网站下载对应的源码，然后把源码放到对应目录后进行编译安装，具体的目录如下：
+Compiler-RT: llvm/projects/compiler-rtCompiler-RT DragonEgg LLVM test suite LLDB LLBD 是使用 LLVM 基础架构构建的调试器，相当于 gdb。
+LLBD 依赖swig、libedit、python。首先需要通过以下命令安装:
+sudo apt get install swig libedit-dev pythonlibc&#43;&#43; 标准库 libc &#43;&#43; 是 LLVM 项目重写的C&#43;&#43; 标准库，支持最新的C&#43;&#43;标准。
+参考资料  lldb Tutorial   ">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title"></h1>
+		<div class="post-meta">January 1, 0001</div>
+	</header>
+	<div class="post-content"><h1 id="llvm-入门教程之外部项目">LLVM 入门教程之外部项目</h1>
+<p>本文内容介绍 LLVM 的相关项目，这些项目不包括在 LLVM+Clang, 因此需要额外安装，具体包括：</p>
+<ul>
+<li>Clang extra tools</li>
+<li>Compiler-RT</li>
+<li>DragonEgg</li>
+<li>LLVM test suite</li>
+<li>LLDB</li>
+<li>libc++</li>
+</ul>
+<p>此外，还有两个官方 LLVM 项目：Polly 和 lld，本文不涉及。</p>
+<h2 id="安装">安装</h2>
+<p>先去官网或镜像网站下载对应的源码，然后把源码放到对应目录后进行编译安装，具体的目录如下：</p>
+<pre><code>Compiler-RT: llvm/projects/compiler-rt
+
+</code></pre><h2 id="compiler-rt">Compiler-RT</h2>
+<h2 id="dragonegg">DragonEgg</h2>
+<h2 id="llvm-test-suite">LLVM test suite</h2>
+<h2 id="lldb">LLDB</h2>
+<p>LLBD 是使用 LLVM 基础架构构建的调试器，相当于 gdb。</p>
+<p>LLBD 依赖swig、libedit、python。首先需要通过以下命令安装:</p>
+<pre><code>sudo apt get install swig libedit-dev python
+</code></pre><h2 id="libc-标准库">libc++ 标准库</h2>
+<p>libc ++ 是 LLVM 项目重写的C++ 标准库，支持最新的C++标准。</p>
+<h2 id="参考资料">参考资料</h2>
+<ol>
+<li><a href="https://lldb.llvm.org/use/tutorial.html">lldb  Tutorial</a></li>
+<li></li>
+</ol>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://yuuoniy.github.io/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

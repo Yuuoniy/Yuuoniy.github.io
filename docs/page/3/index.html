@@ -60,6 +60,9 @@
 					<li>
 						<a href="/about/">About</a>
 					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
 				</ul>
 			</nav>
 		</header>
@@ -74,6 +77,26 @@
 		
 
 
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>Angr 核心概念及模块解读</h2>
+	</header>
+	<section class="entry-content">
+	 <p>文章首发于 先知社区
+ 前言 最近在学习 angr， 发现网上教程大部分都是简单介绍几个顶层接口，或者使用 angr 来解题，比较杂，而且很多接口已经丢弃。所以准备写 angr 系列的教程，同时当作个人学习的记录。
+本文主要对 angr一些概念和接口进行介绍，更像是简略版的说明文档。文章略长，可以选择感兴趣的章节阅读。
+希望通过这篇教程各位可以对 angr 的使用有整体的认识，快速上手 angr并利用它进行二进制分析和研究。对细节感兴趣的同学就可以查文档和看源码。
+安装教程略去，按照文档安装即可。
+顶层接口 首先简单介绍一下 angr 的几个顶层接口，我们会在下面章节中进一步介绍这些接口。
+使用 angr 第一件事就是加载二进制文件，在 angr 中，基本上所有的对象操作都依赖于已有的 Project 。
+&gt;&gt;&gt; import angr &gt;&gt;&gt; proj = angr.Project(&#39;/bin/true&#39;) 以下是 angr 对 Project 类的说明。
+ This is the main class of the angr module. It is meant to contain a set of binaries and the relationships between them, and perform analyses on them....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>January 28, 2020</time>
+	</footer>
+	<a class="entry-link" aria-label="link to Angr 核心概念及模块解读 post" href="https://yuuoniy.github.io/posts/angr-1-basic-concepts/"></a>
+</article>
 <article class="post-entry">
 	<header class="entry-header">
 		<h2>stack pivot</h2>
@@ -112,25 +135,6 @@ chunk1 info(0x20) | chunk1 | chunk2 info | chunk2
 		<time>September 21, 2019</time>
 	</footer>
 	<a class="entry-link" aria-label="link to chunk extend post" href="https://yuuoniy.github.io/posts/chunk_extend/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
-		<h2>magicheap（unsorted_bin_attack)</h2>
-	</header>
-	<section class="entry-content">
-	 <p>题目链接：
-https://github.com/scwuaptx/HITCON-Training/tree/master/LAB/lab14
-首先分析程序，存在任意长度堆溢出，我们的目的是覆盖 bss 段的 magic 变量，使其大于 0x1305, 很容易想到 unsorted bin attack， 该技术达到的效果就是写 unsorted_chunks (av) 到任意地址，而这个值是比较大的。
-我会着重展示内存的变化：
-bk 是指向 chunk 的 pre_size 的地方的，而我们的 target address 对应的是 fake chunk 的 fd 的地方。
-所以 bk = target_address-0x10
-我们直接利用堆溢出，将 unsorted bin 链表中的第一个 chunk 的bk，从而malloc 堆块的时候就能达到 bk 写 unsorted bin 链表头部值的效果。
- 首先 malloc 三个 chunk，分别问 chunk 0, chunk1,chunk2:  gef➤ heap chunks Chunk(addr=0xa1e010, size=0x30, flags=PREV_INUSE) [0x0000000000a1e010 61 61 61 61 0a 00 00 00 00 00 00 00 00 00 00 00 aaaa....</p>
-	</section>
-	<footer class="entry-footer">
-		<time>September 19, 2019</time>
-	</footer>
-	<a class="entry-link" aria-label="link to magicheap（unsorted_bin_attack) post" href="https://yuuoniy.github.io/posts/unsorted_bin_attack/"></a>
 </article> 
 <footer class="page-footer">
 	<nav class="pagination">

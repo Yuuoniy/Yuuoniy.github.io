@@ -60,6 +60,9 @@
 					<li>
 						<a href="/about/">About</a>
 					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
 				</ul>
 			</nav>
 		</header>
@@ -74,6 +77,24 @@
 		
 
 
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>如何使用vue 及相关技术栈快速构建前端</h2>
+	</header>
+	<section class="entry-content">
+	 <p>在本文中，我将给大家介绍一些 vue 的基础知识、相关工具、生态等内容。相信通过该文章你会对 vue 有大概的认识，并且可以快速地找到入门的方向。 一起来学习吧！
+首先介绍一下本次系分项目前端使用的技术栈：
+ vue-cli vuex element-ui vue-router axios webpack yarn  我将一一简单介绍:
+vue 一开始学 vue, 主要熟悉一些组件的概念，数据，生命周期。 写的时候主要也就是 data, mounted, methods 这几项。 布局方面使用 v-for/v-if/v-show 。 还有学一些路由之间的跳转，传递参数这些内容。 基本够用了… 还有可以学一下怎么父子组件的相关概念。 其他的还有computed/watch 等，但是简单的项目也可以不用。
+vuex 用来做状态管理，简单来说，可以维护一些全局变量。
+vue-cli 使用 vue-cli 你可以快速构建一个 vue 项目。目前的版本是 3.0。不同先前版本，构建完项目后需要自己创建配置文件，文件名为 vue.config.js 创建： vue create project-name
+element-ui UI 框架。算是 vue 生态中最常用的UI框架了。其他还有Muse-UI 等等。 我用 element-ui 比较多，就介绍一下我常用的组件： 布局方面，使用 &lt;el-container&gt;  &lt;el-header&gt; &lt;el-main&gt; 将页面分成几大部分。然后使用 el-row el-col 进行布局，设置好 offset 和 span 属性就行 使用 message 来弹出消息，主要有 success/error/warning 几类。 使用 el-menu 设置导航 此外，我喜欢用 el-card 将页面卡片化，布局也很方便。 我常用的还有 form/button/icon/divider 在系分项目中我使用 Upload 来实现头像上传。 新版的 element-ui 也引入了一些非常方便的组件，包括： avatar,loading。我在系分项目中也用到了。...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>June 29, 2019</time>
+	</footer>
+	<a class="entry-link" aria-label="link to 如何使用vue 及相关技术栈快速构建前端 post" href="https://yuuoniy.github.io/posts/vue-learning/"></a>
+</article>
 <article class="post-entry">
 	<header class="entry-header">
 		<h2>2019VolgaCTF &amp; 2019SunshineCTF writeup</h2>
@@ -97,43 +118,23 @@ str = &#34;hajjzvajvzqyaqbendzvajvqauzarlapjzrkybjzenzuvczjvastlj&#34; ans = &#3
 </article>
 <article class="post-entry">
 	<header class="entry-header">
-		<h2>CTF | offbyone writeup</h2>
+		<h2>互联网络测量读书笔记</h2>
 	</header>
 	<section class="entry-content">
-	 <p>offbyone fastbin attack chunk overlap
-题目就叫 offbyone，是 xman 小姐姐给的，不清楚出处…
-offbyone 漏洞的大致思路：
- 改写下一个块的size 改写下一个块的pre inuse位 chunk overlap ： Overwrite next chunk’s size =&gt; extend free chunk Overwrite next chunk’s size =&gt; extend allocated chunk Overwrite next chunk’s size =&gt; shrink free chunk  这道题的 offbyone 比较宽松，可以写任意字节，而不仅仅是 null
-程序分析 edit 函数有 offbyone：
-if ( v1 &gt;= 0 &amp;&amp; v1 &lt;= 15 &amp;&amp; ptrs[v1] ) { puts(&#34;your note:&#34;); v2 = strlen(ptrs[v1]); read(0, (void *)ptrs[v1], v2); puts(&#34;done....</p>
+	 <p>《互联网络测量理论与应用》读书笔记
+a b 主动测量 被动测量 BGP 优点 容易得到大量的 AS 级的拓扑连接信息。
+缺点  由 BGP 的路由信息生成的 AS 级拓扑结构是个类似树状的结构， AS 间可能存在的任何交叉连接都难以被发现 对 BGP 信息进行路由汇集和过滤的过程中可能会隐藏掉该 AS 的边缘信息  OSPF 开放最短路径优先协议，也属于内部网关协议。在链路状态路由协议中，每个路由器维护它自己的本地链路状态信息，即路由器到子网的链路状态和可以到达的邻居路由器，并且通过洪泛的方法把更新了的本地链路状态信息广播给自治系统中每个路由器。
+优点 信息收集比较简单，且速度快
+缺点  要求所有的路由器都支持 OSPF 协议， 收集到的拓扑信息中缺乏接口之间的联系关系，这给基于该方法的拓扑测量带来困难  SNMP//RMON SNMP是 IETF 为Internet 管理而设计的信息交换协议。RMON 是 IETF 制定的一种特殊的 SNMP MIB，主要用于远程监控局域网。
+tcpdump tcpdump 是一种可以记录网络流量的网络检测工具。
+混合测量 网络测量体系结构 被动测量体系结构 RTFM 监听模块、读取模块、控制模块、分析模块。
+抽象测量体系结构 数据采集、数据管理、数据分析、数据表示
+集中式测量体系结构 简单的分布式测量体系结构 基于 P2P 的分布式测量体系结构 基于 web service 的分布式测量体系结构 基础设施部署的关键问题 测量点的选择 噪声分组的过滤 时钟同步 匿名化 误差和校准 网络性能测量 性能指标 时延 传输时延、传播时延、路由器时延 端到端时延...</p>
 	</section>
 	<footer class="entry-footer">
-		<time>September 27, 2018</time>
+		<time>October 1, 2018</time>
 	</footer>
-	<a class="entry-link" aria-label="link to CTF | offbyone writeup post" href="https://yuuoniy.github.io/posts/pwn-offbyone/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
-		<h2>CTF | 0ctf 2017 babyheap</h2>
-	</header>
-	<section class="entry-content">
-	 <p>0ctf 2017 babyheap writeup 有关 fastbin attack 利用
-稍微复习一下 fastbin attack 利用思路：
- 覆盖 got 表劫持控制流 覆盖栈上函数返回地址，然后ROP劫持控制流 覆盖 malloc_hook、覆盖 _IO_FILE 等方式劫持控制流 没有开 FULL RELRO 的话，就可以考虑修改 got 表内容  算是很经典的一道题了吧 先分析一下程序 allocate:
-最大0x1000
-fill 关键！
-没有设置字符串结尾，而且长度并不是之前 chunk 分配时指定的长度，是自己指定的，所以这里就出现了任意堆溢出的情形。可以用来泄露libc地址，以及构造fake chunk
-dump
-输出对应chunk的内容
-free
-释放堆块，清空 inuse,size,ptr
-chunk 结构:
-&#43;---------|---------&#43;|prev_size| size ||---------|---------|| fd | bk ||---------|---------|| data |&#43;---------|---------&#43;chunk 包含三个字段：inusesizeptr题目中 fill 存在堆溢出，可以写任意长度，注意分配使用的 calloc ，在分配的时候会将分配出来的 chunk 先清空，dump 的大小是根据 alloc 指定的 size 决定的，跟真正的 chunk 大小无关。...</p>
-	</section>
-	<footer class="entry-footer">
-		<time>September 25, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to CTF | 0ctf 2017 babyheap post" href="https://yuuoniy.github.io/posts/ctf-fastbin-attack/"></a>
+	<a class="entry-link" aria-label="link to 互联网络测量读书笔记 post" href="https://yuuoniy.github.io/posts/network-measurement-notes-1/"></a>
 </article> 
 <footer class="page-footer">
 	<nav class="pagination">

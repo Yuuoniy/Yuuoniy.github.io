@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="LLVM Backend 前言 LLVM backend的主要功能是code gen，也就是代码生成，其中包括若干个code gen分析换转化pass将LLVM IR转换成特定目标架构的机器 代码。
+overview 在得到优化过的 LLVM IR 之后，下一个阶段就是把它转为目标平台的指令了。LLVM 通过 SelectionDAG 来将 IR 转为机器指令。在此过程中，指令通过 DAG 的节点来表示，最 后线性的 IR 便被转为了 SelectionDAG。在此之后，SelectionDAG 还要经历以下几个阶段。
+  由 LLVM IR 创建 SelectionDAG。
+  SelectionDAG 节点合法化。
+  DAG 合并优化。
+  针对目标指令的指令选择。
+  调度并发射机器指令。
+  寄存器分配——SSA 解构、寄存器赋值、寄存器溢出。
+  发射机器码。
+所有以上步骤在 LLVM 中都是模块化的。
+  LLVM 的后端有一套流水线架构，指令经历了许多阶段：从 LLVM IR 到 SelectionDAG、MachineDAG、MachineInstr，最终到MCInst
+指令选择-指令调度-寄存器分配
+  指令选择阶段
+将 IR 转化为指定目标的 SelectionDAG 结点。将三地址结构的IR转化为有向无环图(DAG) 、">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title"></h1>
+		<div class="post-meta">January 1, 0001</div>
+	</header>
+	<div class="post-content"><h1 id="llvm--backend">LLVM  Backend</h1>
+<h1 id="前言">前言</h1>
+<p>LLVM backend的主要功能是code gen，也就是代码生成，其中包括若干个code gen分析换转化pass将LLVM IR转换成特定目标架构的机器 代码。</p>
+<h1 id="overview">overview</h1>
+<p>在得到优化过的 LLVM IR 之后，下一个阶段就是把它转为目标平台的指令了。LLVM 通过 SelectionDAG 来将 IR 转为机器指令。在此过程中，指令通过 DAG 的节点来表示，最 后线性的 IR 便被转为了 SelectionDAG。在此之后，SelectionDAG 还要经历以下几个阶段。</p>
+<ul>
+<li>
+<p>由 LLVM IR 创建 SelectionDAG。</p>
+</li>
+<li>
+<p>SelectionDAG 节点合法化。</p>
+</li>
+<li>
+<p>DAG 合并优化。</p>
+</li>
+<li>
+<p>针对目标指令的指令选择。</p>
+</li>
+<li>
+<p>调度并发射机器指令。</p>
+</li>
+<li>
+<p>寄存器分配——SSA 解构、寄存器赋值、寄存器溢出。</p>
+</li>
+<li>
+<p>发射机器码。</p>
+<p>所有以上步骤在 LLVM 中都是模块化的。</p>
+</li>
+</ul>
+<p>LLVM 的后端有一套流水线架构，指令经历了许多阶段：从 LLVM IR 到 SelectionDAG、MachineDAG、MachineInstr，最终到MCInst</p>
+<p>指令选择-指令调度-寄存器分配</p>
+<ul>
+<li>
+<p>指令选择阶段</p>
+<p>将 IR 转化为指定目标的 SelectionDAG 结点。将三地址结构的IR转化为有向无环图(DAG) 、</p>
+</li>
+</ul>
+<h3 id="指令选择">指令选择</h3>
+<h3 id="指令调度">指令调度</h3>
+<p>机器执行线性指令集，而现在我们得到的机器指令仍是 DAG 形式的，所以还需要把 DAG 转为线性指令集，这个过程可以通过对 DAG 进行一次拓扑排序完成。但还需要优化。</p>
+<h3 id="寄存器-分配">寄存器 分配</h3>
+<p>LLVM 采用了贪心法来进行寄存器分配，即活动周期越长的变量先分配寄存器。生存 周期短的变量则填补可用寄存器的时间间隙，减少溢出权重。</p>
+<p>tableGen</p>
+<h3 id="代码发射">代码发射</h3>
+<p>LLVM中 代码发射有两种方式，一种是JIT，直接把代码发射到内存，然后执行；另一种则是使用 MC框架，对所有的后端目标平台来说，都可以发射到汇编和目标文件。</p>
+<h3 id="tablegen">tablegen</h3>
+<p>ablegen将.td文件转为.inc 文件，可以在.cpp文件中用#include语法来引入，从而引用其中的寄存器。</p>
+<h3 id="定义指令集">定义指令集</h3>
+<h3 id="参考链接">参考链接</h3>
+<ol>
+<li><a href="https://llvm.org/docs/WritingAnLLVMBackend.html">Writing an LLVM Backend</a></li>
+<li>[Building an LLVM Backend](<a href="https://llvm.org/devmtg/2014-04/PDFs/Talks/Building">https://llvm.org/devmtg/2014-04/PDFs/Talks/Building</a> an LLVM backend.pdf)</li>
+<li></li>
+</ol>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://yuuoniy.github.io/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

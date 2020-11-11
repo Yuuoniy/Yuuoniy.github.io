@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Drafts - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://yuuoniy.github.io/drafts/index.xml" title="Yuuoniy's blog" />
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="list">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+ 
+
+ 
+		<header class="page-header">
+				<h1>Drafts</h1>
+			
+		</header>
+
+
+<article class="post-entry">
+	<header class="entry-header">
+		<h2></h2>
+	</header>
+	<section class="entry-content">
+	 <p>LLVM IR 层介绍 前言 LLVM IR 是 LLVM 的中间语言，先前的文章包括了 IR 的简单介绍，本篇文章针对 IR深入学习。
+包括以下内容：
+  LLVM IR 特性
+  IR 语法
+  生成 IR
+  格式 IR是SS A静态单一赋值的（Static Single Assignment）。
+LLVM IR 是强类型语言。文档 LangRef
+SSA “alloca &#43; mem2reg”技术
+语法 结合例子分析语法，
+首先编写程序
+int sum(int a,int b){ return a&#43;b; } 编译转化为 LLVM IR
+clang sum.c -emit-llvm -S -c -o sum.ll 得到 ll 文件：
+$ cat sum.ll ; ModuleID = &#39;sum....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>January 1, 0001</time>
+	</footer>
+	<a class="entry-link" aria-label="link to  post" href="https://yuuoniy.github.io/drafts/llvm-ir/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2></h2>
+	</header>
+	<section class="entry-content">
+	 <p>LLVM 入门教程之外部项目 本文内容介绍 LLVM 的相关项目，这些项目不包括在 LLVM&#43;Clang, 因此需要额外安装，具体包括：
+ Clang extra tools Compiler-RT DragonEgg LLVM test suite LLDB libc&#43;&#43;  此外，还有两个官方 LLVM 项目：Polly 和 lld，本文不涉及。
+安装 先去官网或镜像网站下载对应的源码，然后把源码放到对应目录后进行编译安装，具体的目录如下：
+Compiler-RT: llvm/projects/compiler-rtCompiler-RT DragonEgg LLVM test suite LLDB LLBD 是使用 LLVM 基础架构构建的调试器，相当于 gdb。
+LLBD 依赖swig、libedit、python。首先需要通过以下命令安装:
+sudo apt get install swig libedit-dev pythonlibc&#43;&#43; 标准库 libc &#43;&#43; 是 LLVM 项目重写的C&#43;&#43; 标准库，支持最新的C&#43;&#43;标准。
+参考资料  lldb Tutorial   ...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>January 1, 0001</time>
+	</footer>
+	<a class="entry-link" aria-label="link to  post" href="https://yuuoniy.github.io/drafts/llvm-projects/"></a>
+</article> 
+<footer class="page-footer">
+	<nav class="pagination">
+		<a class="prev" href="/drafts/">← Prev Page</a>
+	</nav>
+</footer></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://yuuoniy.github.io/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+ 

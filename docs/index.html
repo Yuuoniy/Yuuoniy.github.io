@@ -60,6 +60,9 @@
 					<li>
 						<a href="/about/">About</a>
 					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
 				</ul>
 			</nav>
 		</header>
@@ -75,6 +78,19 @@
 
  
 <article class="first-entry">
+	<header class="entry-header">
+		<h2>About</h2>
+	</header>
+	<section class="entry-content">
+	 <p>hi~
+ Github: https://github.com/Yuuoniy Mail: linmq006@gmail.com  😍 男友链：https://blog.xylearn.site/...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>November 11, 2020</time>
+	</footer>
+	<a class="entry-link" aria-label="link to About post" href="https://yuuoniy.github.io/about/"></a>
+</article>
+<article class="post-entry">
 	<header class="entry-header">
 		<h2>LLVM 入门教程之 Pass 编写</h2>
 	</header>
@@ -105,25 +121,6 @@ $ cd llvm-project$ mkdir build &amp;&amp; cd build$ cmake -G &#34;Unix Makefil
 		<time>June 16, 2020</time>
 	</footer>
 	<a class="entry-link" aria-label="link to LLVM 入门教程之基本介绍 post" href="https://yuuoniy.github.io/posts/llvm-1/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
-		<h2>zeratool：基于 angr 的CTF pwn 自动化利用工具介绍</h2>
-	</header>
-	<section class="entry-content">
-	 <p>文章首发于 先知社区
- 前言 Zeratool 实现了针对 CTF 中的 pwn 题的自动化利用生成（Automatic Exploit Generation）以及远程获取 flag。
-它基于 angr, 探索程序未约束的状态，继而分析状态的寄存器信息和内存布局，设定约束，对约束进行求解，结合 pwntools 编写脚本，提交 payload 到远程 CTF 服务器获得 flag。
-本篇文章结合源码对 zeratool 的实现思路进行分析。通过阅读该文，可以对angr 和 pwn的自动化利用进一步认识。
-注：zeratool 基于 angr7 ，不兼容当前的 angr8
-使用 Zeratool 主要针对栈溢出和格式化字符串漏洞，实现的漏洞利用方式如下：
- 栈溢出漏洞——修改 pc：win function / shellcode / rop chain /one gadget 格式化字符串——修改 got 表项: win function / shellcode  zeratool 接收 binary 作为参数，同时可以配置其他选项：
-[chris:~/Zeratool] [angr] python zeratool.py -h usage: zeratool.py [-h] [-l LIBC] [-u URL] [-p PORT] [-v] file positional arguments: file File to analyze optional arguments: -h, --help show this help message and exit # 帮助信息 -l LIBC, --libc LIBC libc to use # 指定 libc  -u URL, --url URL Remote URL to pwn # 远程 Url  -p PORT, --port PORT Remote port to pwn # 远程端口 -v, --verbose Verbose mode # 设置调试模式 使用示例：...</p>
-	</section>
-	<footer class="entry-footer">
-		<time>February 18, 2020</time>
-	</footer>
-	<a class="entry-link" aria-label="link to zeratool：基于 angr 的CTF pwn 自动化利用工具介绍 post" href="https://yuuoniy.github.io/posts/zeratool/"></a>
 </article> 
 <footer class="page-footer">
 	<nav class="pagination">

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>互联网络测量读书笔记 - Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="《互联网络测量理论与应用》读书笔记
+a b 主动测量 被动测量 BGP 优点 容易得到大量的 AS 级的拓扑连接信息。
+缺点  由 BGP 的路由信息生成的 AS 级拓扑结构是个类似树状的结构， AS 间可能存在的任何交叉连接都难以被发现 对 BGP 信息进行路由汇集和过滤的过程中可能会隐藏掉该 AS 的边缘信息  OSPF 开放最短路径优先协议，也属于内部网关协议。在链路状态路由协议中，每个路由器维护它自己的本地链路状态信息，即路由器到子网的链路状态和可以到达的邻居路由器，并且通过洪泛的方法把更新了的本地链路状态信息广播给自治系统中每个路由器。
+优点 信息收集比较简单，且速度快
+缺点  要求所有的路由器都支持 OSPF 协议， 收集到的拓扑信息中缺乏接口之间的联系关系，这给基于该方法的拓扑测量带来困难  SNMP//RMON SNMP是 IETF 为Internet 管理而设计的信息交换协议。RMON 是 IETF 制定的一种特殊的 SNMP MIB，主要用于远程监控局域网。
+tcpdump tcpdump 是一种可以记录网络流量的网络检测工具。
+混合测量 网络测量体系结构 被动测量体系结构 RTFM 监听模块、读取模块、控制模块、分析模块。
+抽象测量体系结构 数据采集、数据管理、数据分析、数据表示
+集中式测量体系结构 简单的分布式测量体系结构 基于 P2P 的分布式测量体系结构 基于 web service 的分布式测量体系结构 基础设施部署的关键问题 测量点的选择 噪声分组的过滤 时钟同步 匿名化 误差和校准 网络性能测量 性能指标 时延 传输时延、传播时延、路由器时延 端到端时延">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="single">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+
+
+<article class="post-single">
+	<header class="post-header">
+		<h1 class="post-title">互联网络测量读书笔记</h1>
+		<div class="post-meta">October 1, 2018</div>
+	</header>
+	<div class="post-content"><p>《互联网络测量理论与应用》读书笔记</p>
+<!-- raw HTML omitted -->
+<h2 id="a">a</h2>
+<h3 id="b">b</h3>
+<h4 id="主动测量">主动测量</h4>
+<h4 id="被动测量">被动测量</h4>
+<h5 id="bgp">BGP</h5>
+<h6 id="优点">优点</h6>
+<p>容易得到大量的 AS 级的拓扑连接信息。</p>
+<h6 id="缺点">缺点</h6>
+<ol>
+<li>由 BGP 的路由信息生成的 AS 级拓扑结构是个类似树状的结构， AS 间可能存在的任何交叉连接都难以被发现</li>
+<li>对 BGP 信息进行路由汇集和过滤的过程中可能会隐藏掉该 AS 的边缘信息</li>
+</ol>
+<h5 id="ospf">OSPF</h5>
+<p>开放最短路径优先协议，也属于内部网关协议。在链路状态路由协议中，每个路由器维护它自己的本地链路状态信息，即路由器到子网的链路状态和可以到达的邻居路由器，并且通过洪泛的方法把更新了的本地链路状态信息广播给自治系统中每个路由器。</p>
+<h6 id="优点-1">优点</h6>
+<p>信息收集比较简单，且速度快</p>
+<h6 id="缺点-1">缺点</h6>
+<ol>
+<li>要求所有的路由器都支持 OSPF 协议，</li>
+<li>收集到的拓扑信息中缺乏接口之间的联系关系，这给基于该方法的拓扑测量带来困难</li>
+</ol>
+<h5 id="snmprmon">SNMP//RMON</h5>
+<p>SNMP是 IETF 为Internet 管理而设计的信息交换协议。RMON 是 IETF 制定的一种特殊的 SNMP MIB，主要用于远程监控局域网。</p>
+<h5 id="tcpdump">tcpdump</h5>
+<p>tcpdump 是一种可以记录网络流量的网络检测工具。</p>
+<h4 id="混合测量">混合测量</h4>
+<h3 id="网络测量体系结构">网络测量体系结构</h3>
+<h4 id="被动测量体系结构-rtfm">被动测量体系结构 RTFM</h4>
+<p>监听模块、读取模块、控制模块、分析模块。</p>
+<h4 id="抽象测量体系结构">抽象测量体系结构</h4>
+<p>数据采集、数据管理、数据分析、数据表示</p>
+<h4 id="集中式测量体系结构">集中式测量体系结构</h4>
+<h4 id="简单的分布式测量体系结构">简单的分布式测量体系结构</h4>
+<h4 id="基于-p2p-的分布式测量体系结构">基于 P2P 的分布式测量体系结构</h4>
+<h4 id="基于-web-service-的分布式测量体系结构">基于 web service 的分布式测量体系结构</h4>
+<h3 id="基础设施部署的关键问题">基础设施部署的关键问题</h3>
+<h4 id="测量点的选择">测量点的选择</h4>
+<h4 id="噪声分组的过滤">噪声分组的过滤</h4>
+<h4 id="时钟同步">时钟同步</h4>
+<h4 id="匿名化">匿名化</h4>
+<h4 id="误差和校准">误差和校准</h4>
+<h2 id="网络性能测量">网络性能测量</h2>
+<h3 id="性能指标">性能指标</h3>
+<h4 id="时延">时延</h4>
+<p>传输时延、传播时延、路由器时延
+端到端时延</p>
+<h4 id="带宽">带宽</h4>
+<p>容量、可用带宽、批量传输容量、窄链路和紧链路</p>
+<h4 id="丢包">丢包</h4>
+<p>丢包率、丢包距离、丢包周期。</p>
+<h4 id="连通性">连通性</h4>
+<h4 id="网络复制">网络复制</h4>
+<h4 id="数据报文失序">数据报文失序</h4>
+<h3 id="性能测量方法">性能测量方法</h3>
+<ol>
+<li>直接测量、分解测量、推断测量、时间推理测量</li>
+<li>主动测量和被动测量
+主动测量：系统抽样，泊松分布</li>
+</ol>
+<h3 id="网络带宽测量">网络带宽测量</h3>
+<p>带宽测量方法通常通过主动测量的方式进行，通过向网络中注入数据报文并通过观察到的结果进行计算。</p>
+<h4 id="变长报文方法">变长报文方法</h4>
+<p>测量路径中每一跳链路的容量</p>
+<h4 id="基于探测报文间隔模型的方法">基于探测报文间隔模型的方法</h4>
+<h5 id="路径容量测量">路径容量测量</h5>
+<h5 id="路径可用带宽测量">路径可用带宽测量</h5>
+<h5 id="报文队列的测量方法">报文队列的测量方法</h5>
+<h5 id="背景流量的影响分析与测量方法改进">背景流量的影响分析与测量方法改进</h5>
+<h5 id="定位可用带宽瓶颈链路">定位可用带宽瓶颈链路</h5>
+<h4 id="自拥塞方法基于报文速率模型方法">自拥塞方法(基于报文速率模型方法)</h4>
+<p>目的：找到最小的能够在路径上引起拥塞的探测速率，它发送一组探测报文，并根据接收到的探测报文速率来推测带宽属性。</p>
+<p>探测算法</p>
+<ol>
+<li>TOPP 
+通过在源主机和目的主机之间发送一系列的报文对来测量端到端的可用带宽，报文对之间的时间间隔逐渐减小</li>
+<li>SLoPS
+在发送端以速率R发送UDP报文流到接收端</li>
+</ol>
+<h4 id="问题">问题</h4>
+<p>假设平稳流量模型、多个瓶颈链路、设备的简化</p>
+<h3 id="时延及其他端到端性能指标的测量">时延及其他端到端性能指标的测量</h3>
+<h4 id="主动测量方法">主动测量方法</h4>
+<h5 id="icmp-报文的实现方法">ICMP 报文的实现方法</h5>
+<p>Ping 命令。基于ICMP 请求-应答报文的测量工具</p>
+<p>优缺点：ICMP 优先级低,存在安全性问题，容易被过滤</p>
+<h5 id="udp">UDP</h5>
+<p>无状态，需要指定一个端口，端口对应的服务不存在时，会返回“端口不可达”的 <code>ICMP</code> 报文</p>
+<h5 id="tcp">TCP</h5>
+<p>优缺点：避免过滤。因为 TCP 存储转发的基址，会导致测量的结果大于实际值。因此要加入 PSH 标志</p>
+<h4 id="被动测量方法">被动测量方法</h4>
+<p>被动测量方法通过在网络中部署一个或者多个监听结点捕获数据报文，对其中属于同一个流的报文进行匹配，并对报文头序列号、ACK等信息进行分析得到端到端或点到点的丢包、时延、失序等性能信息。</p>
+<h5 id="报文在测量点后丢失">报文在测量点后丢失</h5>
+<h5 id="报文在测量点前丢失">报文在测量点前丢失</h5>
+<h5 id="网络内部失序">网络内部失序</h5>
+<h5 id="重复报文">重复报文</h5>
+<h5 id="ack-丢失导致的冗余重传">ACK 丢失导致的冗余重传</h5>
+<h3 id="逐跳路径性能与网络层析">逐跳路径性能与网络层析</h3>
+<p><strong>网络层析</strong>：基于信号处理中透析图像重建原理，利用端到端测量技术推导网络内部性能或拓扑结构。通过对有限结点子集进行主动或被动测量，进行统计建模并求解线性模型，从而获得网络链路级性能的推测估计。</p>
+<h4 id="基于组播的网络层析方法">基于组播的网络层析方法</h4>
+<p>优缺点：发送报文数量少，测量范围广</p>
+<h3 id="常用的网络性能测量工具">常用的网络性能测量工具</h3>
+<h4 id="端到端带宽测量工具">端到端带宽测量工具</h4>
+<p>bprobe pathrate sprobe capprobe</p>
+<h4 id="逐跳容量测量工具">逐跳容量测量工具</h4>
+<h4 id="可用带宽测量工具">可用带宽测量工具</h4>
+<h4 id="tcp吞吐量和btc的测量工具">TCP吞吐量和BTC的测量工具</h4>
+<h4 id="时延和丢包测量工具">时延和丢包测量工具</h4>
+<h3 id="网络性能分析及应用">网络性能分析及应用</h3>
+<h4 id="路径容量及可用带宽">路径容量及可用带宽</h4>
+<h4 id="时延及时延抖动">时延及时延抖动</h4>
+<h4 id="丢包特征">丢包特征</h4>
+<h4 id="数据报文失序-1">数据报文失序</h4>
+<h4 id="tcp的性能分析">TCP的性能分析</h4>
+<h2 id="网络流量测量">网络流量测量</h2>
+<p>网络流量测量是指捕获网络上的数据分组并对其进行分析的过程</p>
+<h3 id="流量数据采集">流量数据采集</h3>
+<p>方法：网络设备支持的流量采集、基于网卡采集、专用设备、并行采集</p>
+<p>工具： tcpdump、wireshark、nprobe、snort</p>
+<h3 id="流量缩减与抽样">流量缩减与抽样</h3>
+<p>技术：聚合、过滤、抽样、数据概要</p>
+<h4 id="流抽样">流抽样</h4>
+<ol>
+<li>基于分组抽样的流抽样</li>
+<li>等概率流抽样</li>
+<li>针对大流的抽样</li>
+<li>针对流信息的抽样</li>
+<li>流特征推断</li>
+</ol>
+<h4 id="数据概要">数据概要</h4>
+<p>Space-Code Bloom Filter、Sketch</p>
+<h3 id="流量数据的共享与去隐私处理">流量数据的共享与去隐私处理</h3>
+<h4 id="ip-地址匿名化">IP 地址匿名化</h4>
+<p>一对一映射、保持子网映射、保持前缀映射</p>
+<h5 id="方法和工具">方法和工具</h5>
+<p>Tcpdpriv、crypto-PAn、TSA、多权限可恢复匿名化</p>
+<h4 id="应用层信息隐藏">应用层信息隐藏</h4>
+<h4 id="安全性分析">安全性分析</h4>
+<p>密码学攻击、语义攻击</p>
+<h4 id="流量数据的存储格式">流量数据的存储格式</h4>
+<ol>
+<li>分组数据存储格式</li>
+<li>流数据存储格式</li>
+<li>压缩存储格式</li>
+</ol>
+<h4 id="数据共享">数据共享</h4>
+<p>感觉这些还是蛮偏理论的，我也还不清楚在实际工作中哪些部分最重要。先完成基础内容的学习吧。
+希望&hellip;对于网络测量和机器学习的部分在国庆假期前完成。
+我真的&hellip;好伤心，真不希望大三就这样被披上一层阴郁的灰色，到底是谁的问题呢</p>
+</div>
+	
+</article></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://yuuoniy.github.io/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+

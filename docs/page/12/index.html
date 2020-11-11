@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<title>Yuuoniy&#39;s blog</title>
+		
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
+		
+		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+		
+		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+		<meta name="generator" content="Hugo 0.76.5" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://yuuoniy.github.io/index.xml" title="Yuuoniy's blog" />
+		
+		
+		<script>
+			function setTheme() {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.body.classList.add('dark');
+					return;
+				}
+				
+				let date = new Date();
+				let time = date.getTime();
+				let sunrise = date.setHours(7, 00); 
+				let sunset = date.setHours(20, 00); 
+
+				if (time < sunrise || time > sunset)
+					document.body.classList.add('dark');
+			}
+		</script>
+		
+	</head>
+	<body class="list home">
+		
+		<script>
+			setTheme();
+			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
+		</script>
+		
+		<header class="header">
+			<nav class="nav">
+				<h1 class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></h1>
+				<ul class="menu">
+					<li>
+						<a href="/posts/">Posts</a>
+					</li>
+					<li>
+						<a href="/tags/">Tags</a>
+					</li>
+					<li>
+						<a href="/about/">About</a>
+					</li>
+					<li>
+						<a href="/index.xml">RSS</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+		<main class="main">
+ 
+
+   
+		 
+			<header class="page-header">  
+
+			</header>
+		
+
+
+<article class="post-entry">
+	<header class="entry-header">
+		<h2></h2>
+	</header>
+	<section class="entry-content">
+	 <p>实现 LLVM 后端 前言  定义寄存器和寄存器集合 定义调用约定 定义指令集 实现栈帧 lowering 打印指令 选择指令 增加指令编码 子平台支持 多指令 lowering 平台注册  LLVM 有自己的定义目标机器的方式——tablegen，通过它来指定目标的寄存器、 指令集、调用约定等，并且tablegen函数以编程的方式缓解了描述一套架构属性所带来
+定义调用约定 定义指令集 ...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>January 1, 0001</time>
+	</footer>
+	<a class="entry-link" aria-label="link to  post" href="https://yuuoniy.github.io/drafts/llvm-backend-implementation/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2></h2>
+	</header>
+	<section class="entry-content">
+	 <p>LLVM Backend 前言 LLVM backend的主要功能是code gen，也就是代码生成，其中包括若干个code gen分析换转化pass将LLVM IR转换成特定目标架构的机器 代码。
+overview 在得到优化过的 LLVM IR 之后，下一个阶段就是把它转为目标平台的指令了。LLVM 通过 SelectionDAG 来将 IR 转为机器指令。在此过程中，指令通过 DAG 的节点来表示，最 后线性的 IR 便被转为了 SelectionDAG。在此之后，SelectionDAG 还要经历以下几个阶段。
+  由 LLVM IR 创建 SelectionDAG。
+  SelectionDAG 节点合法化。
+  DAG 合并优化。
+  针对目标指令的指令选择。
+  调度并发射机器指令。
+  寄存器分配——SSA 解构、寄存器赋值、寄存器溢出。
+  发射机器码。
+所有以上步骤在 LLVM 中都是模块化的。
+  LLVM 的后端有一套流水线架构，指令经历了许多阶段：从 LLVM IR 到 SelectionDAG、MachineDAG、MachineInstr，最终到MCInst
+指令选择-指令调度-寄存器分配
+  指令选择阶段
+将 IR 转化为指定目标的 SelectionDAG 结点。将三地址结构的IR转化为有向无环图(DAG) 、...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>January 1, 0001</time>
+	</footer>
+	<a class="entry-link" aria-label="link to  post" href="https://yuuoniy.github.io/drafts/llvm-backend/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2></h2>
+	</header>
+	<section class="entry-content">
+	 <p>LLVM 入门教程之 frontend 介绍 前言 clang icc(Intel C&#43;&#43; Compiler)
+ 实现词法分析器 定义抽象语法树 实现语法分析器 解析简单表达式 解析二元表达式 为解析编写驱动  定义抽象语法树 AST 的使用集中在语义分析阶段，在这个阶段，编译器会检查程序和语言元素是否正 确使用。
+http://clang.llvm.org/docs/IntroductionToTheClangAST.html
+实现语法分析器 语法分析器（parser）根据语言的语法规则来解析代码，解析阶段决定了输入的代码是 否能够根据既定的语法组成token流 5。在此阶段会构造出一棵解析树，而语法分析器则会 定义一些函数来把代码组织成一种被称为AST的数据结构
+解析简单的表达式 生成 LLVM IR 实现 codegen 函数，
+这一函数返回值是 LLVM Value 对象，它表示了静态单赋值（SSA）对象。在 Codegen 过程中还需要定义几个静态对象。
+Module_Ob模块包含了代码中的所有函数和变量。
+Builder对象帮助生成 LLVM IR 并且记录程序的当前点，以插入 LLVM 指令。另外， Builder对象有创建新指令的函数。
+Named_Values map 对象记录当前作用域中的所有已定义值，充当符号表的功能。
+codegen Codegen()函数使用了LLVM内建的函数调用来生成IR...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>January 1, 0001</time>
+	</footer>
+	<a class="entry-link" aria-label="link to  post" href="https://yuuoniy.github.io/drafts/llvm-frontend/"></a>
+</article> 
+<footer class="page-footer">
+	<nav class="pagination">
+		<a class="prev" href="/page/11/">← Prev Page</a>
+		<a class="next" href="/page/13/">Next Page →</a>
+	</nav>
+</footer></main>
+<footer class="footer">
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+</footer>
+<script src="https://yuuoniy.github.io/highlight.min.js"></script>
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+ 
