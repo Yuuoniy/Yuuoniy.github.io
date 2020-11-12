@@ -1,92 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
-		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		
-		<title>vue 组件的生命周期及钩子函数 - Yuuoniy&#39;s blog</title>
-		
-		<meta name="description" content="vue 组件的生命周期相关
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>vue 组件的生命周期及钩子函数 - Yuuoniy&#39;s blog</title>
+    
+    <meta name="description" content="vue 组件的生命周期相关
 关于 vue 组件的生命周期，写简单的项目不需要太多的了解，甚至只需要知道 mounted 这一钩子函数就可以了，但如果项目的逻辑较复杂，就需要对整个组件的生命周期有一些认识 下面就让我们来看看吧。
 先看一下官方给出的生命周期图 图中表明了生命周期的各个阶段和相关的钩子函数。
  beforeCreate created beforeMount mounted beforeUpdate updated beforeDestroy destroyed  可以用以下代码做测试，并在控制台查看输出，对于生命周期有个直观的认识。
 var app = new Vue({ el: &#39;#app&#39;, data: { message : &#34;xuxiao is boy&#34; }, beforeCreate: function () { console.group(&#39;beforeCreate 创建前状态&#39;); console.log(&#34;%c%s&#34;, &#34;color:red&#34; , &#34;el : &#34; &#43; this.$el); //undefined  console.log(&#34;%c%s&#34;, &#34;color:red&#34;,&#34;data : &#34; &#43; this.$data); //undefined  console.log(&#34;%c%s&#34;, &#34;color:red&#34;,&#34;message: &#34; &#43; this.message) }, created: function () { console.">
-		<meta name="author" content="">
-		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
-		
-		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
-		
-		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
-		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
-		
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
-		<meta name="generator" content="Hugo 0.76.5" />
-		
-		
-		
-		<script>
-			function setTheme() {
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					document.body.classList.add('dark');
-					return;
-				}
-				
-				let date = new Date();
-				let time = date.getTime();
-				let sunrise = date.setHours(7, 00); 
-				let sunset = date.setHours(20, 00); 
+    <meta name="author" content="">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+    <link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+    <meta name="generator" content="Hugo 0.76.5" />
+    
+    
+    
+    <script>
+      function setTheme() {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add('dark');
+          return;
+        }
 
-				if (time < sunrise || time > sunset)
-					document.body.classList.add('dark');
-			}
-			
-		</script>
-		
-	</head>
-	<body class="single">
-		
-		<script>
-			setTheme();
-			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
-		</script>
-		
-		
-		<header class="header">
-			<nav class="nav">
-				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
-				<ul class="menu">
-					<li>
-						<a href="/posts/">Posts</a>
-					</li>
-					<li>
-						<a href="/tags/">Tags</a>
-					</li>
-					<li>
-						<a href="/about/">About</a>
-					</li>
-					<li>
-						<a href="/index.xml">RSS</a>
-					</li>
-				</ul>
-			</nav>
-		</header>
-		<main class="main">
+        const time = new Date();
+        const prev = localStorage.getItem('date');
+        const date = String(time.getMonth() + 1) + '.' + String(time.getDate());
 
+        const now = time.getTime();
+        let sunrise;
+        let sunset;
 
+        function setBodyClass() {
+          if (now > sunrise && now < sunset) return;
+          document.body.classList.add('dark');
+        }
+
+        if (date !== prev) {
+          fetch('https://api.ipgeolocation.io/astronomy?apiKey=5ed37d85103e4defa5df4c5298ed5215')
+            .then((res) => res.json())
+            .then((data) => {
+              sunrise = data.sunrise.split(':').map(Number);
+              sunset = data.sunset.split(':').map(Number);
+            })
+            .catch(() => {
+              sunrise = [7, 0];
+              sunset = [19, 0];
+            })
+            .finally(() => {
+              sunrise = time.setHours(sunrise[0], sunrise[1], 0);
+              sunset = time.setHours(sunset[0], sunset[1], 0);
+              setBodyClass();
+              localStorage.setItem('sunrise', sunrise);
+              localStorage.setItem('sunset', sunset);
+            });
+          localStorage.setItem('date', date);
+        } else {
+          sunrise = Number(localStorage.getItem('sunrise'));
+          sunset = Number(localStorage.getItem('sunset'));
+          setBodyClass();
+        }
+      }
+    </script>
+  </head>
+  <body class="single">
+    <script>
+      setTheme();
+    </script>
+    <header class="header">
+      <nav class="nav">
+        <p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+        <ul class="menu">
+          <li>
+            <a href="/posts/">Posts</a>
+          </li>
+          <li>
+            <a href="/tags/">Tags</a>
+          </li>
+          <li>
+            <a href="/about/">About</a>
+          </li>
+          <li>
+            <a href="/index.xml">RSS</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <main class="main">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
 <article class="post-single">
-	<header class="post-header">
-
-		<h1 class="post-title">vue 组件的生命周期及钩子函数</h1>
-		<div class="post-meta">June 30, 2019</div>
-		
-		
-	</header>
-	<div class="toc"></div><div class="post-content"><p>vue 组件的生命周期相关</p>
+  <header class="post-header">
+    <h1 class="post-title">vue 组件的生命周期及钩子函数</h1>
+    <div class="post-meta">2019-06-30
+    </div>
+  </header>
+  <div class="post-toc"></div>
+  <div class="post-content article-post">
+    <p>vue 组件的生命周期相关</p>
 <!-- raw HTML omitted -->
 <p>关于 vue 组件的生命周期，写简单的项目不需要太多的了解，甚至只需要知道 mounted 这一钩子函数就可以了，但如果项目的逻辑较复杂，就需要对整个组件的生命周期有一些认识
 下面就让我们来看看吧。</p>
@@ -194,85 +214,28 @@ beforeDestroy 和 destroyed 钩子函数的执行时机在组件销毁的阶段<
 </li>
 </ul>
 <p>以上就是对于各个生命周期的说明了，通过对整个生命周期的了解，我们可以很清晰地知道可以vue 组件在什么阶段做什么事,从而恰当地钩子函数，在恰当的时间做恰当的事情。</p>
-</div>
-	<script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		function mashiroToc(mashiro) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mashiro) {
-        var id = 1;
-        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
-            
-            var hyphenated = "mm-" + id;
-            $(this).attr('id', hyphenated);
-            id++;
-        });
-        
-        tocbot.init({
-            tocSelector: '.toc',
-            contentSelector: '.post-content',
-            headingSelector: 'h1, h2, h3, h4, h5',
-            positionFixedSelector: ".toc",
-            scrollEndCallback: function (e) {
-                window.scrollTo(window.scrollX, window.scrollY - 80);
-            },
-        });
-    }
-}
-	mashiroToc(true);
-	</script>
-	
-</article></main>
+
+  </div>
+  <footer class="post-footer">
+  </footer>
+</article>
+
+<script type="text/javascript">
+  tocbot.init({
+      
+      tocSelector: '.post-toc',
+      
+      contentSelector: '.post-content',
+      
+      headingSelector: 'h1, h2, h3, h4',
+      
+      positionFixedSelector: '.post-toc',
+      positionFixedClass: 'is-position-fixed',
+      fixedSidebarOffset: 'auto',
+      scrollSmooth: true,
+  });
+  tocbot.refresh();
+</script></main>
 <footer class="footer">
 	<span>
 		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
@@ -287,3 +250,4 @@ beforeDestroy 和 destroyed 钩子函数的执行时机在组件销毁的阶段<
 </script>
 </body>
 </html>
+

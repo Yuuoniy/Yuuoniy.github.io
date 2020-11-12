@@ -1,91 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
-		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		
-		<title>CTF | 0ctf 2015 freenote writeup - Yuuoniy&#39;s blog</title>
-		
-		<meta name="description" content="0ctf 2015 freenote writeup 涉及到 double free 漏洞，利用过程：leak libc ,leak heap, unlink
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>CTF | 0ctf 2015 freenote writeup - Yuuoniy&#39;s blog</title>
+    
+    <meta name="description" content="0ctf 2015 freenote writeup 涉及到 double free 漏洞，利用过程：leak libc ,leak heap, unlink
 做题比写论文好玩多了呜呜呜呜 这个也是很经典的一道题啦，主要就是 leak libc ,leak heap, unlink 这三步
 程序分析 首先弄一下结构体 大概就是这样吧：
 00000000 chunk struc ; (sizeof=0x18, mappedto_8) 00000000 ; XREF: chunk_list/r 00000000 flag dq ? 00000008 size dq ? 00000010 ptr dq ? 00000018 chunk ends 00000018 00000000 ; --------------------------------------------------------------------------- 00000000 00000000 chunk_list struc ; (sizeof=0x1810, mappedto_9) 00000000 head dq ? 00000008 num dq ? 00000010 chunksptr chunk 256 dup(?">
-		<meta name="author" content="">
-		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
-		
-		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
-		
-		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
-		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
-		
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
-		<meta name="generator" content="Hugo 0.76.5" />
-		
-		
-		
-		<script>
-			function setTheme() {
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					document.body.classList.add('dark');
-					return;
-				}
-				
-				let date = new Date();
-				let time = date.getTime();
-				let sunrise = date.setHours(7, 00); 
-				let sunset = date.setHours(20, 00); 
+    <meta name="author" content="">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+    <link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+    <meta name="generator" content="Hugo 0.76.5" />
+    
+    
+    
+    <script>
+      function setTheme() {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add('dark');
+          return;
+        }
 
-				if (time < sunrise || time > sunset)
-					document.body.classList.add('dark');
-			}
-			
-		</script>
-		
-	</head>
-	<body class="single">
-		
-		<script>
-			setTheme();
-			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
-		</script>
-		
-		
-		<header class="header">
-			<nav class="nav">
-				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
-				<ul class="menu">
-					<li>
-						<a href="/posts/">Posts</a>
-					</li>
-					<li>
-						<a href="/tags/">Tags</a>
-					</li>
-					<li>
-						<a href="/about/">About</a>
-					</li>
-					<li>
-						<a href="/index.xml">RSS</a>
-					</li>
-				</ul>
-			</nav>
-		</header>
-		<main class="main">
+        const time = new Date();
+        const prev = localStorage.getItem('date');
+        const date = String(time.getMonth() + 1) + '.' + String(time.getDate());
 
+        const now = time.getTime();
+        let sunrise;
+        let sunset;
 
+        function setBodyClass() {
+          if (now > sunrise && now < sunset) return;
+          document.body.classList.add('dark');
+        }
+
+        if (date !== prev) {
+          fetch('https://api.ipgeolocation.io/astronomy?apiKey=5ed37d85103e4defa5df4c5298ed5215')
+            .then((res) => res.json())
+            .then((data) => {
+              sunrise = data.sunrise.split(':').map(Number);
+              sunset = data.sunset.split(':').map(Number);
+            })
+            .catch(() => {
+              sunrise = [7, 0];
+              sunset = [19, 0];
+            })
+            .finally(() => {
+              sunrise = time.setHours(sunrise[0], sunrise[1], 0);
+              sunset = time.setHours(sunset[0], sunset[1], 0);
+              setBodyClass();
+              localStorage.setItem('sunrise', sunrise);
+              localStorage.setItem('sunset', sunset);
+            });
+          localStorage.setItem('date', date);
+        } else {
+          sunrise = Number(localStorage.getItem('sunrise'));
+          sunset = Number(localStorage.getItem('sunset'));
+          setBodyClass();
+        }
+      }
+    </script>
+  </head>
+  <body class="single">
+    <script>
+      setTheme();
+    </script>
+    <header class="header">
+      <nav class="nav">
+        <p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+        <ul class="menu">
+          <li>
+            <a href="/posts/">Posts</a>
+          </li>
+          <li>
+            <a href="/tags/">Tags</a>
+          </li>
+          <li>
+            <a href="/about/">About</a>
+          </li>
+          <li>
+            <a href="/index.xml">RSS</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <main class="main">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
 <article class="post-single">
-	<header class="post-header">
-
-		<h1 class="post-title">CTF | 0ctf 2015 freenote writeup</h1>
-		<div class="post-meta">August 16, 2018</div>
-		
-		
-	</header>
-	<div class="toc"></div><div class="post-content"><p><code>0ctf 2015 freenote writeup</code>
+  <header class="post-header">
+    <h1 class="post-title">CTF | 0ctf 2015 freenote writeup</h1>
+    <div class="post-meta">2018-08-16
+    </div>
+  </header>
+  <div class="post-toc"></div>
+  <div class="post-content article-post">
+    <p><code>0ctf 2015 freenote writeup</code>
 涉及到 <code>double free</code> 漏洞，利用过程：<code>leak libc ,leak heap, unlink</code></p>
 <!-- raw HTML omitted -->
 <p>做题比写论文好玩多了呜呜呜呜
@@ -495,85 +515,28 @@ p<span style="color:#f92672">.</span>interactive()
 <p><a href="http://angelboy.logdown.com/posts/259180-0ctf-2015-write-up">http://angelboy.logdown.com/posts/259180-0ctf-2015-write-up</a>
 <a href="https://blog.csdn.net/qq_33528164/article/details/80085926">https://blog.csdn.net/qq_33528164/article/details/80085926</a>
 <a href="https://kitctf.de/writeups/0ctf2015/freenote">https://kitctf.de/writeups/0ctf2015/freenote</a></p>
-</div>
-	<script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		function mashiroToc(mashiro) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mashiro) {
-        var id = 1;
-        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
-            
-            var hyphenated = "mm-" + id;
-            $(this).attr('id', hyphenated);
-            id++;
-        });
-        
-        tocbot.init({
-            tocSelector: '.toc',
-            contentSelector: '.post-content',
-            headingSelector: 'h1, h2, h3, h4, h5',
-            positionFixedSelector: ".toc",
-            scrollEndCallback: function (e) {
-                window.scrollTo(window.scrollX, window.scrollY - 80);
-            },
-        });
-    }
-}
-	mashiroToc(true);
-	</script>
-	
-</article></main>
+
+  </div>
+  <footer class="post-footer">
+  </footer>
+</article>
+
+<script type="text/javascript">
+  tocbot.init({
+      
+      tocSelector: '.post-toc',
+      
+      contentSelector: '.post-content',
+      
+      headingSelector: 'h1, h2, h3, h4',
+      
+      positionFixedSelector: '.post-toc',
+      positionFixedClass: 'is-position-fixed',
+      fixedSidebarOffset: 'auto',
+      scrollSmooth: true,
+  });
+  tocbot.refresh();
+</script></main>
 <footer class="footer">
 	<span>
 		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
@@ -588,3 +551,4 @@ p<span style="color:#f92672">.</span>interactive()
 </script>
 </body>
 </html>
+

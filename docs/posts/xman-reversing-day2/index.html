@@ -1,94 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
-		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		
-		<title>CTF | 逆向入门第二篇 - Yuuoniy&#39;s blog</title>
-		
-		<meta name="description" content="逆向入门第二篇
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>CTF | 逆向入门第二篇 - Yuuoniy&#39;s blog</title>
+    
+    <meta name="description" content="逆向入门第二篇
 hide strings 查看到有壳upx 3.91 脱壳 不能使用upx -d 直接脱。
 运行起来相当于脱壳看，因此可以用 dd 把data和text两段dump下来之后拼在一起，可以在IDA里面看。但实际上文件结构会被破坏，因为是运行时镜像，动态脱壳都有这样的问题。所以动态调试还是使用有壳的。dd cat /proc/(pid hide)/maps 可以查看进程的内存映射 脱壳命令,其中的地址就是各段的地址,因为是静态的,因此都是不变的，可以直接复制：
 sudo dd if=/proc/$(pidof hide)/mem of=hide_dump1 skip=4194304 bs=1c count=827392sudo dd if=/proc/$(pidof hide)/mem of=hide_dump2 skip=7110656 bs=1c count=20480cat hide_dump1 hide_dump2 &gt;hide_dump看到别人说gdb dump binary 更方便,不过没试过(不会)
 ptrace反调试 ptrace介绍： ptrace提供了一种使父进程得以监视和控制其它进程的方式，它还能够改变子进程中的寄存器和内核映像，因而可以实现断点调试和系统调用的跟踪。使用ptrace，你可以在用户层拦截和修改系统调用(sys call)，修改它的参数，插入代码给正在运行的程序以及偷窥和篡改进程的寄存器和数据段。
 使用strace ptrace 相关的反调试 需要把反调试过掉 gdb 中 catch syscall ptrace 设置断点 可以发现程序在cmp eax,0 处断下,此时通过set $eax=0,使程序可以往下执行。 c ,再修改一次，就可以成功过掉反调试了&gt;&lt; 队友说,ptrace 大概就是看eax有没有改变?一般就是cmp eax,0的地方了
 附gdb 操作  hb *0x start地址 下硬件断点 record full (只有在静态执行时有用) 之后可以倒着执行也可以正着执行 rsi ni si reverse-continue 倒着执行回到上一个断点  ELF：init区，在main 执行前会执行 字符串交叉引用 enter flag 看到哪些地方引用，找到藏起来的代码 p 出来F5有问题,算是IDA的bug吧。">
-		<meta name="author" content="">
-		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
-		
-		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
-		
-		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
-		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
-		
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
-		<meta name="generator" content="Hugo 0.76.5" />
-		
-		
-		
-		<script>
-			function setTheme() {
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					document.body.classList.add('dark');
-					return;
-				}
-				
-				let date = new Date();
-				let time = date.getTime();
-				let sunrise = date.setHours(7, 00); 
-				let sunset = date.setHours(20, 00); 
+    <meta name="author" content="">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+    <link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+    <meta name="generator" content="Hugo 0.76.5" />
+    
+    
+    
+    <script>
+      function setTheme() {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add('dark');
+          return;
+        }
 
-				if (time < sunrise || time > sunset)
-					document.body.classList.add('dark');
-			}
-			
-		</script>
-		
-	</head>
-	<body class="single">
-		
-		<script>
-			setTheme();
-			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
-		</script>
-		
-		
-		<header class="header">
-			<nav class="nav">
-				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
-				<ul class="menu">
-					<li>
-						<a href="/posts/">Posts</a>
-					</li>
-					<li>
-						<a href="/tags/">Tags</a>
-					</li>
-					<li>
-						<a href="/about/">About</a>
-					</li>
-					<li>
-						<a href="/index.xml">RSS</a>
-					</li>
-				</ul>
-			</nav>
-		</header>
-		<main class="main">
+        const time = new Date();
+        const prev = localStorage.getItem('date');
+        const date = String(time.getMonth() + 1) + '.' + String(time.getDate());
 
+        const now = time.getTime();
+        let sunrise;
+        let sunset;
 
+        function setBodyClass() {
+          if (now > sunrise && now < sunset) return;
+          document.body.classList.add('dark');
+        }
+
+        if (date !== prev) {
+          fetch('https://api.ipgeolocation.io/astronomy?apiKey=5ed37d85103e4defa5df4c5298ed5215')
+            .then((res) => res.json())
+            .then((data) => {
+              sunrise = data.sunrise.split(':').map(Number);
+              sunset = data.sunset.split(':').map(Number);
+            })
+            .catch(() => {
+              sunrise = [7, 0];
+              sunset = [19, 0];
+            })
+            .finally(() => {
+              sunrise = time.setHours(sunrise[0], sunrise[1], 0);
+              sunset = time.setHours(sunset[0], sunset[1], 0);
+              setBodyClass();
+              localStorage.setItem('sunrise', sunrise);
+              localStorage.setItem('sunset', sunset);
+            });
+          localStorage.setItem('date', date);
+        } else {
+          sunrise = Number(localStorage.getItem('sunrise'));
+          sunset = Number(localStorage.getItem('sunset'));
+          setBodyClass();
+        }
+      }
+    </script>
+  </head>
+  <body class="single">
+    <script>
+      setTheme();
+    </script>
+    <header class="header">
+      <nav class="nav">
+        <p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+        <ul class="menu">
+          <li>
+            <a href="/posts/">Posts</a>
+          </li>
+          <li>
+            <a href="/tags/">Tags</a>
+          </li>
+          <li>
+            <a href="/about/">About</a>
+          </li>
+          <li>
+            <a href="/index.xml">RSS</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <main class="main">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
 <article class="post-single">
-	<header class="post-header">
-
-		<h1 class="post-title">CTF | 逆向入门第二篇</h1>
-		<div class="post-meta">August 3, 2018</div>
-		
-		
-	</header>
-	<div class="toc"></div><div class="post-content"><p>逆向入门第二篇</p>
+  <header class="post-header">
+    <h1 class="post-title">CTF | 逆向入门第二篇</h1>
+    <div class="post-meta">2018-08-03
+    </div>
+  </header>
+  <div class="post-toc"></div>
+  <div class="post-content article-post">
+    <p>逆向入门第二篇</p>
 <!-- raw HTML omitted -->
 <h4 id="hide">hide</h4>
 <p>strings 查看到有壳upx 3.91
@@ -302,85 +322,28 @@ FRIEND 链接：https://github.com/alexhude/FRIEND</p>
 <p><strong>强制类型转换</strong></p>
 <p>P:还是懒得贴图，我以后不知道自己在写什么鬼东西时一定会后悔的 嗯&hellip;
 大佬讲的是在太难了,我还是先去做一些基础题呜呜呜</p>
-</div>
-	<script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		function mashiroToc(mashiro) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mashiro) {
-        var id = 1;
-        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
-            
-            var hyphenated = "mm-" + id;
-            $(this).attr('id', hyphenated);
-            id++;
-        });
-        
-        tocbot.init({
-            tocSelector: '.toc',
-            contentSelector: '.post-content',
-            headingSelector: 'h1, h2, h3, h4, h5',
-            positionFixedSelector: ".toc",
-            scrollEndCallback: function (e) {
-                window.scrollTo(window.scrollX, window.scrollY - 80);
-            },
-        });
-    }
-}
-	mashiroToc(true);
-	</script>
-	
-</article></main>
+
+  </div>
+  <footer class="post-footer">
+  </footer>
+</article>
+
+<script type="text/javascript">
+  tocbot.init({
+      
+      tocSelector: '.post-toc',
+      
+      contentSelector: '.post-content',
+      
+      headingSelector: 'h1, h2, h3, h4',
+      
+      positionFixedSelector: '.post-toc',
+      positionFixedClass: 'is-position-fixed',
+      fixedSidebarOffset: 'auto',
+      scrollSmooth: true,
+  });
+  tocbot.refresh();
+</script></main>
 <footer class="footer">
 	<span>
 		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
@@ -395,3 +358,4 @@ FRIEND 链接：https://github.com/alexhude/FRIEND</p>
 </script>
 </body>
 </html>
+

@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
-		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		
-		<title>Yuuoniy&#39;s blog</title>
-		
-		<meta name="description" content="LLVM 入门教程之 frontend 介绍 前言 clang icc(Intel C&#43;&#43; Compiler)
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>Yuuoniy&#39;s blog</title>
+    
+    <meta name="description" content="LLVM 入门教程之 frontend 介绍 前言 clang icc(Intel C&#43;&#43; Compiler)
  实现词法分析器 定义抽象语法树 实现语法分析器 解析简单表达式 解析二元表达式 为解析编写驱动  定义抽象语法树 AST 的使用集中在语义分析阶段，在这个阶段，编译器会检查程序和语言元素是否正 确使用。
 http://clang.llvm.org/docs/IntroductionToTheClangAST.html
 实现语法分析器 语法分析器（parser）根据语言的语法规则来解析代码，解析阶段决定了输入的代码是 否能够根据既定的语法组成token流 5。在此阶段会构造出一棵解析树，而语法分析器则会 定义一些函数来把代码组织成一种被称为AST的数据结构
@@ -19,79 +17,101 @@ Module_Ob模块包含了代码中的所有函数和变量。
 Builder对象帮助生成 LLVM IR 并且记录程序的当前点，以插入 LLVM 指令。另外， Builder对象有创建新指令的函数。
 Named_Values map 对象记录当前作用域中的所有已定义值，充当符号表的功能。
 codegen Codegen()函数使用了LLVM内建的函数调用来生成IR">
-		<meta name="author" content="">
-		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
-		
-		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
-		
-		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
-		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
-		
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
-		<meta name="generator" content="Hugo 0.76.5" />
-		
-		
-		
-		<script>
-			function setTheme() {
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					document.body.classList.add('dark');
-					return;
-				}
-				
-				let date = new Date();
-				let time = date.getTime();
-				let sunrise = date.setHours(7, 00); 
-				let sunset = date.setHours(20, 00); 
+    <meta name="author" content="">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+    <link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+    <meta name="generator" content="Hugo 0.76.5" />
+    
+    
+    
+    <script>
+      function setTheme() {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add('dark');
+          return;
+        }
 
-				if (time < sunrise || time > sunset)
-					document.body.classList.add('dark');
-			}
-			
-		</script>
-		
-	</head>
-	<body class="single">
-		
-		<script>
-			setTheme();
-			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
-		</script>
-		
-		
-		<header class="header">
-			<nav class="nav">
-				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
-				<ul class="menu">
-					<li>
-						<a href="/posts/">Posts</a>
-					</li>
-					<li>
-						<a href="/tags/">Tags</a>
-					</li>
-					<li>
-						<a href="/about/">About</a>
-					</li>
-					<li>
-						<a href="/index.xml">RSS</a>
-					</li>
-				</ul>
-			</nav>
-		</header>
-		<main class="main">
+        const time = new Date();
+        const prev = localStorage.getItem('date');
+        const date = String(time.getMonth() + 1) + '.' + String(time.getDate());
 
+        const now = time.getTime();
+        let sunrise;
+        let sunset;
 
+        function setBodyClass() {
+          if (now > sunrise && now < sunset) return;
+          document.body.classList.add('dark');
+        }
+
+        if (date !== prev) {
+          fetch('https://api.ipgeolocation.io/astronomy?apiKey=5ed37d85103e4defa5df4c5298ed5215')
+            .then((res) => res.json())
+            .then((data) => {
+              sunrise = data.sunrise.split(':').map(Number);
+              sunset = data.sunset.split(':').map(Number);
+            })
+            .catch(() => {
+              sunrise = [7, 0];
+              sunset = [19, 0];
+            })
+            .finally(() => {
+              sunrise = time.setHours(sunrise[0], sunrise[1], 0);
+              sunset = time.setHours(sunset[0], sunset[1], 0);
+              setBodyClass();
+              localStorage.setItem('sunrise', sunrise);
+              localStorage.setItem('sunset', sunset);
+            });
+          localStorage.setItem('date', date);
+        } else {
+          sunrise = Number(localStorage.getItem('sunrise'));
+          sunset = Number(localStorage.getItem('sunset'));
+          setBodyClass();
+        }
+      }
+    </script>
+  </head>
+  <body class="single">
+    <script>
+      setTheme();
+    </script>
+    <header class="header">
+      <nav class="nav">
+        <p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+        <ul class="menu">
+          <li>
+            <a href="/posts/">Posts</a>
+          </li>
+          <li>
+            <a href="/tags/">Tags</a>
+          </li>
+          <li>
+            <a href="/about/">About</a>
+          </li>
+          <li>
+            <a href="/index.xml">RSS</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <main class="main">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
 <article class="post-single">
-	<header class="post-header">
-
-		<h1 class="post-title"></h1>
-		<div class="post-meta">January 1, 0001</div>
-		
-		
-	</header>
-	<div class="toc"></div><div class="post-content"><h1 id="llvm-入门教程之-frontend-介绍">LLVM 入门教程之 frontend 介绍</h1>
+  <header class="post-header">
+    <h1 class="post-title"></h1>
+    <div class="post-meta">0001-01-01
+    </div>
+  </header>
+  <div class="post-toc"></div>
+  <div class="post-content article-post">
+    <h1 id="llvm-入门教程之-frontend-介绍">LLVM 入门教程之 frontend 介绍</h1>
 <h2 id="前言">前言</h2>
 <h2 id="clang">clang</h2>
 <p>icc(Intel C++ Compiler)</p>
@@ -117,85 +137,28 @@ codegen Codegen()函数使用了LLVM内建的函数调用来生成IR">
 <p>Named_Values map 对象记录当前作用域中的所有已定义值，充当符号表的功能。</p>
 <h3 id="codegen">codegen</h3>
 <p>Codegen()函数使用了LLVM内建的函数调用来生成IR</p>
-</div>
-	<script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		function mashiroToc(mashiro) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mashiro) {
-        var id = 1;
-        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
-            
-            var hyphenated = "mm-" + id;
-            $(this).attr('id', hyphenated);
-            id++;
-        });
-        
-        tocbot.init({
-            tocSelector: '.toc',
-            contentSelector: '.post-content',
-            headingSelector: 'h1, h2, h3, h4, h5',
-            positionFixedSelector: ".toc",
-            scrollEndCallback: function (e) {
-                window.scrollTo(window.scrollX, window.scrollY - 80);
-            },
-        });
-    }
-}
-	mashiroToc(true);
-	</script>
-	
-</article></main>
+
+  </div>
+  <footer class="post-footer">
+  </footer>
+</article>
+
+<script type="text/javascript">
+  tocbot.init({
+      
+      tocSelector: '.post-toc',
+      
+      contentSelector: '.post-content',
+      
+      headingSelector: 'h1, h2, h3, h4',
+      
+      positionFixedSelector: '.post-toc',
+      positionFixedClass: 'is-position-fixed',
+      fixedSidebarOffset: 'auto',
+      scrollSmooth: true,
+  });
+  tocbot.refresh();
+</script></main>
 <footer class="footer">
 	<span>
 		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
@@ -210,3 +173,4 @@ codegen Codegen()函数使用了LLVM内建的函数调用来生成IR">
 </script>
 </body>
 </html>
+

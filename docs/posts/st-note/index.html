@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
-		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		
-		<title>软件测试学习笔记 - Yuuoniy&#39;s blog</title>
-		
-		<meta name="description" content="软件测试
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>软件测试学习笔记 - Yuuoniy&#39;s blog</title>
+    
+    <meta name="description" content="软件测试
 由于项目需要进行测试,先来学习一下软件测试中的基本概念, 测试的内容很多,这里就简单介绍一下白盒测试/黑盒测试/灰盒测试.
 动态测试 首先介绍一下动态测试 动态测试基本流程:
  运行被测程序 检查运行结果与预期结果的差异 分析运行效率和健壮性等性能  动态测试由三部分组成: 测试实例的构造, 被测程序的执行,输出结果分析 从是否了解软件内部结构 (程序源代码) 的角度划分, 我们可以将动态测试分为白盒/黑盒/灰盒测试三类.
@@ -28,79 +26,101 @@
  计算程序控制流图的 McCabe 环路复杂度； 确定一个线性独立路径 (数量由环路复杂度确定) 的基本集合； 为上述每条独立路径设计可强制执行该路径的测试用例； 测试用例总体保证了语句覆盖和 (单条件判定情况下的) 条件覆盖  数据流测试 数据流测试也称“定义/引用”测试，其目的是发现定义/引用的异常缺陷。
 数据流测试重点关注变量的定义与使用.
 信息流分析 信息流测试通过分析输入数据、输出数据和语句之间的关系来检查程序错误">
-		<meta name="author" content="">
-		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
-		
-		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
-		
-		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
-		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
-		
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
-		<meta name="generator" content="Hugo 0.76.5" />
-		
-		
-		
-		<script>
-			function setTheme() {
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					document.body.classList.add('dark');
-					return;
-				}
-				
-				let date = new Date();
-				let time = date.getTime();
-				let sunrise = date.setHours(7, 00); 
-				let sunset = date.setHours(20, 00); 
+    <meta name="author" content="">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+    <link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+    <meta name="generator" content="Hugo 0.76.5" />
+    
+    
+    
+    <script>
+      function setTheme() {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add('dark');
+          return;
+        }
 
-				if (time < sunrise || time > sunset)
-					document.body.classList.add('dark');
-			}
-			
-		</script>
-		
-	</head>
-	<body class="single">
-		
-		<script>
-			setTheme();
-			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
-		</script>
-		
-		
-		<header class="header">
-			<nav class="nav">
-				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
-				<ul class="menu">
-					<li>
-						<a href="/posts/">Posts</a>
-					</li>
-					<li>
-						<a href="/tags/">Tags</a>
-					</li>
-					<li>
-						<a href="/about/">About</a>
-					</li>
-					<li>
-						<a href="/index.xml">RSS</a>
-					</li>
-				</ul>
-			</nav>
-		</header>
-		<main class="main">
+        const time = new Date();
+        const prev = localStorage.getItem('date');
+        const date = String(time.getMonth() + 1) + '.' + String(time.getDate());
 
+        const now = time.getTime();
+        let sunrise;
+        let sunset;
 
+        function setBodyClass() {
+          if (now > sunrise && now < sunset) return;
+          document.body.classList.add('dark');
+        }
+
+        if (date !== prev) {
+          fetch('https://api.ipgeolocation.io/astronomy?apiKey=5ed37d85103e4defa5df4c5298ed5215')
+            .then((res) => res.json())
+            .then((data) => {
+              sunrise = data.sunrise.split(':').map(Number);
+              sunset = data.sunset.split(':').map(Number);
+            })
+            .catch(() => {
+              sunrise = [7, 0];
+              sunset = [19, 0];
+            })
+            .finally(() => {
+              sunrise = time.setHours(sunrise[0], sunrise[1], 0);
+              sunset = time.setHours(sunset[0], sunset[1], 0);
+              setBodyClass();
+              localStorage.setItem('sunrise', sunrise);
+              localStorage.setItem('sunset', sunset);
+            });
+          localStorage.setItem('date', date);
+        } else {
+          sunrise = Number(localStorage.getItem('sunrise'));
+          sunset = Number(localStorage.getItem('sunset'));
+          setBodyClass();
+        }
+      }
+    </script>
+  </head>
+  <body class="single">
+    <script>
+      setTheme();
+    </script>
+    <header class="header">
+      <nav class="nav">
+        <p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+        <ul class="menu">
+          <li>
+            <a href="/posts/">Posts</a>
+          </li>
+          <li>
+            <a href="/tags/">Tags</a>
+          </li>
+          <li>
+            <a href="/about/">About</a>
+          </li>
+          <li>
+            <a href="/index.xml">RSS</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <main class="main">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
 <article class="post-single">
-	<header class="post-header">
-
-		<h1 class="post-title">软件测试学习笔记</h1>
-		<div class="post-meta">June 30, 2019</div>
-		
-		
-	</header>
-	<div class="toc"></div><div class="post-content"><p>软件测试</p>
+  <header class="post-header">
+    <h1 class="post-title">软件测试学习笔记</h1>
+    <div class="post-meta">2019-06-30
+    </div>
+  </header>
+  <div class="post-toc"></div>
+  <div class="post-content article-post">
+    <p>软件测试</p>
 <!-- raw HTML omitted -->
 <p>由于项目需要进行测试,先来学习一下软件测试中的基本概念, 测试的内容很多,这里就简单介绍一下白盒测试/黑盒测试/灰盒测试.</p>
 <h2 id="动态测试">动态测试</h2>
@@ -180,85 +200,28 @@
 <p>因果图方法考虑被测程序输入条件之间的联系和组合关系，描述由多种条件的组合产生多个动作的结构形式，最终生成判定表 (Decision Table)，方便设计测试用例</p>
 <h3 id="灰盒测试">灰盒测试</h3>
 <p>灰盒测试是一种将黑盒测试、白盒测试、回归测试和变异测试结合在一起的综合测试方法，也是一种软件全生命周期测试方法。</p>
-</div>
-	<script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		function mashiroToc(mashiro) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mashiro) {
-        var id = 1;
-        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
-            
-            var hyphenated = "mm-" + id;
-            $(this).attr('id', hyphenated);
-            id++;
-        });
-        
-        tocbot.init({
-            tocSelector: '.toc',
-            contentSelector: '.post-content',
-            headingSelector: 'h1, h2, h3, h4, h5',
-            positionFixedSelector: ".toc",
-            scrollEndCallback: function (e) {
-                window.scrollTo(window.scrollX, window.scrollY - 80);
-            },
-        });
-    }
-}
-	mashiroToc(true);
-	</script>
-	
-</article></main>
+
+  </div>
+  <footer class="post-footer">
+  </footer>
+</article>
+
+<script type="text/javascript">
+  tocbot.init({
+      
+      tocSelector: '.post-toc',
+      
+      contentSelector: '.post-content',
+      
+      headingSelector: 'h1, h2, h3, h4',
+      
+      positionFixedSelector: '.post-toc',
+      positionFixedClass: 'is-position-fixed',
+      fixedSidebarOffset: 'auto',
+      scrollSmooth: true,
+  });
+  tocbot.refresh();
+</script></main>
 <footer class="footer">
 	<span>
 		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
@@ -273,3 +236,4 @@
 </script>
 </body>
 </html>
+

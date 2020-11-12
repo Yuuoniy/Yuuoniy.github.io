@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
-		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		
-		<title>2019VolgaCTF &amp; 2019SunshineCTF writeup - Yuuoniy&#39;s blog</title>
-		
-		<meta name="description" content="VolgaCTF:  warm/Shadow Cat/JOI  Warm 这道题是 arm 架构下的，不过没什么区别。没有环境的话要先搭一下，直接连服务器做也可以。
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>2019VolgaCTF &amp; 2019SunshineCTF writeup - Yuuoniy&#39;s blog</title>
+    
+    <meta name="description" content="VolgaCTF:  warm/Shadow Cat/JOI  Warm 这道题是 arm 架构下的，不过没什么区别。没有环境的话要先搭一下，直接连服务器做也可以。
 先简单解个密：
 s=&#34;&#34; s&#43;=chr(0x23^85); s&#43;= chr(ord(s[-1])^78) s&#43;= chr(ord(s[-1])^30) s&#43;= chr(ord(s[-1])^21) s&#43;= chr(ord(s[-1])^94) s&#43;= chr(ord(s[-1])^28) s&#43;= chr(ord(s[-1])^33) s&#43;= chr(ord(s[-1])^1) s&#43;= chr(ord(s[-1])^52) s&#43;= chr(ord(s[-1])^7) s&#43;= chr(ord(s[-1])^53) s&#43;= chr(ord(s[-1])^17) s&#43;= chr(ord(s[-1])^55) s&#43;= chr(ord(s[-1])^60) s&#43;= chr(ord(s[-1])^114) s&#43;= chr(ord(s[-1])^71) p.sendline(s); print(len(s)) print(s) 得到 v8&amp;3mqPQebWFqM?x
 程序很明显有溢出，进行覆盖可以读取任意文件，接下来就靠猜了&hellip;
@@ -19,79 +17,101 @@ flag: VolgaCTF{1_h0pe_ur_wARM_up_a_1ittle}
 ShadowCat 用 john 进行破解，首先用默认的字典，发现破解速度极慢，破解出来的都是单字符，想想也是&hellip; 所以自己创建一个可打印字符的字典，使用 &ndash;wordlist 设置破解就好了，最后把破解得到的数据与密文对应的字符进行替换，得到
 脚本：
 str = &#34;hajjzvajvzqyaqbendzvajvqauzarlapjzrkybjzenzuvczjvastlj&#34; ans = &#34;&#34; dict = {&#34;z&#34;:&#34;_&#34;,&#34;a&#34;:&#34;a&#34;,&#34;x&#34;:&#34;b&#34;,&#34;q&#34;:&#34;c&#34;,&#34;l&#34;:&#34;w&#34;,&#34;v&#34;:&#34;h&#34;,&#34;e&#34;:&#34;i&#34;,&#34;f&#34;:&#34;j&#34;,&#34;b&#34;:&#34;k&#34;,&#34;r&#34;:&#34;l&#34;,&#34;g&#34;:&#34;m&#34;,&#34;n&#34;:&#34;n&#34;,&#34;o&#34;:&#34;x&#34;,&#34;p&#34;:&#34;y&#34;,&#34;s&#34;:&#34;d&#34;,&#34;c&#34;:&#34;e&#34;,&#34;w&#34;:&#34;f&#34;,&#34;d&#34;:&#34;g&#34;,&#34;t&#34;:&#34;o&#34;,&#34;h&#34;:&#34;p&#34;,&#34;m&#34;:&#34;q&#34;,&#34;k&#34;:&#34;u&#34;,&#34;i&#34;:&#34;v&#34;,&#34;y&#34;:&#34;r&#34;,&#34;j&#34;:&#34;s&#34;,&#34;u&#34;:&#34;t&#34;} for ch in str: ans&#43;=dict[ch]; print(ans) flag: pass_hash_cracking_hashcat_always_lurks_in_the_shadows">
-		<meta name="author" content="">
-		<meta name="generator" content="hugo-plains https://gitlab.com/hugo-plains/hugo-plains">
-		
-		<link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
-		<link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
-		
-		<link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
-		<link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
-		
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css">
-		<meta name="generator" content="Hugo 0.76.5" />
-		
-		
-		
-		<script>
-			function setTheme() {
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					document.body.classList.add('dark');
-					return;
-				}
-				
-				let date = new Date();
-				let time = date.getTime();
-				let sunrise = date.setHours(7, 00); 
-				let sunset = date.setHours(20, 00); 
+    <meta name="author" content="">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/an-old-hope.min.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/style.css" rel="stylesheet">
+    <link href="https://yuuoniy.github.io/custom.css" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" href="https://yuuoniy.github.io/apple-touch-icon.png">
+    <link rel="icon" href="https://yuuoniy.github.io/favicon.ico">
+    <meta name="generator" content="Hugo 0.76.5" />
+    
+    
+    
+    <script>
+      function setTheme() {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add('dark');
+          return;
+        }
 
-				if (time < sunrise || time > sunset)
-					document.body.classList.add('dark');
-			}
-			
-		</script>
-		
-	</head>
-	<body class="single">
-		
-		<script>
-			setTheme();
-			console.log("This site was made using Hugo and Plains. https://gohugo.io https://gitlab.com/hugo-plains/hugo-plains");
-		</script>
-		
-		
-		<header class="header">
-			<nav class="nav">
-				<p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
-				<ul class="menu">
-					<li>
-						<a href="/posts/">Posts</a>
-					</li>
-					<li>
-						<a href="/tags/">Tags</a>
-					</li>
-					<li>
-						<a href="/about/">About</a>
-					</li>
-					<li>
-						<a href="/index.xml">RSS</a>
-					</li>
-				</ul>
-			</nav>
-		</header>
-		<main class="main">
+        const time = new Date();
+        const prev = localStorage.getItem('date');
+        const date = String(time.getMonth() + 1) + '.' + String(time.getDate());
 
+        const now = time.getTime();
+        let sunrise;
+        let sunset;
 
+        function setBodyClass() {
+          if (now > sunrise && now < sunset) return;
+          document.body.classList.add('dark');
+        }
+
+        if (date !== prev) {
+          fetch('https://api.ipgeolocation.io/astronomy?apiKey=5ed37d85103e4defa5df4c5298ed5215')
+            .then((res) => res.json())
+            .then((data) => {
+              sunrise = data.sunrise.split(':').map(Number);
+              sunset = data.sunset.split(':').map(Number);
+            })
+            .catch(() => {
+              sunrise = [7, 0];
+              sunset = [19, 0];
+            })
+            .finally(() => {
+              sunrise = time.setHours(sunrise[0], sunrise[1], 0);
+              sunset = time.setHours(sunset[0], sunset[1], 0);
+              setBodyClass();
+              localStorage.setItem('sunrise', sunrise);
+              localStorage.setItem('sunset', sunset);
+            });
+          localStorage.setItem('date', date);
+        } else {
+          sunrise = Number(localStorage.getItem('sunrise'));
+          sunset = Number(localStorage.getItem('sunset'));
+          setBodyClass();
+        }
+      }
+    </script>
+  </head>
+  <body class="single">
+    <script>
+      setTheme();
+    </script>
+    <header class="header">
+      <nav class="nav">
+        <p class="logo"><a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></p>
+        <ul class="menu">
+          <li>
+            <a href="/posts/">Posts</a>
+          </li>
+          <li>
+            <a href="/tags/">Tags</a>
+          </li>
+          <li>
+            <a href="/about/">About</a>
+          </li>
+          <li>
+            <a href="/index.xml">RSS</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <main class="main">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.11.1/tocbot.min.js"></script>
 <article class="post-single">
-	<header class="post-header">
-
-		<h1 class="post-title">2019VolgaCTF &amp; 2019SunshineCTF writeup</h1>
-		<div class="post-meta">April 2, 2019</div>
-		
-		
-	</header>
-	<div class="toc"></div><div class="post-content"><h2 id="volgactf">VolgaCTF:</h2>
+  <header class="post-header">
+    <h1 class="post-title">2019VolgaCTF &amp; 2019SunshineCTF writeup</h1>
+    <div class="post-meta">2019-04-02
+    </div>
+  </header>
+  <div class="post-toc"></div>
+  <div class="post-content article-post">
+    <h2 id="volgactf">VolgaCTF:</h2>
 <ul>
 <li>warm/Shadow Cat/JOI</li>
 </ul>
@@ -290,85 +310,28 @@ sh<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34
 sh<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;last_ride &#34;</span><span style="color:#f92672">+</span>p64(shellcode_addr))
 sh<span style="color:#f92672">.</span>interactive()
 </code></pre></div><p>flag: <code>sun{the chair and thumbtacks are ready, but the roof is a little loose}</code></p>
-</div>
-	<script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		function mashiroToc(mashiro) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mashiro) {
-        var id = 1;
-        $(".post-content").children("h1,h2,h3,h4,h5").each(function() {
-            
-            var hyphenated = "mm-" + id;
-            $(this).attr('id', hyphenated);
-            id++;
-        });
-        
-        tocbot.init({
-            tocSelector: '.toc',
-            contentSelector: '.post-content',
-            headingSelector: 'h1, h2, h3, h4, h5',
-            positionFixedSelector: ".toc",
-            scrollEndCallback: function (e) {
-                window.scrollTo(window.scrollX, window.scrollY - 80);
-            },
-        });
-    }
-}
-	mashiroToc(true);
-	</script>
-	
-</article></main>
+
+  </div>
+  <footer class="post-footer">
+  </footer>
+</article>
+
+<script type="text/javascript">
+  tocbot.init({
+      
+      tocSelector: '.post-toc',
+      
+      contentSelector: '.post-content',
+      
+      headingSelector: 'h1, h2, h3, h4',
+      
+      positionFixedSelector: '.post-toc',
+      positionFixedClass: 'is-position-fixed',
+      fixedSidebarOffset: 'auto',
+      scrollSmooth: true,
+  });
+  tocbot.refresh();
+</script></main>
 <footer class="footer">
 	<span>
 		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
@@ -383,3 +346,4 @@ sh<span style="color:#f92672">.</span>interactive()
 </script>
 </body>
 </html>
+
