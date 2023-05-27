@@ -94,32 +94,34 @@
     </header>
     <main class="main">
  
-    <header class="page-header">
-        <h1>Posts</h1>
-      
-    </header>
-<header class="page-header"><h1>Posts</h1></header>
+
+ 
+		<header class="page-header">
+				<h1>Posts</h1>
+			
+		</header>
+
 
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>stack pivot</h2>
-  </header>
-  <section class="entry-content">
-   <p>xctf16_b0verflow checksec:
+	<header class="entry-header">
+		<h2>stack pivot</h2>
+	</header>
+	<section class="entry-content">
+	 <p>xctf16_b0verflow checksec:
 [*] &#39;/home/yuuoniy/MY-AEG/nightmare/modules/17-stack_pivot/xctf16_b0verflow/b0verflow&#39;Arch: i386-32-littleRELRO: Partial RELROStack: No canary foundNX: NX disabledPIE: No PIE (0x8048000)RWX: Has RWX segmentsObviously, there is a stack overflow, while the overflow buffer only is 18 byte. as a result, we could utilize stack pivot technique.
 we could place our shellcode on string s, then jump to here. so we need a jmp gadget. and hint() has this! (we could also use tool to find it)...</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2020-01-14</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/stack_pivot/"></a>
+	</section>
+	<footer class="entry-footer">
+		<time>January 14, 2020</time>
+	</footer>
+	<a class="entry-link" aria-label="link to stack pivot post" href="https://yuuoniy.github.io/posts/stack_pivot/"></a>
 </article>
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>chunk extend</h2>
-  </header>
-  <section class="entry-content">
-   <p>题目：
+	<header class="entry-header">
+		<h2>chunk extend</h2>
+	</header>
+	<section class="entry-content">
+	 <p>题目：
 HITCON Trainging lab13
 程序分析：
 create : 长度没有进行检测，如果为负数，会导致任意长度堆溢出漏洞
@@ -133,18 +135,18 @@ chunk1 info(0x20) | chunk1 | chunk2 info | chunk2
 从而我们可以修改 chunk2 信息，可以用来 leak info, 修改 got 表。
 内存变化
 这个覆盖了 size 后的 layout...</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2019-09-21</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/chunk_extend/"></a>
+	</section>
+	<footer class="entry-footer">
+		<time>September 21, 2019</time>
+	</footer>
+	<a class="entry-link" aria-label="link to chunk extend post" href="https://yuuoniy.github.io/posts/chunk_extend/"></a>
 </article>
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>magicheap（unsorted_bin_attack)</h2>
-  </header>
-  <section class="entry-content">
-   <p>题目链接：
+	<header class="entry-header">
+		<h2>magicheap（unsorted_bin_attack)</h2>
+	</header>
+	<section class="entry-content">
+	 <p>题目链接：
 https://github.com/scwuaptx/HITCON-Training/tree/master/LAB/lab14
 首先分析程序，存在任意长度堆溢出，我们的目的是覆盖 bss 段的 magic 变量，使其大于 0x1305, 很容易想到 unsorted bin attack， 该技术达到的效果就是写 unsorted_chunks (av) 到任意地址，而这个值是比较大的。
 我会着重展示内存的变化：
@@ -152,29 +154,30 @@ bk 是指向 chunk 的 pre_size 的地方的，而我们的 target address 对�
 所以 bk = target_address-0x10
 我们直接利用堆溢出，将 unsorted bin 链表中的第一个 chunk 的bk，从而malloc 堆块的时候就能达到 bk 写 unsorted bin 链表头部值的效果。
  首先 malloc 三个 chunk，分别问 chunk 0, chunk1,chunk2:  gef➤ heap chunks Chunk(addr=0xa1e010, size=0x30, flags=PREV_INUSE) [0x0000000000a1e010 61 61 61 61 0a 00 00 00 00 00 00 00 00 00 00 00 aaaa....</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2019-09-19</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/unsorted_bin_attack/"></a>
-</article>
+	</section>
+	<footer class="entry-footer">
+		<time>September 19, 2019</time>
+	</footer>
+	<a class="entry-link" aria-label="link to magicheap（unsorted_bin_attack) post" href="https://yuuoniy.github.io/posts/unsorted_bin_attack/"></a>
+</article> 
 <footer class="page-footer">
-  <nav class="pagination">
-    <a class="prev" href="/posts/page/2/">← Prev Page</a>
-    <a class="next" href="/posts/page/4/">Next Page →</a>
-  </nav>
+	<nav class="pagination">
+		<a class="prev" href="/posts/page/2/">← Prev Page</a>
+		<a class="next" href="/posts/page/4/">Next Page →</a>
+	</nav>
 </footer></main>
 <footer class="footer">
-  <span>&copy; 2023 <a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></span>
-  <span>&middot;</span>
-  <span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️</span>
-  <span>&middot;</span>
-  <span>Theme️ <a href="https://github.com/nanxiaobei/hugo-paper" rel="noopener" target="_blank">Paper</a></span>
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
 </footer>
 <script src="https://yuuoniy.github.io/highlight.min.js"></script>
 <script>
-  hljs.initHighlightingOnLoad();
+	hljs.initHighlightingOnLoad();
 </script>
 </body>
 </html>
-
+ 

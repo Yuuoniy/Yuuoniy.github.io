@@ -94,41 +94,44 @@
     </header>
     <main class="main">
  
-    <header class="page-header">
-        <h1>llvm</h1>
-      
-    </header>
-<header class="page-header"><h1>llvm</h1></header>
+
+ 
+		<header class="page-header">
+				<h1>llvm</h1>
+			
+		</header>
+
 
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>LLVM 入门教程之基本介绍</h2>
-  </header>
-  <section class="entry-content">
-   <p>前言 本篇文章作为LLVM入门教程，包括以下内容：
+	<header class="entry-header">
+		<h2>LLVM 入门教程之基本介绍</h2>
+	</header>
+	<section class="entry-content">
+	 <p>前言 本篇文章作为LLVM入门教程，包括以下内容：
  LLVM 的安装 LLVM 源码结构 LLVM 工具介绍 Clang 基本使用 LLVM IR 基本内容 Pass 介绍  安装 目前 LLVM 的最新版本为 10.0.0，我尝试通过预编译和源码编译两种安装方式安装了 LLVM&#43;Clang。下面介绍这两种方式。
 预编译源码安装 直接去官网下载解压即可，或者去镜像网站 下载，根据系统选择压缩包进行下载，此处我选择的是 clang&#43;llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz 。
 源码编译安装 首先下载相关源码，可以从 github llvm-project 选择自己需要的源码下载，也可以从上面的镜像网站下载。这里我从镜像网站下载了llvm 和 clang 源码（ clang-10.0.0.src.tar.xz 、llvm-10.0.0.src.tar.xz )
 然后将源码进行解压，保持其目录与 llvm-project 目录一致，即
 目录结构图： llvm-project - llvm - clang - build 然后进入llvm-project 目录编译，如果没有 cmake 可以直接通过 apt 安装一下。
 $ cd llvm-project$ mkdir build &amp;&amp; cd build$ cmake -G &#34;Unix Makefiles&#34; -DLLVM_ENABLE_PROJECTS=&#34;clang&#34; \-DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=&#34;X86&#34; \-DBUILD_SHARED_LIBS=On ....</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2020-06-16</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/llvm-1/"></a>
+	</section>
+	<footer class="entry-footer">
+		<time>June 16, 2020</time>
+	</footer>
+	<a class="entry-link" aria-label="link to LLVM 入门教程之基本介绍 post" href="https://yuuoniy.github.io/posts/llvm-1/"></a>
 </article></main>
 <footer class="footer">
-  <span>&copy; 2023 <a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></span>
-  <span>&middot;</span>
-  <span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️</span>
-  <span>&middot;</span>
-  <span>Theme️ <a href="https://github.com/nanxiaobei/hugo-paper" rel="noopener" target="_blank">Paper</a></span>
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
 </footer>
 <script src="https://yuuoniy.github.io/highlight.min.js"></script>
 <script>
-  hljs.initHighlightingOnLoad();
+	hljs.initHighlightingOnLoad();
 </script>
 </body>
 </html>
-
+ 

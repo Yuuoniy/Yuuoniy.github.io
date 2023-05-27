@@ -94,18 +94,20 @@
     </header>
     <main class="main">
  
-    <header class="page-header">
-        <h1>Posts</h1>
-      
-    </header>
-<header class="page-header"><h1>Posts</h1></header>
+
+ 
+		<header class="page-header">
+				<h1>Posts</h1>
+			
+		</header>
+
 
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>2019VolgaCTF &amp; 2019SunshineCTF writeup</h2>
-  </header>
-  <section class="entry-content">
-   <p>VolgaCTF:  warm/Shadow Cat/JOI  Warm 这道题是 arm 架构下的，不过没什么区别。没有环境的话要先搭一下，直接连服务器做也可以。
+	<header class="entry-header">
+		<h2>2019VolgaCTF &amp; 2019SunshineCTF writeup</h2>
+	</header>
+	<section class="entry-content">
+	 <p>VolgaCTF:  warm/Shadow Cat/JOI  Warm 这道题是 arm 架构下的，不过没什么区别。没有环境的话要先搭一下，直接连服务器做也可以。
 先简单解个密：
 s=&#34;&#34; s&#43;=chr(0x23^85); s&#43;= chr(ord(s[-1])^78) s&#43;= chr(ord(s[-1])^30) s&#43;= chr(ord(s[-1])^21) s&#43;= chr(ord(s[-1])^94) s&#43;= chr(ord(s[-1])^28) s&#43;= chr(ord(s[-1])^33) s&#43;= chr(ord(s[-1])^1) s&#43;= chr(ord(s[-1])^52) s&#43;= chr(ord(s[-1])^7) s&#43;= chr(ord(s[-1])^53) s&#43;= chr(ord(s[-1])^17) s&#43;= chr(ord(s[-1])^55) s&#43;= chr(ord(s[-1])^60) s&#43;= chr(ord(s[-1])^114) s&#43;= chr(ord(s[-1])^71) p.sendline(s); print(len(s)) print(s) 得到 v8&amp;3mqPQebWFqM?x
 程序很明显有溢出，进行覆盖可以读取任意文件，接下来就靠猜了…
@@ -115,35 +117,35 @@ flag: VolgaCTF{1_h0pe_ur_wARM_up_a_1ittle}
 ShadowCat 用 john 进行破解，首先用默认的字典，发现破解速度极慢，破解出来的都是单字符，想想也是… 所以自己创建一个可打印字符的字典，使用 –wordlist 设置破解就好了，最后把破解得到的数据与密文对应的字符进行替换，得到
 脚本：
 str = &#34;hajjzvajvzqyaqbendzvajvqauzarlapjzrkybjzenzuvczjvastlj&#34; ans = &#34;&#34; dict = {&#34;z&#34;:&#34;_&#34;,&#34;a&#34;:&#34;a&#34;,&#34;x&#34;:&#34;b&#34;,&#34;q&#34;:&#34;c&#34;,&#34;l&#34;:&#34;w&#34;,&#34;v&#34;:&#34;h&#34;,&#34;e&#34;:&#34;i&#34;,&#34;f&#34;:&#34;j&#34;,&#34;b&#34;:&#34;k&#34;,&#34;r&#34;:&#34;l&#34;,&#34;g&#34;:&#34;m&#34;,&#34;n&#34;:&#34;n&#34;,&#34;o&#34;:&#34;x&#34;,&#34;p&#34;:&#34;y&#34;,&#34;s&#34;:&#34;d&#34;,&#34;c&#34;:&#34;e&#34;,&#34;w&#34;:&#34;f&#34;,&#34;d&#34;:&#34;g&#34;,&#34;t&#34;:&#34;o&#34;,&#34;h&#34;:&#34;p&#34;,&#34;m&#34;:&#34;q&#34;,&#34;k&#34;:&#34;u&#34;,&#34;i&#34;:&#34;v&#34;,&#34;y&#34;:&#34;r&#34;,&#34;j&#34;:&#34;s&#34;,&#34;u&#34;:&#34;t&#34;} for ch in str: ans&#43;=dict[ch]; print(ans) flag: pass_hash_cracking_hashcat_always_lurks_in_the_shadows...</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2019-04-02</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/2019volgactfsunshine/"></a>
+	</section>
+	<footer class="entry-footer">
+		<time>April 2, 2019</time>
+	</footer>
+	<a class="entry-link" aria-label="link to 2019VolgaCTF &amp; 2019SunshineCTF writeup post" href="https://yuuoniy.github.io/posts/2019volgactfsunshine/"></a>
 </article>
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>CTF | offbyone writeup</h2>
-  </header>
-  <section class="entry-content">
-   <p>offbyone fastbin attack chunk overlap
+	<header class="entry-header">
+		<h2>CTF | offbyone writeup</h2>
+	</header>
+	<section class="entry-content">
+	 <p>offbyone fastbin attack chunk overlap
 题目就叫 offbyone，是 xman 小姐姐给的，不清楚出处…
 offbyone 漏洞的大致思路：
  改写下一个块的size 改写下一个块的pre inuse位 chunk overlap ： Overwrite next chunk’s size =&gt; extend free chunk Overwrite next chunk’s size =&gt; extend allocated chunk Overwrite next chunk’s size =&gt; shrink free chunk  这道题的 offbyone 比较宽松，可以写任意字节，而不仅仅是 null
 程序分析 edit 函数有 offbyone：
 if ( v1 &gt;= 0 &amp;&amp; v1 &lt;= 15 &amp;&amp; ptrs[v1] ) { puts(&#34;your note:&#34;); v2 = strlen(ptrs[v1]); read(0, (void *)ptrs[v1], v2); puts(&#34;done....</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2018-09-27</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/pwn-offbyone/"></a>
+	</section>
+	<footer class="entry-footer">
+		<time>September 27, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | offbyone writeup post" href="https://yuuoniy.github.io/posts/pwn-offbyone/"></a>
 </article>
 <article class="post-entry">
-  <header class="entry-header">
-    <h2>CTF | 0ctf 2017 babyheap</h2>
-  </header>
-  <section class="entry-content">
-   <p>0ctf 2017 babyheap writeup 有关 fastbin attack 利用
+	<header class="entry-header">
+		<h2>CTF | 0ctf 2017 babyheap</h2>
+	</header>
+	<section class="entry-content">
+	 <p>0ctf 2017 babyheap writeup 有关 fastbin attack 利用
 稍微复习一下 fastbin attack 利用思路：
  覆盖 got 表劫持控制流 覆盖栈上函数返回地址，然后ROP劫持控制流 覆盖 malloc_hook、覆盖 _IO_FILE 等方式劫持控制流 没有开 FULL RELRO 的话，就可以考虑修改 got 表内容  算是很经典的一道题了吧 先分析一下程序 allocate:
 最大0x1000
@@ -155,29 +157,30 @@ free
 释放堆块，清空 inuse,size,ptr
 chunk 结构:
 &#43;---------|---------&#43;|prev_size| size ||---------|---------|| fd | bk ||---------|---------|| data |&#43;---------|---------&#43;chunk 包含三个字段：inusesizeptr题目中 fill 存在堆溢出，可以写任意长度，注意分配使用的 calloc ，在分配的时候会将分配出来的 chunk 先清空，dump 的大小是根据 alloc 指定的 size 决定的，跟真正的 chunk 大小无关。...</p>
-  </section>
-  <footer class="entry-footer">
-    <time>2018-09-25</time>
-  </footer>
-  <a class="entry-link" href="https://yuuoniy.github.io/posts/ctf-fastbin-attack/"></a>
-</article>
+	</section>
+	<footer class="entry-footer">
+		<time>September 25, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | 0ctf 2017 babyheap post" href="https://yuuoniy.github.io/posts/ctf-fastbin-attack/"></a>
+</article> 
 <footer class="page-footer">
-  <nav class="pagination">
-    <a class="prev" href="/posts/page/4/">← Prev Page</a>
-    <a class="next" href="/posts/page/6/">Next Page →</a>
-  </nav>
+	<nav class="pagination">
+		<a class="prev" href="/posts/page/4/">← Prev Page</a>
+		<a class="next" href="/posts/page/6/">Next Page →</a>
+	</nav>
 </footer></main>
 <footer class="footer">
-  <span>&copy; 2023 <a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></span>
-  <span>&middot;</span>
-  <span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️</span>
-  <span>&middot;</span>
-  <span>Theme️ <a href="https://github.com/nanxiaobei/hugo-paper" rel="noopener" target="_blank">Paper</a></span>
+	<span>
+		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
+		
+	</span>
+	<span>&middot;</span>
+	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
 </footer>
 <script src="https://yuuoniy.github.io/highlight.min.js"></script>
 <script>
-  hljs.initHighlightingOnLoad();
+	hljs.initHighlightingOnLoad();
 </script>
 </body>
 </html>
-
+ 

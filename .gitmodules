@@ -1,3 +1,7 @@
 [submodule "themes/paper"]
 	path = themes/paper
 	url = https://github.com/XYlearn/hugo-paper.git
+
+[submodule "themes/plains"]
+	path = themes/plains
+	url = https://gitlab.com/hugo-plains/hugo-plains.git
