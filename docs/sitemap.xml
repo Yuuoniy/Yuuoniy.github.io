@@ -98,11 +98,6 @@
   </url>
   
   <url>
-    <loc>https://yuuoniy.github.io/posts/network-measurement-notes-1/</loc>
-    <lastmod>2018-10-01T16:42:16+00:00</lastmod>
-  </url>
-  
-  <url>
     <loc>https://yuuoniy.github.io/posts/pwn-offbyone/</loc>
     <lastmod>2018-09-27T22:02:10+00:00</lastmod>
   </url>
@@ -115,11 +110,6 @@
   <url>
     <loc>https://yuuoniy.github.io/posts/pwn-srop/</loc>
     <lastmod>2018-09-19T16:49:01+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://yuuoniy.github.io/posts/format-string/</loc>
-    <lastmod>2018-09-15T14:55:47+00:00</lastmod>
   </url>
   
   <url>
@@ -193,31 +183,7 @@
   </url>
   
   <url>
-    <loc>https://yuuoniy.github.io/drafts/llvm-backend-implementation/</loc>
-  </url>
-  
-  <url>
-    <loc>https://yuuoniy.github.io/drafts/llvm-backend/</loc>
-  </url>
-  
-  <url>
-    <loc>https://yuuoniy.github.io/drafts/llvm-frontend/</loc>
-  </url>
-  
-  <url>
-    <loc>https://yuuoniy.github.io/drafts/llvm-ir/</loc>
-  </url>
-  
-  <url>
-    <loc>https://yuuoniy.github.io/drafts/llvm-projects/</loc>
-  </url>
-  
-  <url>
     <loc>https://yuuoniy.github.io/categories/</loc>
-  </url>
-  
-  <url>
-    <loc>https://yuuoniy.github.io/drafts/</loc>
   </url>
   
   <url>

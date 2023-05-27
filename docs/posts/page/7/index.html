@@ -104,38 +104,6 @@
 
 <article class="post-entry">
 	<header class="entry-header">
-		<h2>android | 手机应用开发基础知识</h2>
-	</header>
-	<section class="entry-content">
-	 <p>关于 android 基本 UI 界面设计的常用空间等内容
-记得修改 build.gradle 文件 android 应用中的所有用户界面元素都是使用 View 和 ViewGroup 对象构建而成。 打开 res/layout/*.xml 进行布局，首先看到图形显示界面为空白。
-修改 res/value/styles.xml stackoverflow
-UI 设计 ConstraintLayout 约束布局 形式：app:layout_constraint[组件本身的位置]_to[目标位置]Of=&#34;[目标id]&#34;
-1：设计和蓝图:选择您想如何在编辑器中查看您的布局。设计视图显示一个颜色预览你的布局,而蓝图视图显示只对每个视图轮廓。或者你可以查看设计&#43;并排蓝图. 提示:您可以按下B就这些视图之间切换。
-shape 自定义圆角按钮
-事件处理 Intent、Bundle 的使用以及 RecyclerView、ListView 的应用 Intent mIntent = new Intent(this,SerializableDemo.class);  Bundle mBundle = new Bundle(); mBundle.putSerializable(&#34;data&#34;,object); mIntent.putExtras(mBundle); startActivity(mIntent); 取值
-Bundle bundle = this.getIntent().getExtras(); broadcast 静态广播 动态广播 发送广播：将数据装入一个Intent对象，调用Context.sendBroadcast() 方法发出去。 接受广播：所有已经注册的 BroadcastReceiver 会检查注册时的 IntentFilter 是否与发送的 Intent 相匹配，若匹配则就会调用 BroadcastReceiver 的 void onReceive(Context curContext, Intent broadcastMsg)...</p>
-	</section>
-	<footer class="entry-footer">
-		<time>September 12, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to android | 手机应用开发基础知识 post" href="https://yuuoniy.github.io/posts/android-course-2/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
-		<h2>android | 手机平台应用开发第一篇</h2>
-	</header>
-	<section class="entry-content">
-	 <p>git 日常使用总结 git 已经用很多了,大概就是需要了解仓库,分支等概念,熟悉本地和远程的关系,熟练使用clone commit pull push merge操作 下面给出一下常用的命令: 新建分支:git branch dev 切换分支:git checkout dev 添加文件 git add file ,常用 git add . 添加全部更新的文件 查看状态 git status 取回远程仓库的变化，并与本地分支合并:git pull [remote] [branch] 上传本地指定分支到远程仓库:git push [remote] [branch] 常见步骤:git add -&gt;commit -&gt;push, 如果有冲突还涉及到 merge 操作 显示版本历史:git log 显示暂存区和工作区的不同: git diff 对于入门者推荐 git 教程 如何使用 Git 和 GitHub 比较系统,之前我也是根据这个学的
-Android开发环境搭建 之前已经安装过 AS 了,下载sdk应该要翻墙,不过我有梯子,不过 sync gardle 时总是失败 错误： Unknown host &#39;dl.google.com&#39;. You may need to adjust the proxy settings in Gradle....</p>
-	</section>
-	<footer class="entry-footer">
-		<time>September 11, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to android | 手机平台应用开发第一篇 post" href="https://yuuoniy.github.io/posts/android-course-1/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
 		<h2>CTF | 无线网络-802.11攻与防</h2>
 	</header>
 	<section class="entry-content">
@@ -156,6 +124,36 @@ airodump-ng wlan0mon
 		<time>August 17, 2018</time>
 	</footer>
 	<a class="entry-link" aria-label="link to CTF | 无线网络-802.11攻与防 post" href="https://yuuoniy.github.io/posts/xman-wireless-attack-with-defense/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | 0ctf 2015 freenote writeup</h2>
+	</header>
+	<section class="entry-content">
+	 <p>0ctf 2015 freenote writeup 涉及到 double free 漏洞，利用过程：leak libc ,leak heap, unlink
+做题比写论文好玩多了呜呜呜呜 这个也是很经典的一道题啦，主要就是 leak libc ,leak heap, unlink 这三步
+程序分析 首先弄一下结构体 大概就是这样吧：
+00000000 chunk struc ; (sizeof=0x18, mappedto_8) 00000000 ; XREF: chunk_list/r 00000000 flag dq ? 00000008 size dq ? 00000010 ptr dq ? 00000018 chunk ends 00000018 00000000 ; --------------------------------------------------------------------------- 00000000 00000000 chunk_list struc ; (sizeof=0x1810, mappedto_9) 00000000 head dq ? 00000008 num dq ? 00000010 chunksptr chunk 256 dup(?...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>August 16, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | 0ctf 2015 freenote writeup post" href="https://yuuoniy.github.io/posts/xman-freenote-writeup/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | IO_FILE 相关利用</h2>
+	</header>
+	<section class="entry-content">
+	 <p>IO FILE 利用
+seethefile 分析程序 首先看程序
+ openfile:读取 长度为63 filename,打开文件,这里有溢出，因为 filename 大小为 40,但是不能覆盖到fp writefile:输出文件 magicbuf，通过这个应该能泄露地址，首先要把内容写道magicbuf readfile:从文件中读取内容到 0x18 长度 closefile: 这里会调用 fclose 函数，可以用来触发 exit : 这里 name 有溢出。可以覆盖到fp,使之指向我们伪造的fp,在调用fcolse时调用system(&#34;bin/sh&#34;)  bss data laylout
+.bss:0804B080 filename db 40h dup(?) ; DATA XREF: openfile&#43;53↑o .bss:0804B080 ; openfile&#43;6D↑o ... .bss:0804B0C0 public magicbuf .bss:0804B0C0 ; char magicbuf[416] .bss:0804B0C0 magicbuf db 1A0h dup(?) ; DATA XREF: openfile&#43;33↑o .bss:0804B0C0 ; readfile&#43;17↑o ... .bss:0804B260 public name .bss:0804B260 ; char name[32] ....</p>
+	</section>
+	<footer class="entry-footer">
+		<time>August 14, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | IO_FILE 相关利用 post" href="https://yuuoniy.github.io/posts/seethefile-writeup/"></a>
 </article> 
 <footer class="page-footer">
 	<nav class="pagination">

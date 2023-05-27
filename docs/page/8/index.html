@@ -105,44 +105,6 @@
 
 <article class="post-entry">
 	<header class="entry-header">
-		<h2>CTF | 无线网络-802.11攻与防</h2>
-	</header>
-	<section class="entry-content">
-	 <p>常见的无线攻击威胁 fake ap攻击 ARP&amp;Dns劫持 WIFI DOS 公攻击 操作命令： iwconfig
-airm
-airodump-ng 名称
-airmon-ng start name
-airodump-ng --bssid xxx -c 信道 -w 保存文件 wlan0mon
-aircrack-ng 包 -w 字典 
-airodump-ng --bssid B4:0B:44:C2:D5:FF -c 11 -w xmantest wlan0mon
---ivs 只抓握手包
-airodump-ng wlan0mon
-切换信道： iwconfig wlan0mon channel 11
-踢下线： aireplay-ng -0 10000 -a B4:0B:44:C2:D5:FF -c C4:B3:01:C4:27:31 wlan0mon wlan.fc.type_subtype==12
-无线攻防与进阶  ProbeRequest Frame  ProbeRequest SSID 暴露位置信息&amp;定位   WPA-Radius 企业无线攻防 攻击802.11客户端  针对无线设备的漏洞挖掘  802....</p>
-	</section>
-	<footer class="entry-footer">
-		<time>August 17, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to CTF | 无线网络-802.11攻与防 post" href="https://yuuoniy.github.io/posts/xman-wireless-attack-with-defense/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
-		<h2>CTF | 0ctf 2015 freenote writeup</h2>
-	</header>
-	<section class="entry-content">
-	 <p>0ctf 2015 freenote writeup 涉及到 double free 漏洞，利用过程：leak libc ,leak heap, unlink
-做题比写论文好玩多了呜呜呜呜 这个也是很经典的一道题啦，主要就是 leak libc ,leak heap, unlink 这三步
-程序分析 首先弄一下结构体 大概就是这样吧：
-00000000 chunk struc ; (sizeof=0x18, mappedto_8) 00000000 ; XREF: chunk_list/r 00000000 flag dq ? 00000008 size dq ? 00000010 ptr dq ? 00000018 chunk ends 00000018 00000000 ; --------------------------------------------------------------------------- 00000000 00000000 chunk_list struc ; (sizeof=0x1810, mappedto_9) 00000000 head dq ? 00000008 num dq ? 00000010 chunksptr chunk 256 dup(?...</p>
-	</section>
-	<footer class="entry-footer">
-		<time>August 16, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to CTF | 0ctf 2015 freenote writeup post" href="https://yuuoniy.github.io/posts/xman-freenote-writeup/"></a>
-</article>
-<article class="post-entry">
-	<header class="entry-header">
 		<h2>CTF | IO_FILE 相关利用</h2>
 	</header>
 	<section class="entry-content">
@@ -155,6 +117,43 @@ seethefile 分析程序 首先看程序
 		<time>August 14, 2018</time>
 	</footer>
 	<a class="entry-link" aria-label="link to CTF | IO_FILE 相关利用 post" href="https://yuuoniy.github.io/posts/seethefile-writeup/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | 逆向入门第二篇</h2>
+	</header>
+	<section class="entry-content">
+	 <p>逆向入门第二篇
+hide strings 查看到有壳upx 3.91 脱壳 不能使用upx -d 直接脱。
+运行起来相当于脱壳看，因此可以用 dd 把data和text两段dump下来之后拼在一起，可以在IDA里面看。但实际上文件结构会被破坏，因为是运行时镜像，动态脱壳都有这样的问题。所以动态调试还是使用有壳的。dd cat /proc/(pid hide)/maps 可以查看进程的内存映射 脱壳命令,其中的地址就是各段的地址,因为是静态的,因此都是不变的，可以直接复制：
+sudo dd if=/proc/$(pidof hide)/mem of=hide_dump1 skip=4194304 bs=1c count=827392sudo dd if=/proc/$(pidof hide)/mem of=hide_dump2 skip=7110656 bs=1c count=20480cat hide_dump1 hide_dump2 &gt;hide_dump看到别人说gdb dump binary 更方便,不过没试过(不会)
+ptrace反调试 ptrace介绍： ptrace提供了一种使父进程得以监视和控制其它进程的方式，它还能够改变子进程中的寄存器和内核映像，因而可以实现断点调试和系统调用的跟踪。使用ptrace，你可以在用户层拦截和修改系统调用(sys call)，修改它的参数，插入代码给正在运行的程序以及偷窥和篡改进程的寄存器和数据段。
+使用strace ptrace 相关的反调试 需要把反调试过掉 gdb 中 catch syscall ptrace 设置断点 可以发现程序在cmp eax,0 处断下,此时通过set $eax=0,使程序可以往下执行。 c ,再修改一次，就可以成功过掉反调试了&gt;&lt; 队友说,ptrace 大概就是看eax有没有改变?一般就是cmp eax,0的地方了
+附gdb 操作  hb *0x start地址 下硬件断点 record full (只有在静态执行时有用) 之后可以倒着执行也可以正着执行 rsi ni si reverse-continue 倒着执行回到上一个断点  ELF：init区，在main 执行前会执行 字符串交叉引用 enter flag 看到哪些地方引用，找到藏起来的代码 p 出来F5有问题,算是IDA的bug吧。...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>August 3, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | 逆向入门第二篇 post" href="https://yuuoniy.github.io/posts/xman-reversing-day2/"></a>
+</article>
+<article class="post-entry">
+	<header class="entry-header">
+		<h2>CTF | 逆向入门第一篇</h2>
+	</header>
+	<section class="entry-content">
+	 <p>跟着萌新一起逆向入门呦。包括：基本知识点,简单题例子,常见操作
+先来过一遍知识点吧！
+工具介绍  Disassembler 反汇编器 Tracer 记录运行的过程,如函数，指令 Debugger 调试器 Decompiler IDA、geb（支持mips、web assembly?) Emulator (qemu 模拟执行）知道CPU状态 Symbolic execution 符号执行 angr、路径爆炸  具体工具  IDA 支持脚本、手工定义的反汇编规则 Geb 逆安卓 mips web*** Binary ninja 不支持反编译,api好用，通常提供静态分析 R2 命令系统奇怪，支持以太坊智能合约 Retdec capstone  常规逆向 ELF/PE/Mach-O file with x86/x64/arm
+此外还有一些非常常规逆向，比如…不说啦哈哈哈哈
+逆向的一般步骤：信息收集-&gt;定位关键代码-&gt;分析*
+信息收集 Strings(搜看看有没有源码..）/ binwalk file ida -&gt; google/github
+例子
+ CISCN 2018 re 酷狗音乐盒  定位关键代码  根据控制流 Data 交叉引用 代码交叉引用 Memory searching &#43;r/w breakpoint.输入数据 内存搜索 记录地址 对该地址下断点 读写断点（保证运行地址不变？） Tracing 例子：youku client reversing  分析代码 Tips...</p>
+	</section>
+	<footer class="entry-footer">
+		<time>August 3, 2018</time>
+	</footer>
+	<a class="entry-link" aria-label="link to CTF | 逆向入门第一篇 post" href="https://yuuoniy.github.io/posts/xman-reversing-1/"></a>
 </article> 
 <footer class="page-footer">
 	<nav class="pagination">
