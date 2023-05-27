@@ -94,35 +94,33 @@
     </header>
     <main class="main">
  
-
- 
-		<header class="page-header">
-				<h1>Posts</h1>
-			
-		</header>
-
+    <header class="page-header">
+        <h1>Posts</h1>
+      
+    </header>
+<header class="page-header"><h1>Posts</h1></header>
 
 <article class="post-entry">
-	<header class="entry-header">
-		<h2>CTF | srop 利用</h2>
-	</header>
-	<section class="entry-content">
-	 <p>SROP(Sigreturn Oriented Programming)
+  <header class="entry-header">
+    <h2>CTF | srop 利用</h2>
+  </header>
+  <section class="entry-content">
+   <p>SROP(Sigreturn Oriented Programming)
 SROP signal 机制 32 位的 sigreturn 的调用号为 77，64 位的系统调用号为 15
 过程： 推荐看 angelboy 的 ppt
 x86mov eax,0x77int 0x80x64mov rax,0xfsyscall利用要点  利用 sigreturn ,构造 syscall 控制所有寄存器 控制 ip 和 stack 需要足够的栈空间保存 signal frame 直接伪造 sigcontext 结构，全部 push 进 stack 将 ret address 设在 sigreturn syscall 的 gadget 将 signal frame 中的 rip(eip) 设在 syscall sigreturn 回来后就会执行我们自己构造的 syscall  要求  利用栈溢出控制栈内容 相应的地址  ‘/bin/sh’ signal frame syscall sigreturn    系统调用链  控制栈指针 rsp 把原来 rip 指向的 syscall gadget 换成 syscall;ret gadget  基本思路：首先构造一个 fake signal frame 写入内存中，将然后将 RSP 指向这段空间，再发送 rt_sigreturn 信号（ 利用 eax 和 syscall 调用 sigreturn 控制 rax=15 32位是 0x77）。此时，内核会将构造好的 fake signal frame 取出，恢复。恢复后类似于ROP的方式，为 syscall 调用 execve...</p>
-	</section>
-	<footer class="entry-footer">
-		<time>September 19, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to CTF | srop 利用 post" href="https://yuuoniy.github.io/posts/pwn-srop/"></a>
+  </section>
+  <footer class="entry-footer">
+    <time>2018-09-19</time>
+  </footer>
+  <a class="entry-link" href="https://yuuoniy.github.io/posts/pwn-srop/"></a>
 </article>
 <article class="post-entry">
-	<header class="entry-header">
-		<h2>android | 手机应用开发基础知识</h2>
-	</header>
-	<section class="entry-content">
-	 <p>关于 android 基本 UI 界面设计的常用空间等内容
+  <header class="entry-header">
+    <h2>android | 手机应用开发基础知识</h2>
+  </header>
+  <section class="entry-content">
+   <p>关于 android 基本 UI 界面设计的常用空间等内容
 记得修改 build.gradle 文件 android 应用中的所有用户界面元素都是使用 View 和 ViewGroup 对象构建而成。 打开 res/layout/*.xml 进行布局，首先看到图形显示界面为空白。
 修改 res/value/styles.xml stackoverflow
 UI 设计 ConstraintLayout 约束布局 形式：app:layout_constraint[组件本身的位置]_to[目标位置]Of=&#34;[目标id]&#34;
@@ -130,43 +128,42 @@ UI 设计 ConstraintLayout 约束布局 形式：app:layout_constraint[组件本
 shape 自定义圆角按钮
 事件处理 Intent、Bundle 的使用以及 RecyclerView、ListView 的应用 Intent mIntent = new Intent(this,SerializableDemo.class);  Bundle mBundle = new Bundle(); mBundle.putSerializable(&#34;data&#34;,object); mIntent.putExtras(mBundle); startActivity(mIntent); 取值
 Bundle bundle = this.getIntent().getExtras(); broadcast 静态广播 动态广播 发送广播：将数据装入一个Intent对象，调用Context.sendBroadcast() 方法发出去。 接受广播：所有已经注册的 BroadcastReceiver 会检查注册时的 IntentFilter 是否与发送的 Intent 相匹配，若匹配则就会调用 BroadcastReceiver 的 void onReceive(Context curContext, Intent broadcastMsg)...</p>
-	</section>
-	<footer class="entry-footer">
-		<time>September 12, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to android | 手机应用开发基础知识 post" href="https://yuuoniy.github.io/posts/android-course-2/"></a>
+  </section>
+  <footer class="entry-footer">
+    <time>2018-09-12</time>
+  </footer>
+  <a class="entry-link" href="https://yuuoniy.github.io/posts/android-course-2/"></a>
 </article>
 <article class="post-entry">
-	<header class="entry-header">
-		<h2>android | 手机平台应用开发第一篇</h2>
-	</header>
-	<section class="entry-content">
-	 <p>git 日常使用总结 git 已经用很多了,大概就是需要了解仓库,分支等概念,熟悉本地和远程的关系,熟练使用clone commit pull push merge操作 下面给出一下常用的命令: 新建分支:git branch dev 切换分支:git checkout dev 添加文件 git add file ,常用 git add . 添加全部更新的文件 查看状态 git status 取回远程仓库的变化，并与本地分支合并:git pull [remote] [branch] 上传本地指定分支到远程仓库:git push [remote] [branch] 常见步骤:git add -&gt;commit -&gt;push, 如果有冲突还涉及到 merge 操作 显示版本历史:git log 显示暂存区和工作区的不同: git diff 对于入门者推荐 git 教程 如何使用 Git 和 GitHub 比较系统,之前我也是根据这个学的
+  <header class="entry-header">
+    <h2>android | 手机平台应用开发第一篇</h2>
+  </header>
+  <section class="entry-content">
+   <p>git 日常使用总结 git 已经用很多了,大概就是需要了解仓库,分支等概念,熟悉本地和远程的关系,熟练使用clone commit pull push merge操作 下面给出一下常用的命令: 新建分支:git branch dev 切换分支:git checkout dev 添加文件 git add file ,常用 git add . 添加全部更新的文件 查看状态 git status 取回远程仓库的变化，并与本地分支合并:git pull [remote] [branch] 上传本地指定分支到远程仓库:git push [remote] [branch] 常见步骤:git add -&gt;commit -&gt;push, 如果有冲突还涉及到 merge 操作 显示版本历史:git log 显示暂存区和工作区的不同: git diff 对于入门者推荐 git 教程 如何使用 Git 和 GitHub 比较系统,之前我也是根据这个学的
 Android开发环境搭建 之前已经安装过 AS 了,下载sdk应该要翻墙,不过我有梯子,不过 sync gardle 时总是失败 错误： Unknown host &#39;dl.google.com&#39;. You may need to adjust the proxy settings in Gradle....</p>
-	</section>
-	<footer class="entry-footer">
-		<time>September 11, 2018</time>
-	</footer>
-	<a class="entry-link" aria-label="link to android | 手机平台应用开发第一篇 post" href="https://yuuoniy.github.io/posts/android-course-1/"></a>
-</article> 
+  </section>
+  <footer class="entry-footer">
+    <time>2018-09-11</time>
+  </footer>
+  <a class="entry-link" href="https://yuuoniy.github.io/posts/android-course-1/"></a>
+</article>
 <footer class="page-footer">
-	<nav class="pagination">
-		<a class="prev" href="/posts/page/5/">← Prev Page</a>
-		<a class="next" href="/posts/page/7/">Next Page →</a>
-	</nav>
+  <nav class="pagination">
+    <a class="prev" href="/posts/page/5/">← Prev Page</a>
+    <a class="next" href="/posts/page/7/">Next Page →</a>
+  </nav>
 </footer></main>
 <footer class="footer">
-	<span>
-		Copyright © 2020–2020, Yuuoniy and the Hugo Authors; all rights reserved.
-		
-	</span>
-	<span>&middot;</span>
-	<span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️ and <a href="https://gitlab.com/hugo-plains/hugo-plains" rel="noopener" target="_blank">Plains</a></span>
+  <span>&copy; 2023 <a href="https://yuuoniy.github.io/">Yuuoniy&#39;s blog</a></span>
+  <span>&middot;</span>
+  <span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️</span>
+  <span>&middot;</span>
+  <span>Theme️ <a href="https://github.com/nanxiaobei/hugo-paper" rel="noopener" target="_blank">Paper</a></span>
 </footer>
 <script src="https://yuuoniy.github.io/highlight.min.js"></script>
 <script>
-	hljs.initHighlightingOnLoad();
+  hljs.initHighlightingOnLoad();
 </script>
 </body>
 </html>
- 
+
