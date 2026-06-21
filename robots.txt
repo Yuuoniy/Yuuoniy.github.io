@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://yuuoniy.github.io/sitemap.xml
