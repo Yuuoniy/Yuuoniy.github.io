@@ -97,7 +97,7 @@ class AcademicSiteSourceTest(unittest.TestCase):
         ]:
             self.assertIn(text, about)
 
-        self.assertIn('href="/files/SpecAuditor.pdf"', about)
+        self.assertIn('href="https://yuuoniy.github.io/files/SpecAuditor.pdf"', about)
         self.assertIn('href="https://github.com/Yuuoniy/SpecAuditor"', about)
         publications = about.split('<div class="contact-links"', 1)[0]
         bugauditor = publications.split("BugAuditor", 1)[1].split("</li>", 1)[0]
