@@ -79,6 +79,15 @@ class AcademicSiteSourceTest(unittest.TestCase):
         self.assertRegex(config, r"(?m)^icon:\s*icon\.png(?:\s+#.*)?$")
         self.assertTrue((ROOT / "assets" / "img" / "icon.png").exists())
 
+    def test_google_search_console_verification_enabled(self):
+        config = read("_config.yml")
+
+        self.assertIn(
+            "google_site_verification: sieUKjMGeBdG6hVraIc1YBOH9blYJGnpklzxYjIRpC8",
+            config,
+        )
+        self.assertIn("enable_google_verification: true", config)
+
     def test_publications_use_al_folio_style_with_text_links_and_plain_artifact_badges(self):
         about = read("_pages/about.md")
 
