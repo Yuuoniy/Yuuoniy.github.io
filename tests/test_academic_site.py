@@ -171,13 +171,13 @@ class AcademicSiteSourceTest(unittest.TestCase):
         for text in [
             "You and Your Research",
             "Science as a Vocation",
-            "《How to Solve It》",
-            "《Discourse on the Method》",
-            "《Writing Science》",
-            "《The Sense of Style》",
-            "《Bird by Bird》",
-            "《The Art of Nonfiction》",
-            "《On Revision: The Only Writing That Counts》",
+            "*How to Solve It*",
+            "*Discourse on the Method*",
+            "*Writing Science*",
+            "*The Sense of Style*",
+            "*Bird by Bird*",
+            "*The Art of Nonfiction*",
+            "*On Revision: The Only Writing That Counts*",
         ]:
             self.assertIn(text, misc)
 

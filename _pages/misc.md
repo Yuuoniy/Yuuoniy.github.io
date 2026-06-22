@@ -15,13 +15,13 @@ _styles: |
 
 - [You and Your Research](https://www.cs.virginia.edu/~robins/YouAndYourResearch.pdf)
 - [Science as a Vocation](https://sociology.sas.upenn.edu/sites/default/files/Weber-Science-as-a-Vocation.pdf)
-- 《How to Solve It》
-- 《Discourse on the Method》
+- *How to Solve It*
+- *Discourse on the Method*
 
 <h3 class="misc-section-heading">Books about writing</h3>
 
-- [《Writing Science》](https://wp.optics.arizona.edu/kupinski/wp-content/uploads/sites/91/2023/01/Writing_Science_Joshua_Schimel.pdf)
-- 《The Sense of Style》
-- 《Bird by Bird》
-- 《The Art of Nonfiction》
-- 《On Revision: The Only Writing That Counts》
+- [*Writing Science*](https://wp.optics.arizona.edu/kupinski/wp-content/uploads/sites/91/2023/01/Writing_Science_Joshua_Schimel.pdf)
+- *The Sense of Style*
+- *Bird by Bird*
+- *The Art of Nonfiction*
+- *On Revision: The Only Writing That Counts*
