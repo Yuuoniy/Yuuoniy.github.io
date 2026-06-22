@@ -88,6 +88,12 @@ class AcademicSiteSourceTest(unittest.TestCase):
         )
         self.assertIn("enable_google_verification: true", config)
 
+    def test_google_analytics_measurement_id_configured(self):
+        config = read("_config.yml")
+
+        self.assertIn("analytics:", config)
+        self.assertIn("  google: G-0DJHMR0F89", config)
+
     def test_publications_use_al_folio_style_with_text_links_and_plain_artifact_badges(self):
         about = read("_pages/about.md")
 
