@@ -92,7 +92,7 @@ class AcademicSiteSourceTest(unittest.TestCase):
         config = read("_config.yml")
 
         self.assertIn("analytics:", config)
-        self.assertIn("  google: G-VBVH3SWXHF", config)
+        self.assertIn("  google: G-0DJHMR0F89", config)
 
     def test_publications_use_al_folio_style_with_text_links_and_plain_artifact_badges(self):
         about = read("_pages/about.md")
