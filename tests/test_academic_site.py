@@ -108,16 +108,15 @@ class AcademicSiteSourceTest(unittest.TestCase):
             "background: rgba(218, 165, 32, 0.06)",
             ">PDF<",
             ">Code<",
-            "[coming soon]",
         ]:
             self.assertIn(text, about)
 
         self.assertIn('href="https://yuuoniy.github.io/files/SpecAuditor.pdf"', about)
+        self.assertIn('href="https://yuuoniy.github.io/files/BugAuditor.pdf"', about)
         self.assertIn('href="https://github.com/Yuuoniy/SpecAuditor"', about)
         publications = about.split('<div class="contact-links"', 1)[0]
         bugauditor = publications.split("BugAuditor", 1)[1].split("</li>", 1)[0]
-        self.assertIn("[coming soon]", bugauditor)
-        self.assertNotIn("PDF<", bugauditor)
+        self.assertIn("PDF<", bugauditor)
         self.assertNotIn("Code<", bugauditor)
         self.assertNotIn("Google Scholar", publications)
         self.assertNotIn("Citation", about)
@@ -211,6 +210,12 @@ class AcademicSiteSourceTest(unittest.TestCase):
 
         self.assertTrue(pdf.exists())
         self.assertGreater(pdf.stat().st_size, 1_000_000)
+
+    def test_bugauditor_pdf_is_available(self):
+        pdf = ROOT / "files" / "BugAuditor.pdf"
+
+        self.assertTrue(pdf.exists())
+        self.assertGreater(pdf.stat().st_size, 100_000)
 
 
 if __name__ == "__main__":
