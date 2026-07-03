@@ -205,6 +205,20 @@ class AcademicSiteSourceTest(unittest.TestCase):
         ]:
             self.assertFalse((ROOT / path).exists(), f"{path} should be removed")
 
+    def test_legacy_blog_paths_redirect_to_home(self):
+        redirects = {
+            "_pages/redirect-posts.md": "/posts/",
+            "_pages/redirect-posts-vue-lifecycle.md": "/posts/vue-lifecycle/",
+            "_pages/redirect-posts-rex-1.md": "/posts/rex-1/",
+        }
+
+        for path, permalink in redirects.items():
+            page = read(path)
+            self.assertIn("redirect: true", page)
+            self.assertIn("hide_title: true", page)
+            self.assertIn(f"permalink: {permalink}", page)
+            self.assertIn("Redirecting to the [home page]", page)
+
     def test_specauditor_pdf_is_preserved(self):
         pdf = ROOT / "files" / "SpecAuditor.pdf"
 
