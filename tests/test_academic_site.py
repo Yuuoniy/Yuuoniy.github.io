@@ -114,10 +114,11 @@ class AcademicSiteSourceTest(unittest.TestCase):
         self.assertIn('href="https://yuuoniy.github.io/files/SpecAuditor.pdf"', about)
         self.assertIn('href="https://yuuoniy.github.io/files/BugAuditor.pdf"', about)
         self.assertIn('href="https://github.com/Yuuoniy/SpecAuditor"', about)
+        self.assertIn('href="https://github.com/Yuuoniy/BugAuditor"', about)
         publications = about.split('<div class="contact-links"', 1)[0]
         bugauditor = publications.split("BugAuditor", 1)[1].split("</li>", 1)[0]
         self.assertIn("PDF<", bugauditor)
-        self.assertNotIn("Code<", bugauditor)
+        self.assertIn("Code<", bugauditor)
         self.assertNotIn("Google Scholar", publications)
         self.assertNotIn("Citation", about)
         self.assertNotIn('class="award btn', about)
@@ -128,6 +129,57 @@ class AcademicSiteSourceTest(unittest.TestCase):
         self.assertNotIn('class="fa-solid fa-award"', about)
         self.assertNotIn('class="fa-solid fa-file-pdf"', publications)
         self.assertNotIn('class="fa-solid fa-code"', publications)
+
+    def test_publications_include_bibtex_entries(self):
+        about = read("_pages/about.md")
+
+        self.assertEqual(about.count(">BibTeX</a>"), 4)
+        for text in [
+            "@inproceedings{lin2026bugauditor,",
+            "@inproceedings{lin2026specauditor,",
+            "@inproceedings{lin2025uncovering,",
+            "@inproceedings{lin2023detecting,",
+            "date = {2026-08-12/2026-08-14}",
+            "address = {Baltimore, MD, USA}",
+            "IEEE Symposium on Security \\&amp; Privacy",
+            "date = {2026-05-18/2026-05-21}",
+            "address = {San Francisco, CA, USA}",
+            "Network and Distributed System Security Symposium",
+            "date = {2025-02-24/2025-02-28}",
+            "address = {San Diego, CA, USA}",
+            "date = {2023-08-09/2023-08-11}",
+            "address = {Anaheim, CA, USA}",
+        ]:
+            self.assertIn(text, about)
+
+        publications = about.split('<div class="contact-links"', 1)[0]
+        self.assertEqual(publications.count('<div class="links publication-links">'), 4)
+        self.assertEqual(publications.count('class="btn btn-sm z-depth-0 bibtex-toggle" role="button"'), 4)
+        self.assertEqual(publications.count('class="bibtex-block" hidden'), 4)
+        for text in [
+            ".publication-links .btn {",
+            "display: inline-flex;",
+            "align-items: center;",
+            "justify-content: center;",
+            "margin: 0.375rem;",
+            "column-gap: 0;",
+            "row-gap: 0;",
+            "width: 3.25rem;",
+            "height: 1.45rem;",
+            "padding: 0;",
+            "font-size: 0.64rem;",
+            "line-height: 1;",
+        ]:
+            self.assertIn(text, about)
+        self.assertNotIn("margin: 0.28rem 0;", publications)
+        self.assertNotIn("column-gap: 0.45rem;", publications)
+        self.assertNotIn("row-gap: 0.35rem;", publications)
+        self.assertNotIn("min-height: 1.85rem;", publications)
+        self.assertNotIn("line-height: 1.2;", publications)
+        self.assertNotIn(">BibTeX</button>", publications)
+        self.assertNotIn("<summary>BibTeX</summary>", publications)
+        self.assertNotIn("<details", publications)
+        self.assertNotIn('<details class="bibtex-entry" style="margin-top: 0.35rem;">', publications)
 
     def test_contact_links_are_icon_links_at_homepage_bottom(self):
         about = read("_pages/about.md")
