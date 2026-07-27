@@ -71,6 +71,7 @@ My research focuses on software security, program analysis, and AI for security.
           <div class="title">BugAuditor: Detecting Bugs via Inconsistent Defensive Code Auditing</div>
           <div class="author"><em>Miaoqian Lin</em>, Kai Chen, and Hao Chen</div>
           <div class="periodical"><em>In Proceedings of the 35th USENIX Security Symposium</em>, 2026</div>
+          <div class="links artifact-note" style="display: inline-block; color: #8a6500; background: rgba(218, 165, 32, 0.06); font-weight: 600; font-size: 0.9rem; padding: 0.12rem 0.45rem; border-radius: 4px;">Artifact Available · Functional · Reproducible</div>
           <div class="links publication-links">
             <a href="https://yuuoniy.github.io/files/BugAuditor.pdf" class="btn btn-sm z-depth-0" role="button" title="PDF" aria-label="PDF">PDF</a>
             <a href="https://github.com/Yuuoniy/BugAuditor" class="btn btn-sm z-depth-0" role="button" title="Code" aria-label="Code">Code</a>
