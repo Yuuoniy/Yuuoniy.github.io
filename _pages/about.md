@@ -22,6 +22,11 @@ latest_posts:
 I am a Postdoctoral Researcher at The University of Hong Kong, working with Prof. [Ho Chen](https://sec.hku.hk/). I received my Ph.D. from the University of Chinese Academy of Sciences, where I was advised by Prof. [Kai Chen](https://kaichen.org/). I feel very fortunate to work with excellent researchers.
 
 My research focuses on software security, program analysis, and AI for security. Specifically, I have designed and implemented automated analysis tools for large-scale bug detection. My work has detected hundreds of previously unknown security bugs in widely used programs. Based on my research, I have also contributed hundreds of bug-fixing patches to the mainline of the Linux kernel.
+<div class="research-opening" style="margin-top: 1.5rem; padding: 0.85rem 1rem; border-left: 4px solid #b58900; background: rgba(218, 165, 32, 0.08); border-radius: 4px; overflow: hidden;">
+  ✨ <strong>Our research group has open positions.</strong><br>
+  If you are interested in my work and would like to join us as a research assistant or visiting scholar (either locally or remotely), please feel free to drop me an <a href="mailto:miaoqian@hku.hk">email</a>! ✉️
+</div>
+
 
 <h2 id="selected-publications" style="margin-top: 2.75rem;">Selected publications</h2>
 

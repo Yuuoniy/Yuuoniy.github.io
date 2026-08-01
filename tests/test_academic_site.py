@@ -119,6 +119,7 @@ class AcademicSiteSourceTest(unittest.TestCase):
         bugauditor = publications.split("BugAuditor", 1)[1].split("</li>", 1)[0]
         self.assertIn("PDF<", bugauditor)
         self.assertIn("Code<", bugauditor)
+        self.assertIn("Artifact Available · Functional · Reproducible", bugauditor)
         self.assertNotIn("Google Scholar", publications)
         self.assertNotIn("Citation", about)
         self.assertNotIn('class="award btn', about)
