@@ -188,5 +188,6 @@ My research focuses on software security, program analysis, and AI for security.
 <div class="contact-links" style="text-align: center; margin-top: 2rem;">
   <a href="mailto:miaoqian@hku.hk" title="Email" aria-label="Email" style="margin-right: 1rem;"><i class="fa-solid fa-envelope contact-icon" style="font-size: 1.75rem;"></i></a>
   <a href="https://scholar.google.com/citations?user=sj17XuAAAAAJ&amp;hl=en" title="Google Scholar" aria-label="Google Scholar" style="margin-right: 1rem;"><i class="ai ai-google-scholar contact-icon" style="font-size: 1.75rem;"></i></a>
+  <a href="https://www.linkedin.com/in/miaoqian-lin-2565b7332/" title="LinkedIn" aria-label="LinkedIn" style="margin-right: 1rem;"><i class="fa-brands fa-linkedin" style="font-size: 1.75rem;"></i></a>
   <a href="https://github.com/Yuuoniy" title="GitHub" aria-label="GitHub"><i class="fa-brands fa-github" style="font-size: 1.75rem;"></i></a>
 </div>
