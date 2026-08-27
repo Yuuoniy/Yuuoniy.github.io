@@ -172,6 +172,13 @@ My research focuses on software security, program analysis, and AI for security.
   </ol>
 </div>
 
+<h2 id="academic-services" style="margin-top: 2.25rem; font-size: 1.35rem;">Academic services</h2>
+
+<div class="academic-services">
+  <p style="margin: 0.25rem 0;"><strong>Program committee member:</strong> IEEE SaTML 2027, USENIX Security 2027</p>
+  <p style="margin: 0.25rem 0;"><strong>Reviewer:</strong> TSE 2026</p>
+</div>
+
 <script>
   document.querySelectorAll(".bibtex-toggle").forEach((control) => {
     control.addEventListener("click", (event) => {
