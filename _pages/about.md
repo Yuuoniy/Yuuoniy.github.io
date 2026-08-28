@@ -175,8 +175,10 @@ My research focuses on software security, program analysis, and AI for security.
 <h2 id="academic-services" style="margin-top: 2.25rem; font-size: 1.35rem;">Academic services</h2>
 
 <div class="academic-services">
-  <p style="margin: 0.25rem 0;"><strong>Program committee member:</strong> IEEE SaTML 2027, USENIX Security 2027</p>
-  <p style="margin: 0.25rem 0;"><strong>Reviewer:</strong> TSE 2026</p>
+  <ul style="margin: 0.25rem 0 0; padding-left: 1.25rem;">
+    <li><strong>Program committee member:</strong> IEEE SaTML 2027, USENIX Security 2027</li>
+    <li><strong>Reviewer:</strong> TSE 2026</li>
+  </ul>
 </div>
 
 <script>

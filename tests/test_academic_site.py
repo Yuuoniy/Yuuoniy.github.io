@@ -204,8 +204,10 @@ class AcademicSiteSourceTest(unittest.TestCase):
         about = read("_pages/about.md")
 
         self.assertIn('<h2 id="academic-services" style="margin-top: 2.25rem; font-size: 1.35rem;">Academic services</h2>', about)
-        self.assertIn('<p style="margin: 0.25rem 0;"><strong>Program committee member:</strong> IEEE SaTML 2027, USENIX Security 2027</p>', about)
-        self.assertIn('<p style="margin: 0.25rem 0;"><strong>Reviewer:</strong> TSE 2026</p>', about)
+        self.assertIn('<ul style="margin: 0.25rem 0 0; padding-left: 1.25rem;">', about)
+        self.assertIn('<li><strong>Program committee member:</strong> IEEE SaTML 2027, USENIX Security 2027</li>', about)
+        self.assertIn('<li><strong>Reviewer:</strong> TSE 2026</li>', about)
+        self.assertNotIn('<p style="margin: 0.25rem 0;"><strong>Program committee member:</strong>', about)
         self.assertLess(about.index('<h2 id="selected-publications"'), about.index('<h2 id="academic-services"'))
         self.assertLess(about.index('<h2 id="academic-services"'), about.index('<div class="contact-links"'))
 
